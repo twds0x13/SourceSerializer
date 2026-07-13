@@ -1,31 +1,30 @@
-# SourceSerializer
+---
+layout: home
 
-Attribute-defined schema. Source-generated parser at compile time. Zero reflection, zero boxing.
+hero:
+  name: "SourceSerializer"
+  text: Compile-time Serializer Generator
+  tagline: Attribute-defined schema. Source-generated parser at compile time. Zero reflection, zero boxing.
+  image:
+    src: /logo.svg
+    alt: SourceSerializer
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /en/guide/getting-started
+    - theme: alt
+      text: API Reference
+      link: /en/api/
 
-## Compared to JSON
-
-JSON discovers type structure at runtime via reflection. SourceSerializer does this work at compile time.
-
-| | JSON | SourceSerializer |
-|------|------|------|
-| Schema | Runtime reflection | Compile-time attribute |
-| Parser | Runtime | Compile time |
-| Memory | Heap + boxing | `stackalloc`, zero GC |
-| Type safety | `object` cast | Strongly typed |
-| Circular references | `$ref` patches | Two-phase, native support |
-
-## Quick Start
-
-```csharp
-[Template("<float x> <float y>")]
-public struct Vec2
-{
-    public float x;
-    public float y;
-}
-
-// Scan_Vec2 generated at compile time
-SerializerScanners.TryGetScanner<Vec2>(out var scan);
-scan("3.5 -2.1".AsSpan(), 0, out Vec2 v);
-// v.x == 3.5f, v.y == -2.1f
-```
+features:
+  - title: Zero Reflection, Zero Boxing
+    details: Compile-time SG emits C# span scanners. Runtime stackalloc allocation, no heap memory, Burst-compatible.
+  - title: Managed / Unmanaged Dual Strategy
+    details: unmanaged types use single-pass span scanning; managed types use two-phase Walk-Serialize with native circular reference support.
+  - title: Four XML Primitives
+    details: Literal text, field, optional block, repetition block. Compact syntax and XML syntax are equivalent and interchangeable.
+  - title: 12 Built-in Type Scanners
+    details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char. Hand-written zero-allocation span scanners.
+  - title: Compile-time Error Diagnostics
+    details: Circular dependency detection, readonly struct rejection, missing type warnings. Errors surface at compile time, not at runtime.
+---

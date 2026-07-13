@@ -1,0 +1,60 @@
+# `[Template]`
+
+为 struct 或 class 声明序列化模板。source generator 在编译期生成 span scanner。
+
+## 签名
+
+```csharp
+[AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+public sealed class TemplateAttribute : Attribute
+{
+    public string Template { get; }
+    public TemplateAttribute(string template);
+}
+```
+
+## 构造参数
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `template` | `string` | 模板字符串（compact 语法或 XML 格式） |
+
+## 模板语法
+
+`<type fieldname>` 字段指令映射到内置类型或已注册类型的扫描器。
+
+Compact 示例：
+
+```csharp
+[Template("<float X> <float Y>")]
+public struct Point2D { public float X; public float Y; }
+```
+
+带 optional 和 repetition：
+
+```csharp
+[Template("<float Damage>|<optional>draw <int Cards></optional>")]
+public struct SpellCard { public float Damage; public int Cards; }
+
+[Template("<float Damage><repetition>, <float Multipliers></repetition>")]
+public struct DamageData { public float Damage; public float Multipliers; }
+```
+
+等价 XML 格式：
+
+```xml
+<literal-template>
+  <field type="float" name="Damage"/>
+  <repetition>
+    <text>, </text>
+    <field type="float" name="Multipliers"/>
+  </repetition>
+</literal-template>
+```
+
+## 运行时使用
+
+```csharp
+SerializerScanners.TryGetScanner<Point2D>(out var scan);
+scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+```

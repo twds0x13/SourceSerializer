@@ -1,16 +1,27 @@
 # 快速入门
 
-用 attribute 声明结构，source generator 在编译期生成零分配解析器。
+SourceSerializer 用 attribute 声明结构布局，source generator 在编译期生成零分配 span 扫描器。
 
 ## 安装
 
-在 `manifest.json` 中添加：
+Unity 项目在 `manifest.json` 中添加：
 
 ```json
 "com.twds0x13.sourceserializer": "https://github.com/twds0x13/SourceSerializer.git#main"
 ```
 
-## 声明第一个模板
+.NET 项目在 `.csproj` 中引用 source generator：
+
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\SourceSerializer\packages\sourceserializer\SourceGenerator\SourceSerializer.Generator.csproj"
+                    OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+</ItemGroup>
+```
+
+## 声明模板
+
+用 `[Template("...")]` 在 struct 上声明文本格式：
 
 ```csharp
 using SourceSerializer;
@@ -25,13 +36,16 @@ public struct Point2D
 
 ## 使用生成的解析器
 
+编译后，source generator 生成 `Scan_Point2D` 方法并注册到 `SerializerScanners`：
+
 ```csharp
 SerializerScanners.TryGetScanner<Point2D>(out var scan);
-scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
-// v.X == 3.5f, v.Y == -2.1f
+int pos = scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+// pos > 0, v.X == 3.5f, v.Y == -2.1f
 ```
 
 ## 下一步
 
-- [模板语法](./template-syntax) — compact 格式、XML 格式、四种原语
-- [Managed vs Unmanaged](./managed-vs-unmanaged) — 双策略选择指南
+- [模板语法](./template-syntax): compact 格式、XML 格式、四种原语、嵌套
+- [Managed vs Unmanaged](./managed-vs-unmanaged): 双策略选择
+- [API 参考](/api/): Template、ExternalTemplate、Tag、TypeAlias 属性

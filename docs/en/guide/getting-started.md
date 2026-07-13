@@ -1,16 +1,27 @@
 # Getting Started
 
-Declare structs with attributes; the source generator produces zero-allocation parsers at compile time.
+SourceSerializer uses attributes to declare struct layouts. The source generator emits zero-allocation span scanners at compile time.
 
 ## Installation
 
-Add to `manifest.json`:
+For Unity projects, add to `manifest.json`:
 
 ```json
 "com.twds0x13.sourceserializer": "https://github.com/twds0x13/SourceSerializer.git#main"
 ```
 
-## Declare Your First Template
+For .NET projects, reference the source generator in `.csproj`:
+
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\SourceSerializer\packages\sourceserializer\SourceGenerator\SourceSerializer.Generator.csproj"
+                    OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+</ItemGroup>
+```
+
+## Declare a Template
+
+Use `[Template("...")]` on a struct to declare its text format:
 
 ```csharp
 using SourceSerializer;
@@ -25,13 +36,16 @@ public struct Point2D
 
 ## Use the Generated Parser
 
+After compilation, the source generator emits a `Scan_Point2D` method and registers it in `SerializerScanners`:
+
 ```csharp
 SerializerScanners.TryGetScanner<Point2D>(out var scan);
-scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
-// v.X == 3.5f, v.Y == -2.1f
+int pos = scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+// pos > 0, v.X == 3.5f, v.Y == -2.1f
 ```
 
 ## Next Steps
 
-- [Template Syntax](./template-syntax) — compact format, XML format, four primitives
-- [Managed vs Unmanaged](./managed-vs-unmanaged) — dual-strategy selection guide
+- [Template Syntax](./template-syntax): compact format, XML format, four primitives, nesting
+- [Managed vs Unmanaged](./managed-vs-unmanaged): dual strategy selection
+- [API Reference](/en/api/): Template, ExternalTemplate, Tag, TypeAlias attributes

@@ -1,5 +1,7 @@
 # SourceSerializer
 
+[中文](./README.md)
+
 [![.NET Test](https://github.com/twds0x13/SourceSerializer/actions/workflows/dotnet-test.yml/badge.svg)](https://github.com/twds0x13/SourceSerializer/actions/workflows/dotnet-test.yml)
 [![Codecov](https://codecov.io/gh/twds0x13/SourceSerializer/branch/main/graph/badge.svg)](https://app.codecov.io/gh/twds0x13/SourceSerializer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)

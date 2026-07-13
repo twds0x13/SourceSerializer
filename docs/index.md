@@ -1,31 +1,30 @@
-# SourceSerializer
+---
+layout: home
 
-用 attribute 声明 Schema，source generator 在编译期生成专用解析器。零反射，零装箱。
+hero:
+  name: "SourceSerializer"
+  text: 编译期序列化生成器
+  tagline: 用 attribute 声明 Schema，source generator 在编译期生成专用解析器。零反射，零装箱。
+  image:
+    src: /logo.svg
+    alt: SourceSerializer
+  actions:
+    - theme: brand
+      text: 快速入门
+      link: /guide/getting-started
+    - theme: alt
+      text: API 参考
+      link: /api/
 
-## 与 JSON 的区别
-
-JSON 在运行时通过反射发现类型结构。SourceSerializer 在编译期完成这项工作。
-
-| | JSON | SourceSerializer |
-|------|------|------|
-| Schema 定义 | 运行时反射 | 编译期 attribute |
-| 解析器生成 | 运行时 | 编译期 |
-| 内存分配 | 堆分配 + 装箱 | `stackalloc`，零 GC |
-| 类型安全 | `object` 中转 | 强类型 |
-| 循环引用 | `$ref` 补丁 | 两步走，原生支持 |
-
-## 快速开始
-
-```csharp
-[Template("<float x> <float y>")]
-public struct Vec2
-{
-    public float x;
-    public float y;
-}
-
-// 编译期生成 Scan_Vec2 方法
-SerializerScanners.TryGetScanner<Vec2>(out var scan);
-scan("3.5 -2.1".AsSpan(), 0, out Vec2 v);
-// v.x == 3.5f, v.y == -2.1f
-```
+features:
+  - title: 零反射，零装箱
+    details: 编译期 SG 输出 C# span scanner。运行时 stackalloc 分配，无堆内存，Burst 兼容。
+  - title: Managed / Unmanaged 双策略
+    details: unmanaged 类型走单次 span 扫描；managed 类型走两步 Walk-Serialize，天然支持循环引用。
+  - title: 四种 XML 原语
+    details: 裸文字（text）、字段（field）、可选块（optional）、重复块（repetition）。compact 语法与 XML 语法等价互换。
+  - title: 12 种内置类型扫描器
+    details: float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char。零分配手写 span 扫描器。
+  - title: 编译期错误诊断
+    details: 循环依赖检测、只读 struct 拒绝、缺失类型警告。所有错误在编译期报告，不等到运行时 NRE。
+---

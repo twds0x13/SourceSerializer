@@ -6,30 +6,100 @@ export default withMermaid(
     base: "/SourceSerializer/",
     title: "SourceSerializer",
     description: "Compile-time serializer generator — attribute-defined schema, source-generated parser",
+    head: [
+      ["link", { rel: "icon", type: "image/svg+xml", href: "/SourceSerializer/favicon.svg" }],
+      ["meta", { property: "og:image", content: "https://twds0x13.github.io/SourceSerializer/logo.svg" }],
+      ["meta", { property: "og:image:width", content: "512" }],
+      ["meta", { property: "og:image:height", content: "512" }],
+      ["meta", { name: "twitter:card", content: "summary" }],
+    ],
+
     locales: {
-      root: { label: "简体中文", lang: "zh-CN" },
-      en: { label: "English", lang: "en-US" },
-    },
-    themeConfig: {
-      logo: "/logo.png",
-      nav: [
-        { text: "指南", link: "/guide/getting-started" },
-        { text: "API", link: "/api/" },
-      ],
-      sidebar: {
-        "/guide/": [
-          { text: "Getting Started", link: "/guide/getting-started" },
-          { text: "Template Syntax", link: "/guide/template-syntax" },
-          { text: "Managed vs Unmanaged", link: "/guide/managed-vs-unmanaged" },
-        ],
-        "/en/guide/": [
-          { text: "Getting Started", link: "/en/guide/getting-started" },
-          { text: "Template Syntax", link: "/en/guide/template-syntax" },
-          { text: "Managed vs Unmanaged", link: "/en/guide/managed-vs-unmanaged" },
-        ],
+      root: {
+        label: "简体中文",
+        lang: "zh-CN",
+        themeConfig: {
+          logo: "/logo.svg",
+          nav: [
+            { text: "首页", link: "/" },
+            { text: "指南", link: "/guide/getting-started" },
+            { text: "API", link: "/api/" },
+          ],
+          sidebar: {
+            "/guide/": [
+              { text: "快速入门", link: "/guide/getting-started" },
+              { text: "模板语法", link: "/guide/template-syntax" },
+              { text: "Managed vs Unmanaged", link: "/guide/managed-vs-unmanaged" },
+            ],
+            "/api/": [
+              {
+                text: "Attributes",
+                collapsed: false,
+                items: [
+                  { text: "Template", link: "/api/template-attribute" },
+                  { text: "ExternalTemplate", link: "/api/external-template-attribute" },
+                  { text: "Tag", link: "/api/tag-attribute" },
+                  { text: "TypeAlias", link: "/api/type-alias-attribute" },
+                ],
+              },
+              {
+                text: "Runtime",
+                collapsed: false,
+                items: [
+                  { text: "SerializerRegistry", link: "/api/serializer-registry" },
+                  { text: "SerializerScanners", link: "/api/serializer-scanners" },
+                ],
+              },
+            ],
+          },
+          socialLinks: [{ icon: "github", link: "https://github.com/twds0x13/SourceSerializer" }],
+          footer: { message: "基于 MIT 许可发布。", copyright: "Copyright © 2026 twds0x13" },
+        },
       },
-      socialLinks: [{ icon: "github", link: "https://github.com/twds0x13/SourceSerializer" }],
+
+      en: {
+        label: "English",
+        lang: "en-US",
+        themeConfig: {
+          logo: "/logo.svg",
+          nav: [
+            { text: "Home", link: "/en/" },
+            { text: "Guide", link: "/en/guide/getting-started" },
+            { text: "API", link: "/en/api/" },
+          ],
+          sidebar: {
+            "/en/guide/": [
+              { text: "Getting Started", link: "/en/guide/getting-started" },
+              { text: "Template Syntax", link: "/en/guide/template-syntax" },
+              { text: "Managed vs Unmanaged", link: "/en/guide/managed-vs-unmanaged" },
+            ],
+            "/en/api/": [
+              {
+                text: "Attributes",
+                collapsed: false,
+                items: [
+                  { text: "Template", link: "/en/api/template-attribute" },
+                  { text: "ExternalTemplate", link: "/en/api/external-template-attribute" },
+                  { text: "Tag", link: "/en/api/tag-attribute" },
+                  { text: "TypeAlias", link: "/en/api/type-alias-attribute" },
+                ],
+              },
+              {
+                text: "Runtime",
+                collapsed: false,
+                items: [
+                  { text: "SerializerRegistry", link: "/en/api/serializer-registry" },
+                  { text: "SerializerScanners", link: "/en/api/serializer-scanners" },
+                ],
+              },
+            ],
+          },
+          socialLinks: [{ icon: "github", link: "https://github.com/twds0x13/SourceSerializer" }],
+          footer: { message: "Released under the MIT License.", copyright: "Copyright © 2026 twds0x13" },
+        },
+      },
     },
+
     mermaid: {
       themeCSS: ".label foreignObject { overflow: visible; }",
     },
