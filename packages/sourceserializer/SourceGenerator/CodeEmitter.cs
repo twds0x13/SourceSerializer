@@ -216,10 +216,7 @@ namespace SourceSerializer.Generator
                 }
                 else
                 {
-                    // SSR004 would have been reported by BuildDependencyGraph.
-                    // Emit default assignment to keep generated code compilable.
-                    sb.AppendLine($"{indent}// Warning: unregistered type '{typeAlias}' (SSR004). Field left at default.");
-                    sb.AppendLine($"{indent}value.{fieldName} = default;");
+                    sb.AppendLine($"{indent}// ERROR: unregistered type '{typeAlias}'");
                 }
             }
             sb.AppendLine();

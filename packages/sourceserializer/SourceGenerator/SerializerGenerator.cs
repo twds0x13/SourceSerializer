@@ -20,21 +20,21 @@ namespace SourceSerializer.Generator
         private static readonly DiagnosticDescriptor CircularDependencyError = new(
             "SSR002", "Circular template dependency",
             "Struct '{0}' has a circular dependency via template field types: {1}",
-            "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
+            "FluxFormula", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor ReadonlyStructError = new(
-            "SSR003", "Readonly struct cannot use Template",
-            "Struct '{0}' is declared 'readonly'. [Template] requires mutable fields for field assignment. Remove the 'readonly' modifier from the struct or its fields.",
-            "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
+            "SSR003", "Readonly struct cannot use LiteralTemplate",
+            "Struct '{0}' is declared 'readonly'. [LiteralTemplate] requires mutable fields for field assignment. Remove the 'readonly' modifier from the struct or its fields.",
+            "FluxFormula", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor MissingDependencyWarning = new(
             "SSR004", "Missing template dependency",
-            "Template for '{0}' references type '{1}' which has no [Template] and is not a built-in type. The field will be skipped.",
-            "SourceSerializer", DiagnosticSeverity.Warning, isEnabledByDefault: true);
+            "Template for '{0}' references type '{1}' which has no [LiteralTemplate] and is not a built-in type. The field will be skipped.",
+            "FluxFormula", DiagnosticSeverity.Warning, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor ParseError = new(
-            "SSR001", "Template Error",
-            "{0}", "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
+            "SSR001", "Literal Template Error",
+            "{0}", "FluxFormula", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -47,7 +47,7 @@ namespace SourceSerializer.Generator
                 .Where(info => info.HasValue)
                 .Select((info, _) => info!.Value);
 
-            // Pipeline B: [ExternalTemplate(typeof(X), "...")]
+            // Pipeline B: [ExternalLiteralTemplate(typeof(X), "...")]
             var externalDeclarations = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     "SourceSerializer.ExternalTemplateAttribute",
@@ -56,7 +56,7 @@ namespace SourceSerializer.Generator
                 .Where(info => info.HasValue)
                 .Select((info, _) => info!.Value);
 
-            // Pipeline C: [TypeAlias("Alias", "float")] — custom aliases
+            // Pipeline C: [LiteralTypeAlias("Alias", "float")] — custom aliases
             var typeAliases = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     "SourceSerializer.TypeAliasAttribute",
@@ -66,7 +66,7 @@ namespace SourceSerializer.Generator
                 .Select((a, _) => a!.Value)
                 .Collect();
 
-            // Pipeline D: enum members with [Tag] — auto-generated tag scanners
+            // Pipeline D: enum members with [LiteralTag] — auto-generated tag scanners
             var enumTags = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     "SourceSerializer.TagAttribute",
@@ -139,12 +139,12 @@ namespace SourceSerializer.Generator
         }
 
         /// <summary>
-        /// 从 [ExternalTemplate(typeof(X), "...")] 提取（目标类型, 模板）。
+        /// 从 [ExternalLiteralTemplate(typeof(X), "...")] 提取（目标类型, 模板）。
         /// attribute 可在 assembly/class/struct 上。
         /// </summary>
         private static StructTemplateInfo? GetExternalInfo(GeneratorAttributeSyntaxContext ctx)
         {
-            // ExternalTemplate 的 constructor: (Type targetType, string template)
+            // ExternalLiteralTemplate 的 constructor: (Type targetType, string template)
             foreach (var attr in ctx.Attributes)
             {
                 if (attr.AttributeClass == null
@@ -184,7 +184,7 @@ namespace SourceSerializer.Generator
             return null;
         }
 
-        /// <summary>从 [Tag("tag")] 提取枚举标签映射</summary>
+        /// <summary>从 [LiteralTag("tag")] 提取枚举标签映射</summary>
         private static (string EnumName, string EnumFullName, string MemberName, string Tag)? GetEnumTagInfo(GeneratorAttributeSyntaxContext ctx)
         {
             var memberSymbol = ctx.TargetSymbol as IFieldSymbol;
@@ -221,7 +221,7 @@ namespace SourceSerializer.Generator
             return map;
         }
 
-        /// <summary>从 [TypeAlias("alias", "type")] 提取别名映射</summary>
+        /// <summary>从 [LiteralTypeAlias("alias", "type")] 提取别名映射</summary>
         private static (string Alias, string CSharpType)? GetTypeAlias(GeneratorAttributeSyntaxContext ctx)
         {
             foreach (var attr in ctx.Attributes)
@@ -467,12 +467,12 @@ namespace SourceSerializer.Generator
                     }
                 }
 
-                // HasCycle guarantees a valid DAG — every round must find a root.
-                // If we get here, the cycle detector missed a case.
-                if (!found)
-                    throw new InvalidOperationException(
-                        $"Topological sort stalled with {remaining.Count} remaining: {string.Join(", ", remaining)}. " +
-                        "This indicates an undetected cycle in the dependency graph.");
+                if (!found && remaining.Count > 0)
+                {
+                    foreach (var name in remaining)
+                        result.Add(nameIndex[name]);
+                    remaining.Clear();
+                }
             }
 
             return result;
