@@ -1,0 +1,27 @@
+# .NET / Build
+tests/SourceSerializer.Tests/bin/
+tests/SourceSerializer.Tests/obj/
+packages/sourceserializer/SourceGenerator/bin/
+packages/sourceserializer/SourceGenerator/obj/
+
+# Node / VitePress
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# Coverage reports
+.coverage-report.xml
+cov*.xml
+cov*/
+test_coverage_output*/
+coveragereport/
+
+# AI / Claude
+CLAUDE.md
+.claude/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo

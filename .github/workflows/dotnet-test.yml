@@ -1,0 +1,53 @@
+name: .NET Test & Coverage
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".gitignore"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".gitignore"
+
+jobs:
+  test:
+    name: .NET ${{ matrix.dotnet-version }} — Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dotnet-version: ["9.0"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}.x
+
+      - name: Run tests
+        run: dotnet test tests/SourceSerializer.Tests/ --configuration Release --framework net${{ matrix.dotnet-version }}
+
+      - name: Install coverage tool
+        run: dotnet tool install -g dotnet-coverage --allow-downgrade
+
+      - name: Collect coverage
+        run: dotnet-coverage collect --output coverage-latest.xml --output-format cobertura "dotnet test tests/SourceSerializer.Tests/ --configuration Release --no-build --framework net${{ matrix.dotnet-version }}"
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage-latest.xml
+          flags: core-tests
+          name: dotnet-core
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

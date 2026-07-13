@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Runtime source files from the UPM package -->
+  <ItemGroup>
+    <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TemplateAttribute.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TagAttribute.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TypeAliasAttribute.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/Attributes/ExternalTemplateAttribute.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/SerializerScanners.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/SerializerRegistry.cs" />
+  </ItemGroup>
+
+  <!-- Test source files -->
+  <ItemGroup>
+    <Compile Include="TemplateTests.cs" />
+  </ItemGroup>
+
+  <!-- Source Generator as Analyzer -->
+  <ItemGroup>
+    <ProjectReference Include="../../packages/sourceserializer/SourceGenerator/SourceSerializer.Generator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.1.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+  </ItemGroup>
+</Project>

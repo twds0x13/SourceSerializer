@@ -1,0 +1,22 @@
+{
+  "name": "sourceserializer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SourceSerializer monorepo root — VitePress docs + semantic-release",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.0",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "semantic-release": "^24.0.0",
+    "vitepress": "^1.6.0",
+    "vitepress-plugin-mermaid": "^2.0.0",
+    "mermaid": "^10.0.0"
+  }
+}
