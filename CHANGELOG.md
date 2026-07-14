@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/twds0x13/SourceSerializer/compare/v1.0.1...v1.1.0) (2026-07-14)
+
+### Features
+
+* add serialization direction, class support, and generic collection auto-resolution ([2f8933b](https://github.com/twds0x13/SourceSerializer/commit/2f8933bb0fcfca382d67b5400377eeb77ceffc3c))
+
 ## [1.0.1](https://github.com/twds0x13/SourceSerializer/compare/v1.0.0...v1.0.1) (2026-07-13)
 
 ### Bug Fixes
