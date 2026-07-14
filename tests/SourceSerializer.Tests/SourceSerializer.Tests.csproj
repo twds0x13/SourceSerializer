@@ -15,11 +15,19 @@
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/ExternalTemplateAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerScanners.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerRegistry.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/SerializerEmitters.cs" />
   </ItemGroup>
 
   <!-- Test source files -->
   <ItemGroup>
-    <Compile Include="TemplateTests.cs" />
+    <Compile Include="PrimitiveScannerTests.cs" />      <!-- 内置类型扫描器 -->
+    <Compile Include="UnmanagedStructTests.cs" />       <!-- 纯值类型 struct -->
+    <Compile Include="ManagedTypeTests.cs" />           <!-- class + managed struct -->
+    <Compile Include="CollectionRepetitionTests.cs" />  <!-- List/Repetition 集合 -->
+    <Compile Include="EnumTagTests.cs" />               <!-- 枚举标签 -->
+    <Compile Include="TypeAliasTests.cs" />             <!-- 类型别名 -->
+    <Compile Include="EdgeCaseTests.cs" />              <!-- 边界与负面路径 -->
+    <Compile Include="EmitterTests.cs" />              <!-- 序列化 Emit -->
   </ItemGroup>
 
   <!-- Source Generator as Analyzer -->

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SourceSerializer
 {
@@ -10,15 +11,16 @@ namespace SourceSerializer
     /// public enum Element : byte
     /// {
     ///     Physical = 0,
-    ///     [LiteralTag("fire")]  Fire,
-    ///     [LiteralTag("ice")]   Ice,
-    ///     [LiteralTag("magic")] Magic,
+    ///     [Tag("fire")]  Fire,
+    ///     [Tag("ice")]   Ice,
+    ///     [Tag("magic")] Magic,
     /// }
     /// </code>
-    /// 模板中写 <c>&lt;Element tag&gt;</c>，生成器自动识别枚举类型并生成标签扫描代��。
+    /// 模板中写 <c>&lt;Element tag&gt;</c>，生成器自动识别枚举类型并生成标签扫描代码。
     /// </example>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    // 纯声明式 attribute，无运行时逻辑
+    [ExcludeFromCodeCoverage]
     public sealed class TagAttribute : Attribute
     {
         /// <summary>标签字符串（如 "fire"、"ice"）</summary>

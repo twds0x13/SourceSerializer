@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SourceSerializer
 {
@@ -9,12 +10,13 @@ namespace SourceSerializer
     /// </summary>
     /// <example>
     /// <code>
-    /// [LiteralTemplate("&lt;float damage&gt;|&lt;optional&gt;draw &lt;int draw&gt;&lt;/optional&gt;|idx:&lt;int index&gt;")]
+    /// [Template("&lt;float damage&gt;|&lt;optional&gt;draw &lt;int DrawsProvide&gt;&lt;/optional&gt;|idx:&lt;int StartIndex&gt;")]
     /// public struct SpellContext { public float Damage; public byte DrawsProvide; public byte StartIndex; }
     /// </code>
     /// </example>
-    [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+    // 纯声明式 attribute，无运行时逻辑
+    [ExcludeFromCodeCoverage]
     public sealed class TemplateAttribute : Attribute
     {
         /// <summary>模板字符串</summary>

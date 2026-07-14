@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SourceSerializer
 {
@@ -11,10 +12,10 @@ namespace SourceSerializer
     /// 换行在解析时被规范化为空格，因此以下两种写法等价：</para>
     /// <code>
     /// // 单行
-    /// [ExternalLiteralTemplate(typeof(Vector3), "&lt;float x&gt; &lt;float y&gt; &lt;float z&gt;")]
+    /// [ExternalTemplate(typeof(Vector3), "&lt;float x&gt; &lt;float y&gt; &lt;float z&gt;")]
     ///
     /// // 多行（推荐）
-    /// [ExternalLiteralTemplate(typeof(Vector3), """
+    /// [ExternalTemplate(typeof(Vector3), """
     ///     &lt;float x&gt;
     ///     &lt;float y&gt;
     ///     &lt;float z&gt;
@@ -29,7 +30,8 @@ namespace SourceSerializer
     /// </code>
     /// </example>
     [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    // 纯声明式 attribute，无运行时逻辑
+    [ExcludeFromCodeCoverage]
     public sealed class ExternalTemplateAttribute : Attribute
     {
         /// <summary>目标 struct 类型</summary>
