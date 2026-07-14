@@ -1,3 +1,9 @@
+## [1.2.2](https://github.com/twds0x13/SourceSerializer/compare/v1.2.1...v1.2.2) (2026-07-14)
+
+### Bug Fixes
+
+* **docs:** upgrade mermaid from 10.9.6 to 11.15.0 ([c0774cc](https://github.com/twds0x13/SourceSerializer/commit/c0774cc28b1b33b316e16303719d64a293fca0e4))
+
 ## [1.2.1](https://github.com/twds0x13/SourceSerializer/compare/v1.2.0...v1.2.1) (2026-07-14)
 
 ### Bug Fixes
