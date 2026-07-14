@@ -13,8 +13,9 @@
 
 | Type | Description |
 |------|-------------|
-| [`SerializerRegistry`](./serializer-registry) | Zero-allocation span scanners for 12 built-in types |
-| [`SerializerScanners`](./serializer-scanners) | Scanner registry entry point, `TryGetScanner<T>` |
+| [`SerializerRegistry`](./serializer-registry) | Zero-allocation span scanners and emitters for 12 built-in types |
+| [`SerializerScanners`](./serializer-scanners) | Deserialization registry entry point, `TryGetScanner<T>` |
+| [`SerializerEmitters`](./serializer-emitters) | Serialization registry entry point, `TryGetEmitter<T>` |
 
 ## Type Relationships
 
@@ -24,7 +25,12 @@ flowchart TD
     C["[Tag]"] --> B
     D["[TypeAlias]"] --> B
     B --> E[SerializerScanners.g.cs]
+    B --> E2[SerializerEmitters.g.cs]
     E --> F[TryGetScanner]
     F --> G[ScannerDelegate]
     H[SerializerRegistry] --> G
+    E2 --> K[TryGetEmitter]
+    K --> J[EmitterDelegate]
+    H --> I[Emit_Xxx methods]
+    I --> J
 ```

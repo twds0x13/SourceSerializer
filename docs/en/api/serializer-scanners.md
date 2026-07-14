@@ -35,7 +35,7 @@ Source-generated scanner methods match the signature of built-in type scanners:
 
 ## Internal Registration Mechanism
 
-The source generator registers scanners via a static constructor in the generated `Serializers.g.cs`:
+The source generator registers scanners via a static constructor in the generated `SerializerScanners.g.cs`:
 
 ```csharp
 static SerializerScanners()

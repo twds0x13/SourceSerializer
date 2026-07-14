@@ -35,7 +35,7 @@ source generator 生成的扫描方法签名与内置类型扫描方法一致：
 
 ## 内部注册机制
 
-source generator 在生成的 `Serializers.g.cs` 中通过静态构造函数注册扫描器：
+source generator 在生成的 `SerializerScanners.g.cs` 中通过静态构造函数注册扫描器：
 
 ```csharp
 static SerializerScanners()

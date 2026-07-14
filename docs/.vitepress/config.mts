@@ -32,6 +32,7 @@ export default withMermaid(
                 { text: "快速入门", link: "/guide/getting-started" },
                 { text: "模板语法", link: "/guide/template-syntax" },
                 { text: "Managed vs Unmanaged", link: "/guide/managed-vs-unmanaged" },
+                { text: "编译期诊断", link: "/guide/diagnostics" },
               ],
             },
             {
@@ -53,6 +54,7 @@ export default withMermaid(
                   items: [
                     { text: "SerializerRegistry", link: "/api/serializer-registry" },
                     { text: "SerializerScanners", link: "/api/serializer-scanners" },
+                    { text: "SerializerEmitters", link: "/api/serializer-emitters" },
                   ],
                 },
               ],
@@ -80,6 +82,7 @@ export default withMermaid(
                 { text: "Getting Started", link: "/en/guide/getting-started" },
                 { text: "Template Syntax", link: "/en/guide/template-syntax" },
                 { text: "Managed vs Unmanaged", link: "/en/guide/managed-vs-unmanaged" },
+                { text: "Diagnostics", link: "/en/guide/diagnostics" },
               ],
             },
             {
@@ -101,6 +104,7 @@ export default withMermaid(
                   items: [
                     { text: "SerializerRegistry", link: "/en/api/serializer-registry" },
                     { text: "SerializerScanners", link: "/en/api/serializer-scanners" },
+                    { text: "SerializerEmitters", link: "/en/api/serializer-emitters" },
                   ],
                 },
               ],

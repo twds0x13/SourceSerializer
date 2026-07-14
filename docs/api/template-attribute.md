@@ -40,6 +40,13 @@ public struct SpellCard { public float Damage; public int Cards; }
 public struct DamageData { public float Damage; public float Multipliers; }
 ```
 
+也可用于 class：
+
+```csharp
+[Template("<string Name>")]
+public class NamedItem { public string Name; }
+```
+
 等价 XML 格式：
 
 ```xml
@@ -54,7 +61,18 @@ public struct DamageData { public float Damage; public float Multipliers; }
 
 ## 运行时使用
 
+反序列化（scan）：
+
 ```csharp
 SerializerScanners.TryGetScanner<Point2D>(out var scan);
 scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+```
+
+序列化（emit）：
+
+```csharp
+SerializerEmitters.TryGetEmitter<Point2D>(out var emit);
+var sb = new StringBuilder();
+emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+Console.WriteLine(sb.ToString()); // "3.5 -2.1"
 ```

@@ -19,22 +19,52 @@ public struct Point2D
 // internal static int Scan_Point2D(ReadOnlySpan<char> src, int pos, out Point2D value)
 ```
 
-The unmanaged path is implemented in the current version.
+The serialization direction is also available. The source generator simultaneously emits an `Emit_Point2D` method that writes the instance to a `StringBuilder`:
+
+```csharp
+SerializerEmitters.TryGetEmitter<Point2D>(out var emit);
+var sb = new StringBuilder();
+emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+// sb.ToString() == "3.5 -2.1"
+```
+
+Both scanning and emitting are implemented for the unmanaged path.
 
 ## Managed Path
 
-When `T : class` or managed struct (containing string, List, object references, etc.), uses a two-phase strategy:
+When `T : class` or managed struct (containing string, List, object references, etc.), different handling applies.
+
+### Deserialization (Implemented)
+
+The Source Generator uses Roslyn's `ITypeSymbol.IsUnmanagedType` as the authoritative source of truth, splitting into two orthogonal dimensions:
+
+| Dimension | Meaning | Roslyn Source | Codegen Impact |
+|-----------|---------|---------------|----------------|
+| `NeedsHeapAlloc` | Is the type a class? | `TypeKind == Class` | `new T()` vs `default` |
+| `NeedsWalkPhase` | Does the type contain GC references? | `!IsUnmanagedType` | Reserved for future Walk phase |
+
+Roslyn is the single source of truth. `IsUnmanagedType` covers the full definition of C# 7.3+ `unmanaged` constraints (including generic specialization), requiring zero lines of manual rules in the SG.
+
+### Serialization Direction (Partially Implemented)
+
+Serialization for the unmanaged path is fully implemented. The source generator uses `EmitCodeEmitter` to produce `SerializerEmitters.g.cs`, supporting:
+
+- Literal text output
+- Field serialization (built-in types, custom nested types, enum tags)
+- Optional blocks (output when field is non-default)
+
+Two-phase serialization for the managed path is still planned:
 
 1. **Walk**: traverse the object graph, assign sequential int IDs to each object
 2. **Serialize**: replace reference fields with int IDs
 
-Circular references are handled natively without `$ref` annotations or graph analysis.
+Circular references are handled natively without `$ref` annotations or graph analysis. `NeedsWalkPhase` determines at compile time whether two-phase codegen is needed.
 
-The managed path is planned for a future version.
+`<repetition>` block serialization currently emits a stub, deferred to the managed Walk phase.
 
 ## Selection Guide
 
 | Scenario | Strategy |
 |----------|----------|
-| Pure numeric structs (Vector3, StatBlock, Point2D) | Unmanaged |
-| Types with string, List, object references | Managed (planned) |
+| Pure numeric structs (Vector3, StatBlock, Point2D) | Unmanaged: both scan and emit complete |
+| Types with string, List, object references | Managed: deserialization available, serialization partially available |

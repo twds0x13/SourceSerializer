@@ -22,8 +22,9 @@ Compile-time serialization: declare schema with attributes, source generator emi
 
 - `[Template("...")]` declares struct layout: fields, separators, optional blocks, repeatable sequences
 - Unmanaged path: `stackalloc` span scanner, zero heap allocation, Burst-compatible
+- Serialization direction: compile-time generated `SerializerEmitters`, struct to StringBuilder with zero allocation
 - Managed path: two-phase walk-then-serialize, circular references without `$ref` (planned)
-- Built-in scanners for 12 C# primitive types (float, int, bool, char, etc.)
+- Built-in scanners and emitters for 12 C# primitive types (float, int, bool, char, etc.)
 
 ## Installation
 
@@ -46,6 +47,11 @@ public struct DamageData
 SerializerScanners.TryGetScanner<DamageData>(out var scan);
 scan("42, 1.5, 2.0".AsSpan(), 0, out DamageData v);
 // v.damage == 42, v.multipliers == 2.0
+
+// Serialization
+SerializerEmitters.TryGetEmitter<DamageData>(out var emit);
+var sb = new StringBuilder();
+emit(sb, v);  // sb.ToString() == "42, 1.5, 2.0"
 ```
 
 ## Documentation

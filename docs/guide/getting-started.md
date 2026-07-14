@@ -44,8 +44,20 @@ int pos = scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
 // pos > 0, v.X == 3.5f, v.Y == -2.1f
 ```
 
+## 使用生成的序列化器
+
+编译后，source generator 同时生成 `Emit_Point2D` 方法并注册到 `SerializerEmitters`：
+
+```csharp
+SerializerEmitters.TryGetEmitter<Point2D>(out var emit);
+var sb = new StringBuilder();
+emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+Console.WriteLine(sb.ToString()); // "3.5 -2.1"
+```
+
 ## 下一步
 
-- [模板语法](./template-syntax): compact 格式、XML 格式、四种原语、嵌套
+- [模板语法](./template-syntax): compact 格式、XML 格式、四种原语、嵌套、泛型集合
 - [Managed vs Unmanaged](./managed-vs-unmanaged): 双策略选择
+- [编译期诊断](./diagnostics): 错误代码参考
 - [API 参考](/api/): Template、ExternalTemplate、Tag、TypeAlias 属性

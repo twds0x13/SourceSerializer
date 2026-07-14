@@ -127,3 +127,27 @@ Use `[ExternalTemplate]` to declare templates for types without `[Template]`, su
 ```csharp
 [ExternalTemplate(typeof(Vector3), "<float x> <float y> <float z>")]
 ```
+
+## Generic Collection Auto-Resolution
+
+When a field type is `List<T>` or `Dictionary<K,V>`, the source generator automatically synthesizes a parser from built-in open generic templates. Callers do not need to manually write `[Template]` for collection types.
+
+The synthesized template for `List<T>` parses comma-separated element sequences, where each element is parsed by the element type's template. `Dictionary<K,V>` parses `key: value` pair sequences.
+
+```csharp
+// Element type
+[Template("<float Value>")]
+public struct NamedValue
+{
+    public float Value;
+}
+
+// Collection field is auto-resolved
+[Template("<repetition>, <List<NamedValue> Items></repetition>")]
+public struct Container
+{
+    public List<NamedValue> Items;
+}
+```
+
+Collection fields use `.Add()` instead of `=` for assignment, so all parsed values are retained in the list. Scalar fields inside `<repetition>` get overwritten on each iteration, which triggers the [SSR005 diagnostic](./diagnostics#ssr005-scalar-field-inside-repetition).

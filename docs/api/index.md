@@ -13,8 +13,9 @@
 
 | 类型 | 说明 |
 |------|------|
-| [`SerializerRegistry`](./serializer-registry) | 12 种内置类型的零分配 span 扫描器 |
-| [`SerializerScanners`](./serializer-scanners) | 扫描器注册入口，`TryGetScanner<T>` 获取生成的解析器 |
+| [`SerializerRegistry`](./serializer-registry) | 12 种内置类型的零分配 span 扫描器与发射器 |
+| [`SerializerScanners`](./serializer-scanners) | 反序列化注册入口，`TryGetScanner<T>` 获取生成的解析器 |
+| [`SerializerEmitters`](./serializer-emitters) | 序列化注册入口，`TryGetEmitter<T>` 获取生成的发射器 |
 
 ## 类型关系
 
@@ -24,7 +25,12 @@ flowchart TD
     C["[Tag]"] --> B
     D["[TypeAlias]"] --> B
     B --> E[SerializerScanners.g.cs]
+    B --> E2[SerializerEmitters.g.cs]
     E --> F[TryGetScanner]
     F --> G[ScannerDelegate]
     H[SerializerRegistry] --> G
+    E2 --> K[TryGetEmitter]
+    K --> J[EmitterDelegate]
+    H --> I[Emit_Xxx 方法]
+    I --> J
 ```

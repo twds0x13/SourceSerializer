@@ -127,3 +127,27 @@ public struct Spell
 ```csharp
 [ExternalTemplate(typeof(Vector3), "<float x> <float y> <float z>")]
 ```
+
+## 泛型集合自动解析
+
+当字段类型为 `List<T>` 或 `Dictionary<K,V>` 时，source generator 自动从内置的开放泛型模板合成解析器。调用方无需为集合类型手动编写 `[Template]`。
+
+`List<T>` 的合成模板解析逗号分隔的元素序列，每个元素按元素类型的模板解析。`Dictionary<K,V>` 解析 `key: value` 对序列。
+
+```csharp
+// 元素类型
+[Template("<float Value>")]
+public struct NamedValue
+{
+    public float Value;
+}
+
+// 集合字段自动解析
+[Template("<repetition>, <List<NamedValue> Items></repetition>")]
+public struct Container
+{
+    public List<NamedValue> Items;
+}
+```
+
+集合类型的字段赋值使用 `.Add()` 而非 `=`，因此解析多个元素时所有值都被保留到列表中。标量字段在 `<repetition>` 块中每次迭代被覆盖，会触发 [SSR005 诊断](./diagnostics#ssr005重复块内的标量字段)。
