@@ -63,10 +63,10 @@ namespace SourceSerializer.Generator
             "Struct '{0}' is declared 'readonly'. [Template] requires mutable fields for field assignment. Remove the 'readonly' modifier from the struct or its fields.",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
-        private static readonly DiagnosticDescriptor MissingDependencyWarning = new(
+        private static readonly DiagnosticDescriptor MissingDependencyError = new(
             "SSR004", "Missing template dependency",
-            "Template for '{0}' references type '{1}' which has no [Template] and is not a built-in type. The field will be skipped.",
-            "SourceSerializer", DiagnosticSeverity.Warning, isEnabledByDefault: true);
+            "Template for '{0}' references type '{1}' which has no [Template] and is not a built-in type. Add [Template] or [ExternalTemplate] to the type, use a built-in type, or mark the field with [TemplateIgnore].",
+            "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor ParseError = new(
             "SSR001", "Template Parse Error",
@@ -169,6 +169,8 @@ namespace SourceSerializer.Generator
             {
                 if (member is IFieldSymbol f && !f.IsStatic && f.DeclaredAccessibility == Accessibility.Public)
                 {
+                    if (HasTemplateIgnoreAttribute(f))
+                        continue;
                     var (kind, elemType) = ClassifyFieldType(f.Type);
                     bool fieldNeedsWalk = !f.Type.IsUnmanagedType;
                     fields.Add(new FieldInfo(f.Name, f.Type.ToDisplayString(), kind, elemType, fieldNeedsWalk));
@@ -218,6 +220,8 @@ namespace SourceSerializer.Generator
                 {
                     if (member is IFieldSymbol f && !f.IsStatic && f.DeclaredAccessibility == Accessibility.Public)
                     {
+                        if (HasTemplateIgnoreAttribute(f))
+                            continue;
                         var (kind, elemType) = ClassifyFieldType(f.Type);
                         bool fieldNeedsWalk = !f.Type.IsUnmanagedType;
                         fields.Add(new FieldInfo(f.Name, f.Type.ToDisplayString(), kind, elemType, fieldNeedsWalk));
@@ -322,6 +326,22 @@ namespace SourceSerializer.Generator
         private static bool IsManagedFieldType(ITypeSymbol type)
         {
             return !type.IsUnmanagedType;
+        }
+
+        /// <summary>检查字段是否标注了 [TemplateIgnore]，若是则跳过不参与序列化。</summary>
+        private static bool HasTemplateIgnoreAttribute(IFieldSymbol field)
+        {
+            foreach (var attr in field.GetAttributes())
+            {
+                if (attr.AttributeClass != null
+                    && attr.AttributeClass.Name == "TemplateIgnoreAttribute"
+                    && attr.AttributeClass.ContainingNamespace != null
+                    && attr.AttributeClass.ContainingNamespace.ToDisplayString() == "SourceSerializer")
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>从 symbol 的指定 attribute 中提取第一个构造参数（模板字符串）</summary>
@@ -462,7 +482,7 @@ namespace SourceSerializer.Generator
                     else
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
-                            MissingDependencyWarning, Location.None,
+                            MissingDependencyError, Location.None,
                             info.StructName, refType));
                     }
                 }
