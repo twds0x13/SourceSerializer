@@ -38,8 +38,9 @@ export default withMermaid(
             {
               text: "API 参考",
               items: [
+                { text: "API 总览", link: "/api/" },
                 {
-                  text: "Attributes",
+                  text: "属性",
                   collapsed: false,
                   items: [
                     { text: "Template", link: "/api/template-attribute" },
@@ -49,7 +50,7 @@ export default withMermaid(
                   ],
                 },
                 {
-                  text: "Runtime",
+                  text: "运行时",
                   collapsed: false,
                   items: [
                     { text: "SerializerRegistry", link: "/api/serializer-registry" },
@@ -88,6 +89,7 @@ export default withMermaid(
             {
               text: "API Reference",
               items: [
+                { text: "API Overview", link: "/en/api/" },
                 {
                   text: "Attributes",
                   collapsed: false,
@@ -117,7 +119,16 @@ export default withMermaid(
     },
 
     mermaid: {
-      themeCSS: ".label foreignObject { overflow: visible; }",
+      htmlLabels: true,
+      themeCSS: `
+        .label foreignObject { overflow: visible !important; }
+        .nodeLabel foreignObject { overflow: visible !important; }
+        .edgeLabel foreignObject { overflow: visible !important; }
+        .label div, .nodeLabel div, .edgeLabel div { padding-bottom: 5px; }
+      `,
+      themeVariables: {
+        fontFamily: '"Microsoft YaHei", "Noto Sans SC", "PingFang SC", sans-serif',
+      },
     },
   })
 );
