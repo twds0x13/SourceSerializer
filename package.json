@@ -14,9 +14,9 @@
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.0",
     "conventional-changelog-conventionalcommits": "^8.0.0",
+    "mermaid": "^11.15.0",
     "semantic-release": "^24.0.0",
     "vitepress": "^1.6.0",
-    "vitepress-plugin-mermaid": "^2.0.0",
-    "mermaid": "^10.0.0"
+    "vitepress-plugin-mermaid": "^2.0.0"
   }
 }
