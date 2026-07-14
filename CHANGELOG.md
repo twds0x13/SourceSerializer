@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/twds0x13/SourceSerializer/compare/v1.2.0...v1.2.1) (2026-07-14)
+
+### Bug Fixes
+
+* **docs:** logo, sidebar labels, Mermaid parity, and API navigation ([0a0871a](https://github.com/twds0x13/SourceSerializer/commit/0a0871a1a61f27abe8db0a5e9d461a5f938215d2))
+
 ## [1.2.0](https://github.com/twds0x13/SourceSerializer/compare/v1.1.0...v1.2.0) (2026-07-14)
 
 ### Features
