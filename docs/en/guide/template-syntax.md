@@ -122,6 +122,21 @@ Input `"fire"` parses to `Element.Fire`. Input `"water"` fails because no tag ma
 
 ## Third-Party Type Templates
 
+## Fields Excluded from Serialization
+
+If a struct contains fields that should not participate in serialization (caches, internal state), mark them with `[TemplateIgnore]`. Marked fields do not appear in the template string and will not trigger SSR004. See [Diagnostics](./diagnostics#using-templateignore-to-skip-fields).
+
+```csharp
+[Template("<float Value>")]
+public struct Stats
+{
+    public float Value;
+    [TemplateIgnore] public CacheData InternalCache;
+}
+```
+
+## Third-Party Type Templates
+
 Use `[ExternalTemplate]` to declare templates for types without `[Template]`, such as structs from third-party libraries:
 
 ```csharp

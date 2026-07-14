@@ -9,7 +9,7 @@ All SourceSerializer errors and warnings are reported at compile time via Roslyn
 | SSR001 | Error | Template Parse Error | The template string cannot be parsed as valid compact or XML format |
 | SSR002 | Error | Circular template dependency | Two or more templates reference each other, forming a cycle |
 | SSR003 | Error | Readonly struct cannot use `[Template]` | A `readonly struct` has `[Template]` applied, but its fields cannot be assigned |
-| SSR004 | Warning | Missing template dependency | Template references a field type that has no `[Template]` and is not a built-in type |
+| SSR004 | Error | Missing template dependency | Template references a type without `[Template]` and the field is not marked `[TemplateIgnore]` |
 | SSR005 | Error | Scalar field inside `<repetition>` | A non-collection field appears inside a `<repetition>` block |
 
 ## SSR001: Template Parse Error
@@ -56,7 +56,7 @@ Fix: remove the `readonly` modifier.
 
 ## SSR004: Missing Template Dependency
 
-A field type is neither one of the 12 built-in types nor annotated with `[Template]`. The source generator skips the field and reports a warning. Compilation continues.
+A field type is neither one of the 12 built-in types nor annotated with `[Template]`, and the field is not marked `[TemplateIgnore]`. Compilation will stop.
 
 Example trigger:
 
@@ -67,7 +67,10 @@ public struct Unregistered { public float X; }
 public struct Container { public Unregistered Data; }
 ```
 
-Fix: add `[Template]` to the referenced type, or use a built-in type instead.
+Fix options:
+- Add `[Template]` or `[ExternalTemplate]` to the referenced type
+- Use a built-in type instead
+- If the field should not participate in serialization, mark it with `[TemplateIgnore]` and remove the reference from the template string
 
 ## SSR005: Scalar Field Inside Repetition
 
@@ -86,6 +89,23 @@ Fix: change the field to a collection type:
 [Template("<repetition>, <float Items></repetition>")]
 public struct Good { public List<float> Items; }
 ```
+
+## Using `[TemplateIgnore]` to Skip Fields
+
+When a struct contains fields that should not participate in serialization (cache values, runtime constants, internal state), and the field type has no `[Template]`, mark it with `[TemplateIgnore]`. Ignored fields are excluded from scanner and emitter code.
+
+```csharp
+public struct CacheData { public float[] Cache; }
+
+[Template("<float Value>")]
+public struct Stats
+{
+    public float Value;
+    [TemplateIgnore] public CacheData InternalCache;
+}
+```
+
+Note: marked fields should not appear in the template string. If the template string still references the field's type, the source generator will still report SSR004.
 
 ## See Also
 

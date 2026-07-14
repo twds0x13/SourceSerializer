@@ -122,6 +122,23 @@ public struct Spell
 
 ## 第三方类型模板
 
+用 `[ExternalTemplate]` 为未标记 `[Template]` 的类型（如第三方库中的 struct）声明模板。
+
+## 不参与序列化的字段
+
+如果 struct 包含不应参与序列化的字段（缓存、内部状态），用 `[TemplateIgnore]` 标记。被标记的字段不出现在模板字符串中，也不会触发 SSR004 错误。详见[编译期诊断](./diagnostics#使用-templateignore-忽略字段)。
+
+```csharp
+[Template("<float Value>")]
+public struct Stats
+{
+    public float Value;
+    [TemplateIgnore] public CacheData InternalCache;
+}
+```
+
+## 第三方类型模板
+
 用 `[ExternalTemplate]` 为未标记 `[Template]` 的类型（如第三方库中的 struct）声明模板：
 
 ```csharp

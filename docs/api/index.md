@@ -8,6 +8,7 @@
 | [`[ExternalTemplate]`](./external-template-attribute) | assembly, class, struct | 为第三方类型声明模板 |
 | [`[Tag]`](./tag-attribute) | enum field | 为枚举成员声明字符串标签 |
 | [`[TypeAlias]`](./type-alias-attribute) | assembly | 注册类型别名 |
+| [`[TemplateIgnore]`](../guide/diagnostics#使用-templateignore-忽略字段) | field | 标记字段不参与序列化，阻止 SSR004 错误 |
 
 ## Runtime
 

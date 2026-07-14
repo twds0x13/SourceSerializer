@@ -8,6 +8,7 @@
 | [`[ExternalTemplate]`](./external-template-attribute) | assembly, class, struct | Declares a template for a third-party type |
 | [`[Tag]`](./tag-attribute) | enum field | Declares a string tag for an enum member |
 | [`[TypeAlias]`](./type-alias-attribute) | assembly | Registers a type alias |
+| [`[TemplateIgnore]`](../guide/diagnostics#using-templateignore-to-skip-fields) | field | Excludes a field from serialization, prevents SSR004 error |
 
 ## Runtime
 
