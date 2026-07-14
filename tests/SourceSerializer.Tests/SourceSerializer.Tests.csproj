@@ -13,6 +13,7 @@
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TagAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TypeAliasAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/ExternalTemplateAttribute.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TemplateIgnoreAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerScanners.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerRegistry.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerEmitters.cs" />
@@ -28,6 +29,7 @@
     <Compile Include="TypeAliasTests.cs" />             <!-- 类型别名 -->
     <Compile Include="EdgeCaseTests.cs" />              <!-- 边界与负面路径 -->
     <Compile Include="EmitterTests.cs" />              <!-- 序列化 Emit -->
+    <Compile Include="TemplateIgnoreTests.cs" />      <!-- [TemplateIgnore] + SSR004 -->
   </ItemGroup>
 
   <!-- Source Generator as Analyzer -->
