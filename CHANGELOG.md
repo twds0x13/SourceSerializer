@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/twds0x13/SourceSerializer/compare/v1.1.0...v1.2.0) (2026-07-14)
+
+### Features
+
+* add [TemplateIgnore] attribute and upgrade SSR004 to Error ([2e2c400](https://github.com/twds0x13/SourceSerializer/commit/2e2c4003e018911132784c4e681af6b0c2088765))
+
 ## [1.1.0](https://github.com/twds0x13/SourceSerializer/compare/v1.0.1...v1.1.0) (2026-07-14)
 
 ### Features
