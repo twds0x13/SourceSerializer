@@ -1,3 +1,9 @@
+## [2.1.0](https://github.com/twds0x13/SourceSerializer/compare/v2.0.0...v2.1.0) (2026-07-15)
+
+### Features
+
+* automatic interface dispatch via Roslyn Interface->Implementation resolution ([f4ac67a](https://github.com/twds0x13/SourceSerializer/commit/f4ac67a5ba146fe94d00994abbce23fc65bb928e))
+
 ## [2.0.0](https://github.com/twds0x13/SourceSerializer/compare/v1.2.2...v2.0.0) (2026-07-15)
 
 ### ⚠ BREAKING CHANGES
