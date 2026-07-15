@@ -48,10 +48,12 @@ namespace SourceSerializer.Generator
                 bool NeedsHeapAlloc, bool NeedsWalkPhase, bool IsCollection)> structs,
             Dictionary<string, string> dependencyGraph,
             Dictionary<string, string>? typeAliases = null,
-            Dictionary<string, List<(string MemberName, string Tag)>>? enumTagMap = null)
+            Dictionary<string, List<(string MemberName, string Tag)>>? enumTagMap = null,
+            Dictionary<string, List<string>>? interfaceMap = null)
         {
             var tAliases = typeAliases ?? new Dictionary<string, string>();
             var eTags = enumTagMap ?? new Dictionary<string, List<(string, string)>>(StringComparer.Ordinal);
+            var iMap = interfaceMap ?? new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
             // 每次 EmitAll 重置所有计数器，确保增量生成输出稳定
             _varCounter = 0;
@@ -70,7 +72,8 @@ namespace SourceSerializer.Generator
             sb.AppendLine("    partial class SerializerScanners");
             sb.AppendLine("    {");
 
-            if (structs.Count > 0)
+            bool hasAny = structs.Count > 0 || iMap.Count > 0;
+            if (hasAny)
             {
                 sb.AppendLine("        static SerializerScanners()");
                 sb.AppendLine("        {");
@@ -78,6 +81,16 @@ namespace SourceSerializer.Generator
                 {
                     string methodName = GetScannerMethodName(name);
                     sb.AppendLine($"            ScannerRegistry<{name}>.Scanner = (ReadOnlySpan<char> s, int p, out {name} v) =>");
+                    sb.AppendLine($"            {{");
+                    sb.AppendLine($"                int r = {methodName}(s, p, out v);");
+                    sb.AppendLine($"                return r;");
+                    sb.AppendLine($"            }};");
+                }
+                // 接口 dispatch 注册
+                foreach (var ifaceName in iMap.Keys)
+                {
+                    string methodName = GetScannerMethodName(ifaceName);
+                    sb.AppendLine($"            ScannerRegistry<{ifaceName}>.Scanner = (ReadOnlySpan<char> s, int p, out {ifaceName} v) =>");
                     sb.AppendLine($"            {{");
                     sb.AppendLine($"                int r = {methodName}(s, p, out v);");
                     sb.AppendLine($"                return r;");
@@ -99,8 +112,58 @@ namespace SourceSerializer.Generator
                 sb.AppendLine();
             }
 
+            // 接口 dispatch 方法
+            foreach (var kv in iMap)
+            {
+                sb.Append(EmitInterfaceDispatch(kv.Key, kv.Value, dependencyGraph));
+                sb.AppendLine();
+            }
+
             sb.AppendLine("    }");
             sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 为接口生成 dispatch 扫描方法：尝试全部实现，选推进最远的（长前缀匹配胜出）。
+        /// </summary>
+        private static string EmitInterfaceDispatch(string ifaceName, List<string> concreteTypes,
+            Dictionary<string, string> dependencyGraph)
+        {
+            var sb = new StringBuilder();
+            string methodName = GetScannerMethodName(ifaceName);
+            string bestVar = GetUniqueVar("best");
+            string bestValueVar = GetUniqueVar("bestVal");
+
+            sb.AppendLine($"        /// <summary>接口分发扫描器：{ifaceName}</summary>");
+            sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+            sb.AppendLine($"        internal static int {methodName}(ReadOnlySpan<char> src, int pos, out {ifaceName} value)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            value = default;");
+            sb.AppendLine("            if (pos >= src.Length) return pos;");
+            sb.AppendLine("            int start = pos;");
+            sb.AppendLine($"            int {bestVar} = pos;");
+            sb.AppendLine($"            {ifaceName} {bestValueVar} = default;");
+            sb.AppendLine();
+
+            for (int i = 0; i < concreteTypes.Count; i++)
+            {
+                string concrete = concreteTypes[i];
+                string scanMethod = dependencyGraph.TryGetValue(concrete, out var m)
+                    ? m : GetScannerMethodName(concrete);
+                string localVar = GetUniqueVar(concrete);
+                string rVar = GetUniqueVar("r");
+
+                sb.AppendLine($"            // try {concrete}");
+                sb.AppendLine($"            int {rVar} = {scanMethod}(src, pos, out {concrete} {localVar});");
+                sb.AppendLine($"            if ({rVar} > {bestVar}) {{ {bestVar} = {rVar}; {bestValueVar} = {localVar}; }}");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine($"            if ({bestVar} > pos) {{ value = {bestValueVar}; return {bestVar}; }}");
+            sb.AppendLine("            return start;");
+            sb.AppendLine("        }");
 
             return sb.ToString();
         }

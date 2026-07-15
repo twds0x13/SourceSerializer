@@ -31,6 +31,7 @@
     <Compile Include="EmitterTests.cs" />              <!-- 序列化 Emit -->
     <Compile Include="TemplateIgnoreTests.cs" />      <!-- [TemplateIgnore] + SSR004 -->
     <Compile Include="GenericTemplateTests.cs" />   <!-- 用户自定义泛型类型 -->
+    <Compile Include="InterfaceDispatchTests.cs" /> <!-- 接口自动分发 -->
   </ItemGroup>
 
   <!-- Source Generator as Analyzer -->

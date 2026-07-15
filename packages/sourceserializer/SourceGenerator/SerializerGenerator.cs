@@ -190,6 +190,10 @@ namespace SourceSerializer.Generator
                 }
             }
 
+            string[] implementedInterfaces = structSymbol.AllInterfaces
+                .Select(i => i.ToDisplayString())
+                .ToArray();
+
             return new StructTemplateInfo
             {
                 StructName = structName,
@@ -201,6 +205,7 @@ namespace SourceSerializer.Generator
                 Fields = fields,
                 IsOpenGeneric = isOpenGeneric,
                 TypeParameterNames = typeParamNames,
+                ImplementedInterfaces = implementedInterfaces,
             };
         }
 
@@ -266,6 +271,8 @@ namespace SourceSerializer.Generator
                     Fields = fields,
                     IsOpenGeneric = isOpenGeneric,
                     TypeParameterNames = typeParamNames,
+                    ImplementedInterfaces = targetType.AllInterfaces
+                        .Select(i => i.ToDisplayString()).ToArray(),
                 };
             }
 
@@ -429,8 +436,21 @@ namespace SourceSerializer.Generator
                 foreach (var (ginfo, gast) in generated)
                     parsed.Add((ginfo, gast));
 
+                // ── 1.6 Build interface→concrete dispatch map ──
+                var interfaceMap = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+                foreach (var info in writable)
+                {
+                    if (info.ImplementedInterfaces == null) continue;
+                    foreach (var iface in info.ImplementedInterfaces)
+                    {
+                        if (!interfaceMap.TryGetValue(iface, out var list))
+                            interfaceMap[iface] = list = new List<string>();
+                        list.Add(info.StructName);
+                    }
+                }
+
                 // ── 2. Build dependency graph ──
-                var depGraph = BuildDependencyGraph(context, parsed, typeAliases);
+                var depGraph = BuildDependencyGraph(context, parsed, typeAliases, interfaceMap);
                 if (depGraph == null) return; // circular dependency detected (diagnostic already reported)
 
                 // ── 2.5 Validate: no scalar fields inside <repetition> ──
@@ -457,15 +477,18 @@ namespace SourceSerializer.Generator
                     if (info.IsOpenGeneric) continue;
                     emitDepGraph[info.StructName] = CodeEmitter.GetScannerMethodName(info.StructName);
                 }
+                // 接口 dispatch 条目加入依赖图
+                foreach (var ifaceName in interfaceMap.Keys)
+                    emitDepGraph[ifaceName] = CodeEmitter.GetScannerMethodName(ifaceName);
 
                 var aliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var (alias, csharpType) in typeAliases)
                     aliasMap[alias] = csharpType;
 
-                string source = CodeEmitter.EmitAll(emitList, emitDepGraph, aliasMap, enumTagMap);
+                string source = CodeEmitter.EmitAll(emitList, emitDepGraph, aliasMap, enumTagMap, interfaceMap);
                 context.AddSource("SerializerScanners.g.cs", source);
 
-                string emitSource = EmitCodeEmitter.EmitAll(emitList, emitDepGraph, aliasMap, enumTagMap);
+                string emitSource = EmitCodeEmitter.EmitAll(emitList, emitDepGraph, aliasMap, enumTagMap, interfaceMap);
                 context.AddSource("SerializerEmitters.g.cs", emitSource);
             }
             catch (FormatException ex)
@@ -478,7 +501,8 @@ namespace SourceSerializer.Generator
         private static Dictionary<string, HashSet<string>>? BuildDependencyGraph(
             SourceProductionContext context,
             List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed,
-            System.Collections.Immutable.ImmutableArray<(string Alias, string CSharpType)> typeAliases)
+            System.Collections.Immutable.ImmutableArray<(string Alias, string CSharpType)> typeAliases,
+            Dictionary<string, List<string>> interfaceMap)
         {
             // 别名映射的后备类型等同于内置类型，不需要依赖边
             var aliasBackingTypes = new HashSet<string>(StringComparer.Ordinal);
@@ -513,6 +537,13 @@ namespace SourceSerializer.Generator
                     // 开放泛型的类型参数不是真正的依赖（合成时替换）
                     if (info.TypeParameterNames != null && info.TypeParameterNames.Contains(refType))
                         continue;
+
+                    // 接口引用：interfaceMap 中有实现 → 合法依赖
+                    if (interfaceMap.ContainsKey(refType))
+                    {
+                        graph[info.StructName].Add(refType);
+                        continue;
+                    }
 
                     if (allNames.Contains(refType))
                         graph[info.StructName].Add(refType);
@@ -938,6 +969,8 @@ namespace SourceSerializer.Generator
             public bool IsOpenGeneric;
             /// <summary>开放泛型的类型参数名（如 ["T"]）。非泛型时为空数组。</summary>
             public string[] TypeParameterNames;
+            /// <summary>此类型实现的所有接口全名。用于编译期接口自动分发。</summary>
+            public string[] ImplementedInterfaces;
         }
     }
 }
