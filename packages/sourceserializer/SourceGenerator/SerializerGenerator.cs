@@ -44,12 +44,44 @@ namespace SourceSerializer.Generator
             "short", "ushort", "byte", "sbyte", "bool", "char", "string",
         };
 
-        /// <summary>开放泛型模板镜像（与 SerializerRegistry.GenericTemplates 同步）。键=开放泛型全名，值=模板（T 为类型占位符）。</summary>
-        private static readonly Dictionary<string, string> GenericTemplates = new(StringComparer.Ordinal)
+        /// <summary>
+        /// 内置默认泛型模板。用户可通过 [ExternalTemplate(typeof(List<>), "...")] 覆盖。
+        /// 模板中类型参数占位符使用实际类型参数名（T, TKey, TValue 等），SG 按名称替换。
+        /// </summary>
+        private static List<StructTemplateInfo> GetDefaultGenericTemplates()
         {
-            ["System.Collections.Generic.List<>"] = "<first><T1 item></first><body>, <T1 item></body>",
-            ["System.Collections.Generic.Dictionary<>"] = "<first><T1 key>: <T2 value></first><body>, <T1 key>: <T2 value></body>",
-        };
+            return new List<StructTemplateInfo>
+            {
+                new StructTemplateInfo
+                {
+                    StructName = "List`1",
+                    Template = "<first><T item></first><body>, <T item></body>",
+                    IsReadonly = false,
+                    NeedsHeapAlloc = true,
+                    NeedsWalkPhase = true,
+                    IsCollection = true,
+                    TypeKind = "class",
+                    IsOpenGeneric = true,
+                    TypeParameterNames = new[] { "T" },
+                    ImplementedInterfaces = Array.Empty<string>(),
+                    Fields = new List<FieldInfo>(),
+                },
+                new StructTemplateInfo
+                {
+                    StructName = "Dictionary`2",
+                    Template = "<first><TKey key>: <TValue value></first><body>, <TKey key>: <TValue value></body>",
+                    IsReadonly = false,
+                    NeedsHeapAlloc = true,
+                    NeedsWalkPhase = true,
+                    IsCollection = true,
+                    TypeKind = "class",
+                    IsOpenGeneric = true,
+                    TypeParameterNames = new[] { "TKey", "TValue" },
+                    ImplementedInterfaces = Array.Empty<string>(),
+                    Fields = new List<FieldInfo>(),
+                },
+            };
+        }
 
         private static readonly HashSet<string> _knownEnumTypes = new(StringComparer.Ordinal);
 
@@ -416,6 +448,11 @@ namespace SourceSerializer.Generator
 
             // Filter out readonly structs
             var writable = structs.Where(s => !s.IsReadonly).ToList();
+
+            // 注入内置默认泛型模板（用户可通过 [ExternalTemplate] 覆盖）
+            foreach (var def in GetDefaultGenericTemplates())
+                writable.Insert(0, def);
+
             if (writable.Count == 0) return;
 
             try
@@ -704,88 +741,57 @@ namespace SourceSerializer.Generator
         {
             if (node is FieldDirectiveNode field)
             {
-                // 尝试将 List<X> / Dict<K,V> 解析为开放泛型实例
-                var (openGeneric, elemTypes, isCollection) = ParseGenericType(field.TypeAlias, openGenerics);
-                if (openGeneric != null && elemTypes != null)
+                // 解析泛型类型实例：List<float>, Wrapper<int>, Dict<string,float> 等
+                var (openGeneric, elemTypes, _) = ParseGenericType(field.TypeAlias, openGenerics);
+                if (openGeneric != null && elemTypes != null
+                    && openGenerics.TryGetValue($"{openGeneric}`{elemTypes.Length}", out var openGen))
                 {
-                    string instanceName = field.TypeAlias; // 保留原始泛型名
-
-                    if (isCollection && GenericTemplates.TryGetValue(openGeneric, out var template))
+                    string instanceName = field.TypeAlias;
+                    if (seen.Add(instanceName))
                     {
-                        // ── 硬编码集合泛型合成（List, Dictionary）──
-                        string resolved = template;
+                        var openInfo = openGen.Info;
+
+                        // 1. 模板字符串中替换类型参数
+                        string resolved = openInfo.Template;
                         for (int ti = 0; ti < elemTypes.Length; ti++)
-                            resolved = resolved.Replace($"T{ti + 1}", elemTypes[ti]);
+                            resolved = resolved.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
 
-                        if (seen.Add(instanceName))
-                        {
-                            string xml = CompactToXml.IsCompactFormat(resolved)
-                                ? CompactToXml.Convert(resolved)
-                                : resolved;
-                            var ast = XmlTemplateParser.Parse(xml);
-                            var synthInfo = new StructTemplateInfo
-                            {
-                                StructName = instanceName,
-                                Template = resolved,
-                                IsReadonly = false,
-                                NeedsHeapAlloc = true,
-                                NeedsWalkPhase = true,
-                                IsCollection = true,
-                                TypeKind = "class",
-                                Fields = new List<FieldInfo>
-                                {
-                                    new FieldInfo(field.FieldName, field.TypeAlias, CollectionKind.List, elemTypes[0], needsWalkPhase: true),
-                                },
-                            };
-                            result.Add((synthInfo, ast));
-                        }
-                    }
-                    else if (!isCollection && openGenerics.TryGetValue($"{openGeneric}`{elemTypes!.Length}", out var openGen))
-                    {
-                        // ── 用户定义泛型合成（Wrapper<float>, Pair<int,float> 等）──
-                        if (seen.Add(instanceName))
-                        {
-                            var openInfo = openGen.Info;
+                        // 2. 重新解析替换后的模板
+                        string xml = CompactToXml.IsCompactFormat(resolved)
+                            ? CompactToXml.Convert(resolved) : resolved;
+                        var ast = XmlTemplateParser.Parse(xml);
 
-                            // 1. 模板字符串中替换类型参数
-                            string resolved = openInfo.Template;
+                        // 3. 构建具体化 FieldInfo 列表
+                        var synthFields = new List<FieldInfo>();
+                        foreach (var fi in openInfo.Fields)
+                        {
+                            string concreteType = fi.TypeName;
                             for (int ti = 0; ti < elemTypes.Length; ti++)
-                                resolved = resolved.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
-
-                            // 2. 重新解析替换后的模板
-                            string xml = CompactToXml.IsCompactFormat(resolved)
-                                ? CompactToXml.Convert(resolved) : resolved;
-                            var ast = XmlTemplateParser.Parse(xml);
-
-                            // 3. 构建具体化 FieldInfo 列表
-                            var synthFields = new List<FieldInfo>();
-                            foreach (var fi in openInfo.Fields)
-                            {
-                                string concreteType = fi.TypeName;
-                                for (int ti = 0; ti < elemTypes.Length; ti++)
-                                    concreteType = concreteType.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
-                                var (kind, elemType) = ClassifyFieldTypeByName(concreteType);
-                                synthFields.Add(new FieldInfo(fi.Name, concreteType, kind, elemType,
-                                    needsWalkPhase: concreteType == "string" || !BuiltinTypes.Contains(concreteType)));
-                            }
-
-                            // 4. 计算合成标志（保守：非内置 unmanaged → 需要 Walk）
-                            bool synthNeedsWalkPhase = openInfo.TypeKind == "class"
-                                || elemTypes.Any(arg => arg == "string" || !BuiltinTypes.Contains(arg));
-
-                            var synthInfo = new StructTemplateInfo
-                            {
-                                StructName = instanceName,
-                                Template = resolved,
-                                IsReadonly = openInfo.IsReadonly,
-                                NeedsHeapAlloc = openInfo.TypeKind == "class",
-                                NeedsWalkPhase = synthNeedsWalkPhase,
-                                IsCollection = false,
-                                TypeKind = openInfo.TypeKind,
-                                Fields = synthFields,
-                            };
-                            result.Add((synthInfo, ast));
+                                concreteType = concreteType.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
+                            var (kind, elemType) = ClassifyFieldTypeByName(concreteType);
+                            synthFields.Add(new FieldInfo(fi.Name, concreteType, kind, elemType,
+                                needsWalkPhase: concreteType == "string" || !BuiltinTypes.Contains(concreteType)));
                         }
+
+                        // 4. 计算合成标志
+                        bool synthNeedsWalkPhase = openInfo.TypeKind == "class"
+                            || elemTypes.Any(arg => arg == "string" || !BuiltinTypes.Contains(arg));
+                        // 集合检测：开放泛型模板含 <first>/<body> 时自动标记为集合
+                        bool synthIsCollection = openInfo.IsCollection
+                            || (openInfo.Template.Contains("<first>") && openInfo.Template.Contains("<body>"));
+
+                        var synthInfo = new StructTemplateInfo
+                        {
+                            StructName = instanceName,
+                            Template = resolved,
+                            IsReadonly = openInfo.IsReadonly,
+                            NeedsHeapAlloc = openInfo.TypeKind == "class",
+                            NeedsWalkPhase = synthNeedsWalkPhase,
+                            IsCollection = synthIsCollection,
+                            TypeKind = openInfo.TypeKind,
+                            Fields = synthFields,
+                        };
+                        result.Add((synthInfo, ast));
                     }
                 }
             }
@@ -831,18 +837,9 @@ namespace SourceSerializer.Generator
             }
             args.Add(argsStr.Substring(lastSplit).Trim());
 
-            // 阶段 1: 硬编码集合泛型模板（List, Dictionary）
-            var openMap = new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["List"] = "System.Collections.Generic.List<>",
-                ["Dictionary"] = "System.Collections.Generic.Dictionary<>",
-            };
-            if (openMap.TryGetValue(baseName, out var fullName))
-                return (fullName, args.ToArray(), true);
-
-            // 阶段 2: 用户定义开放泛型模板（按基名+元数匹配，如 "Pair`2"）
+            // 按基名+元数查找开放泛型模板（默认 + 用户定义 + ExternalTemplate）
             string openKey = $"{baseName}`{args.Count}";
-            if (openGenerics.TryGetValue(openKey, out var openGen))
+            if (openGenerics.TryGetValue(openKey, out _))
                 return (baseName, args.ToArray(), false);
 
             return (null, null, false);
