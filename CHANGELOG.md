@@ -1,3 +1,32 @@
+## [2.0.0](https://github.com/twds0x13/SourceSerializer/compare/v1.2.2...v2.0.0) (2026-07-15)
+
+### ⚠ BREAKING CHANGES
+
+* <repetition> in compact template syntax is now
+automatically converted to equivalent <first>/<body> pairs. The
+<repetition> tag is no longer a user-facing primitive — use
+<first>+<body> directly instead. Template authors with existing
+<repetition> usage should migrate to <first>/<body>; compact
+syntax templates are auto-converted and continue to compile.
+
+Features:
+- Any type with [Template] that is an open generic is automatically
+  resolved when a concrete instance (e.g. Wrapper<float>) appears
+  as a field type in another template
+- Supports unlimited type parameters (T, TKey, TValue, or any
+  user-defined names), resolved by position
+- Synthesized generic instances inherit NeedsHeapAlloc/NeedsWalkPhase
+  from their open generic definition
+- Recursive discovery handles nested generics (List<Wrapper<float>>)
+- Arity-suffixed StructName (Pair^2) avoids conflicts with concrete
+  types of the same name
+- Comma characters in generic type parameter lists are escaped in
+  generated method names (Pair<float,int> → Scan_Pair_float_int)
+
+### Features
+
+* support user-defined generic types and remove <repetition> from public API ([a84af5c](https://github.com/twds0x13/SourceSerializer/commit/a84af5cf30d3d0669c50f8ae30a0185bfdfc3966))
+
 ## [1.2.2](https://github.com/twds0x13/SourceSerializer/compare/v1.2.1...v1.2.2) (2026-07-14)
 
 ### Bug Fixes
