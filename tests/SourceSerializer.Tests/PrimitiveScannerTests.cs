@@ -176,6 +176,15 @@ public class PrimitiveScannerTests
     // ── Short / Ushort / Byte / Sbyte ──
 
     [Test]
+    public void ShortField_Parses()
+    {
+        Assert.That(SerializerScanners.TryGetScanner<ShortField>(out var scan), Is.True);
+        int r = scan("-42".AsSpan(), 0, out ShortField v);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(v.Val, Is.EqualTo((short)-42));
+    }
+
+    [Test]
     public void UshortField_Parses()
     {
         Assert.That(SerializerScanners.TryGetScanner<UshortField>(out var scan), Is.True);

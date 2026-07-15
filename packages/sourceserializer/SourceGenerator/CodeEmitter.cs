@@ -530,7 +530,7 @@ namespace SourceSerializer.Generator
         // ── 辅助 ──────────────────────────────────────
 
         public static string GetScannerMethodName(string structTypeName)
-            => $"Scan_{structTypeName.Replace("<", "_").Replace(">", "")}";
+            => $"Scan_{structTypeName.Replace("<", "_").Replace(">", "").Replace(",", "_")}";
 
         private static string GetUniqueVar(string fieldName) => $"_{fieldName}_{_varCounter++}";
 

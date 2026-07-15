@@ -260,6 +260,6 @@ namespace SourceSerializer.Generator
         }
 
         public static string GetEmitMethodName(string structTypeName)
-            => "Emit_" + structTypeName.Replace("<", "_").Replace(">", "");
+            => "Emit_" + structTypeName.Replace("<", "_").Replace(">", "").Replace(",", "_");
     }
 }

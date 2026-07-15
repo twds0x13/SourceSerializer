@@ -73,9 +73,9 @@ namespace SourceSerializer.Generator
             "{0}", "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor ScalarInRepetitionError = new(
-            "SSR005", "Scalar field inside <repetition>",
+            "SSR005", "Scalar field inside repetition block",
             "Field '{0}' of struct '{1}' is scalar type '{2}' but appears inside a " +
-            "<repetition> block. Use a collection type (List<T>, T[], etc.) for " +
+            "repetition block. Use a collection type (List<T>, T[], etc.) for " +
             "fields that receive repeated values.",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
@@ -156,7 +156,14 @@ namespace SourceSerializer.Generator
         private static StructTemplateInfo? GetStructInfo(GeneratorAttributeSyntaxContext ctx, bool fromExternal)
         {
             var structSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
-            var structName = structSymbol.Name;
+            bool isOpenGeneric = structSymbol.IsGenericType;
+            // 开放泛型 StructName 带元数后缀，避免与同名非泛型类型冲突
+            var structName = isOpenGeneric
+                ? $"{structSymbol.Name}`{structSymbol.TypeParameters.Length}"
+                : structSymbol.Name;
+            string[] typeParamNames = isOpenGeneric
+                ? structSymbol.TypeParameters.Select(tp => tp.Name).ToArray()
+                : Array.Empty<string>();
             bool isReadonly = structSymbol.IsReadOnly;
             bool isClass = structSymbol.TypeKind == TypeKind.Class;
 
@@ -171,6 +178,12 @@ namespace SourceSerializer.Generator
                 {
                     if (HasTemplateIgnoreAttribute(f))
                         continue;
+                    // 类型参数字段：记录为占位符，合成时替换为具体类型
+                    if (f.Type is ITypeParameterSymbol tp)
+                    {
+                        fields.Add(new FieldInfo(f.Name, tp.Name, CollectionKind.None, null, needsWalkPhase: false));
+                        continue;
+                    }
                     var (kind, elemType) = ClassifyFieldType(f.Type);
                     bool fieldNeedsWalk = !f.Type.IsUnmanagedType;
                     fields.Add(new FieldInfo(f.Name, f.Type.ToDisplayString(), kind, elemType, fieldNeedsWalk));
@@ -186,6 +199,8 @@ namespace SourceSerializer.Generator
                 NeedsWalkPhase = !structSymbol.IsUnmanagedType,
                 TypeKind = isClass ? "class" : "struct",
                 Fields = fields,
+                IsOpenGeneric = isOpenGeneric,
+                TypeParameterNames = typeParamNames,
             };
         }
 
@@ -210,11 +225,16 @@ namespace SourceSerializer.Generator
 
                 var targetType = (INamedTypeSymbol)typeArg.Value;
 
+                bool isClass = targetType.TypeKind == TypeKind.Class;
+                bool isOpenGeneric = targetType.IsGenericType;
+                string[] typeParamNames = isOpenGeneric
+                    ? targetType.TypeParameters.Select(tp => tp.Name).ToArray()
+                    : Array.Empty<string>();
+
                 string? template = attr.ConstructorArguments[1].Value as string;
                 if (string.IsNullOrEmpty(template))
                     continue;
 
-                bool isClass = targetType.TypeKind == TypeKind.Class;
                 var fields = new List<FieldInfo>();
                 foreach (var member in targetType.GetMembers())
                 {
@@ -222,6 +242,11 @@ namespace SourceSerializer.Generator
                     {
                         if (HasTemplateIgnoreAttribute(f))
                             continue;
+                        if (f.Type is ITypeParameterSymbol tp)
+                        {
+                            fields.Add(new FieldInfo(f.Name, tp.Name, CollectionKind.None, null, needsWalkPhase: false));
+                            continue;
+                        }
                         var (kind, elemType) = ClassifyFieldType(f.Type);
                         bool fieldNeedsWalk = !f.Type.IsUnmanagedType;
                         fields.Add(new FieldInfo(f.Name, f.Type.ToDisplayString(), kind, elemType, fieldNeedsWalk));
@@ -230,13 +255,17 @@ namespace SourceSerializer.Generator
 
                 return new StructTemplateInfo
                 {
-                    StructName = targetType.Name,
+                    StructName = isOpenGeneric
+                        ? $"{targetType.Name}`{targetType.TypeParameters.Length}"
+                        : targetType.Name,
                     Template = template!,
                     IsReadonly = targetType.IsReadOnly,
                     NeedsHeapAlloc = isClass,
                     NeedsWalkPhase = !targetType.IsUnmanagedType,
                     TypeKind = isClass ? "class" : "struct",
                     Fields = fields,
+                    IsOpenGeneric = isOpenGeneric,
+                    TypeParameterNames = typeParamNames,
                 };
             }
 
@@ -410,11 +439,12 @@ namespace SourceSerializer.Generator
                 // ── 3. Topological sort ──
                 var ordered = TopologicalSort(parsed, depGraph);
 
-                // ── 4. Emit code ──
+                // ── 4. Emit code（开放泛型模板不生成代码，仅合成时使用）──
                 var emitList = new List<(string StructName, List<TemplateNode> Nodes,
                     Dictionary<string, FieldInfo> FieldTypes, bool NeedsHeapAlloc, bool NeedsWalkPhase, bool IsCollection)>();
                 foreach (var (info, ast) in ordered)
                 {
+                    if (info.IsOpenGeneric) continue; // 开放泛型仅作为合成模板
                     var fieldTypes = new Dictionary<string, FieldInfo>(StringComparer.Ordinal);
                     foreach (var fi in info.Fields)
                         fieldTypes[fi.Name] = fi;
@@ -423,7 +453,10 @@ namespace SourceSerializer.Generator
 
                 var emitDepGraph = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var (info, _) in ordered)
+                {
+                    if (info.IsOpenGeneric) continue;
                     emitDepGraph[info.StructName] = CodeEmitter.GetScannerMethodName(info.StructName);
+                }
 
                 var aliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var (alias, csharpType) in typeAliases)
@@ -475,6 +508,10 @@ namespace SourceSerializer.Generator
 
                     // 枚举标签类型，由 Pipeline D 自动生成
                     if (_knownEnumTypes.Contains(refType))
+                        continue;
+
+                    // 开放泛型的类型参数不是真正的依赖（合成时替换）
+                    if (info.TypeParameterNames != null && info.TypeParameterNames.Contains(refType))
                         continue;
 
                     if (allNames.Contains(refType))
@@ -585,83 +622,166 @@ namespace SourceSerializer.Generator
         /// <summary>
         /// 扫描已解析模板的字段引用，为泛型集合类型（如 List&lt;NamedValue&gt;）
         /// 自动解析开放泛型模板并合成 StructTemplateInfo。
+        /// 支持硬编码集合泛型（List/Dictionary）和用户定义开放泛型。
+        /// 递归发现处理嵌套泛型（如 List&lt;Wrapper&lt;float&gt;&gt;）。
         /// </summary>
         private static List<(StructTemplateInfo Info, List<TemplateNode> Ast)> ResolveGenericTypeInstances(
             List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed)
         {
+            // 构建开放泛型索引：StructName（已含元数后缀如 "Pair`2"）→ (Info, AST)
+            var openGenerics = new Dictionary<string, (StructTemplateInfo, List<TemplateNode>)>(StringComparer.Ordinal);
+            foreach (var (info, ast) in parsed)
+                if (info.IsOpenGeneric)
+                    openGenerics[info.StructName] = (info, ast);
+
             var result = new List<(StructTemplateInfo, List<TemplateNode>)>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
-
             foreach (var (info, _) in parsed)
                 seen.Add(info.StructName);
 
-            foreach (var (info, ast) in parsed)
-            {
-                foreach (var node in ast)
-                    CollectGenericRefs(node, seen, result);
-            }
+            // 递归发现：对每轮新合成的条目继续扫描字段引用
+            CollectAllGenericRefs(parsed, seen, result, openGenerics);
 
             return result;
         }
 
+        /// <summary>递归扫描条目列表中的字段引用，发现并合成泛型实例。</summary>
+        private static void CollectAllGenericRefs(
+            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> entries,
+            HashSet<string> seen,
+            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> result,
+            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics)
+        {
+            int beforeCount = result.Count;
+            foreach (var (info, ast) in entries)
+            {
+                foreach (var node in ast)
+                    CollectGenericRefs(node, seen, result, openGenerics);
+            }
+
+            // 本轮新合成的条目，递归扫描（处理 List&lt;Wrapper&lt;float&gt;&gt; 场景）
+            var newEntries = new List<(StructTemplateInfo, List<TemplateNode>)>();
+            for (int i = beforeCount; i < result.Count; i++)
+                newEntries.Add(result[i]);
+            if (newEntries.Count > 0)
+                CollectAllGenericRefs(newEntries, seen, result, openGenerics);
+        }
+
         private static void CollectGenericRefs(TemplateNode node, HashSet<string> seen,
-            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> result)
+            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> result,
+            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics)
         {
             if (node is FieldDirectiveNode field)
             {
                 // 尝试将 List<X> / Dict<K,V> 解析为开放泛型实例
-                var (openGeneric, elemTypes) = ParseGenericType(field.TypeAlias);
-                if (openGeneric != null && elemTypes != null
-                    && GenericTemplates.TryGetValue(openGeneric, out var template))
+                var (openGeneric, elemTypes, isCollection) = ParseGenericType(field.TypeAlias, openGenerics);
+                if (openGeneric != null && elemTypes != null)
                 {
-                    // 顺序替换 T1, T2, ... → 具体类型参数
-                    string resolved = template;
-                    for (int ti = 0; ti < elemTypes.Length; ti++)
-                        resolved = resolved.Replace($"T{ti + 1}", elemTypes[ti]);
                     string instanceName = field.TypeAlias; // 保留原始泛型名
 
-                    if (seen.Add(instanceName))
+                    if (isCollection && GenericTemplates.TryGetValue(openGeneric, out var template))
                     {
-                        string xml = CompactToXml.IsCompactFormat(resolved)
-                            ? CompactToXml.Convert(resolved)
-                            : resolved;
-                        var ast = XmlTemplateParser.Parse(xml);
-                        var synthInfo = new StructTemplateInfo
+                        // ── 硬编码集合泛型合成（List, Dictionary）──
+                        string resolved = template;
+                        for (int ti = 0; ti < elemTypes.Length; ti++)
+                            resolved = resolved.Replace($"T{ti + 1}", elemTypes[ti]);
+
+                        if (seen.Add(instanceName))
                         {
-                            StructName = instanceName,
-                            Template = resolved,
-                            IsReadonly = false,
-                            NeedsHeapAlloc = true,   // 合成集合类型始终是引用类型 (class)
-                            NeedsWalkPhase = true,   // 泛型集合含引用类型元素
-                            IsCollection = true,
-                            TypeKind = "class",
-                            Fields = new List<FieldInfo>
+                            string xml = CompactToXml.IsCompactFormat(resolved)
+                                ? CompactToXml.Convert(resolved)
+                                : resolved;
+                            var ast = XmlTemplateParser.Parse(xml);
+                            var synthInfo = new StructTemplateInfo
                             {
-                                new FieldInfo(field.FieldName, field.TypeAlias, CollectionKind.List, elemTypes[0], needsWalkPhase: true),
-                            },
-                        };
-                        result.Add((synthInfo, ast));
+                                StructName = instanceName,
+                                Template = resolved,
+                                IsReadonly = false,
+                                NeedsHeapAlloc = true,
+                                NeedsWalkPhase = true,
+                                IsCollection = true,
+                                TypeKind = "class",
+                                Fields = new List<FieldInfo>
+                                {
+                                    new FieldInfo(field.FieldName, field.TypeAlias, CollectionKind.List, elemTypes[0], needsWalkPhase: true),
+                                },
+                            };
+                            result.Add((synthInfo, ast));
+                        }
+                    }
+                    else if (!isCollection && openGenerics.TryGetValue($"{openGeneric}`{elemTypes!.Length}", out var openGen))
+                    {
+                        // ── 用户定义泛型合成（Wrapper<float>, Pair<int,float> 等）──
+                        if (seen.Add(instanceName))
+                        {
+                            var openInfo = openGen.Info;
+
+                            // 1. 模板字符串中替换类型参数
+                            string resolved = openInfo.Template;
+                            for (int ti = 0; ti < elemTypes.Length; ti++)
+                                resolved = resolved.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
+
+                            // 2. 重新解析替换后的模板
+                            string xml = CompactToXml.IsCompactFormat(resolved)
+                                ? CompactToXml.Convert(resolved) : resolved;
+                            var ast = XmlTemplateParser.Parse(xml);
+
+                            // 3. 构建具体化 FieldInfo 列表
+                            var synthFields = new List<FieldInfo>();
+                            foreach (var fi in openInfo.Fields)
+                            {
+                                string concreteType = fi.TypeName;
+                                for (int ti = 0; ti < elemTypes.Length; ti++)
+                                    concreteType = concreteType.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
+                                var (kind, elemType) = ClassifyFieldTypeByName(concreteType);
+                                synthFields.Add(new FieldInfo(fi.Name, concreteType, kind, elemType,
+                                    needsWalkPhase: concreteType == "string" || !BuiltinTypes.Contains(concreteType)));
+                            }
+
+                            // 4. 计算合成标志（保守：非内置 unmanaged → 需要 Walk）
+                            bool synthNeedsWalkPhase = openInfo.TypeKind == "class"
+                                || elemTypes.Any(arg => arg == "string" || !BuiltinTypes.Contains(arg));
+
+                            var synthInfo = new StructTemplateInfo
+                            {
+                                StructName = instanceName,
+                                Template = resolved,
+                                IsReadonly = openInfo.IsReadonly,
+                                NeedsHeapAlloc = openInfo.TypeKind == "class",
+                                NeedsWalkPhase = synthNeedsWalkPhase,
+                                IsCollection = false,
+                                TypeKind = openInfo.TypeKind,
+                                Fields = synthFields,
+                            };
+                            result.Add((synthInfo, ast));
+                        }
                     }
                 }
             }
             else if (node is OptionalBlockNode opt)
             {
                 foreach (var child in opt.Body)
-                    CollectGenericRefs(child, seen, result);
+                    CollectGenericRefs(child, seen, result, openGenerics);
             }
             else if (node is RepetitionNode rep)
             {
                 foreach (var child in rep.Body)
-                    CollectGenericRefs(child, seen, result);
+                    CollectGenericRefs(child, seen, result, openGenerics);
             }
         }
 
-        /// <summary>将 "List&lt;NamedValue&gt;" 或 "Dict&lt;string,float&gt;" 解析为 (开放泛型全名, 类型参数[])</summary>
-        private static (string? OpenGeneric, string[]? ElementTypes) ParseGenericType(string typeName)
+        /// <summary>
+        /// 将 "List&lt;NamedValue&gt;" / "Wrapper&lt;float&gt;" 解析为泛型实例。
+        /// 两阶段查找：先查硬编码集合泛型模板，再查用户定义开放泛型模板。
+        /// </summary>
+        /// <returns>(开放泛型标识, 类型参数[], 是否集合类型)</returns>
+        private static (string? OpenGeneric, string[]? ElementTypes, bool IsCollection) ParseGenericType(
+            string typeName,
+            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics)
         {
             int lt = typeName.IndexOf('<');
             int gt = typeName.LastIndexOf('>');
-            if (lt < 0 || gt < lt) return (null, null);
+            if (lt < 0 || gt < lt) return (null, null, false);
             string baseName = typeName.Substring(0, lt);
             string argsStr = typeName.Substring(lt + 1, gt - lt - 1);
 
@@ -680,14 +800,43 @@ namespace SourceSerializer.Generator
             }
             args.Add(argsStr.Substring(lastSplit).Trim());
 
+            // 阶段 1: 硬编码集合泛型模板（List, Dictionary）
             var openMap = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["List"] = "System.Collections.Generic.List<>",
                 ["Dictionary"] = "System.Collections.Generic.Dictionary<>",
             };
             if (openMap.TryGetValue(baseName, out var fullName))
-                return (fullName, args.ToArray());
-            return (null, null);
+                return (fullName, args.ToArray(), true);
+
+            // 阶段 2: 用户定义开放泛型模板（按基名+元数匹配，如 "Pair`2"）
+            string openKey = $"{baseName}`{args.Count}";
+            if (openGenerics.TryGetValue(openKey, out var openGen))
+                return (baseName, args.ToArray(), false);
+
+            return (null, null, false);
+        }
+
+        /// <summary>字符串版本的类型分类（仅用于合成类型，无 Roslyn 符号可用）。</summary>
+        private static (CollectionKind Kind, string? ElemType) ClassifyFieldTypeByName(string typeName)
+        {
+            if (typeName.StartsWith("List<") || typeName.StartsWith("System.Collections.Generic.List<"))
+            {
+                string? elem = ExtractFirstGenericArg(typeName);
+                return elem != null ? (CollectionKind.List, elem) : (CollectionKind.None, null);
+            }
+            if (typeName.EndsWith("[]"))
+                return (CollectionKind.Array, typeName.Substring(0, typeName.Length - 2));
+            return (CollectionKind.None, null);
+        }
+
+        /// <summary>从 "List&lt;float&gt;" 中提取 "float"。</summary>
+        private static string? ExtractFirstGenericArg(string typeName)
+        {
+            int lt = typeName.IndexOf('<');
+            int gt = typeName.LastIndexOf('>');
+            if (lt < 0 || gt <= lt) return null;
+            return typeName.Substring(lt + 1, gt - lt - 1);
         }
 
         private static bool HasCycle(
@@ -785,6 +934,10 @@ namespace SourceSerializer.Generator
             public bool IsCollection; // true for List<T> etc. — field assignment → .Add()
             public string TypeKind; // "struct" or "class"
             public List<FieldInfo> Fields;
+            /// <summary>是否为开放泛型类型（如 Wrapper&lt;T&gt;）</summary>
+            public bool IsOpenGeneric;
+            /// <summary>开放泛型的类型参数名（如 ["T"]）。非泛型时为空数组。</summary>
+            public string[] TypeParameterNames;
         }
     }
 }
