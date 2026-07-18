@@ -1,3 +1,27 @@
+## [3.0.0](https://github.com/twds0x13/SourceSerializer/compare/v2.1.0...v3.0.0) (2026-07-18)
+
+### ⚠ BREAKING CHANGES
+
+* SerializerScanners and SerializerEmitters removed.
+SerializerBlocks is now the single API for scan+emit.
+
+- Default templates: interfaces (IList, ISet, IReadOnlyList, IDictionary,
+  IReadOnlyDictionary), resolved via Roslyn AllInterfaces.
+- Delete GenericInterfaceAliases, TypeKind field, Scanner/Emitter delegates
+  and registries. Merge all generation into SerializerBlocks partial class.
+- Add TryResolveViaInterfaces for Roslyn-based BCL type resolution.
+- Unify BuiltinTypes into BuiltinTypeNames; add decimal/nint/nuint/Half.
+- Rename CollectionKind.List to Sequential; unify ClassifyFieldType/ByName.
+- Fix string.Replace parameter safety (length-descending).
+- Fix C# keyword field names with @ prefix.
+- Implement collection emit (foreach + first/body) replacing stub.
+- Add SerializerBlocks: ISerializerBlock<T> + per-type struct + Serialize/
+  Deserialize convenience methods.
+
+### Features
+
+* interface-first templates, SerializerBlocks, architecture cleanup ([31a72fd](https://github.com/twds0x13/SourceSerializer/commit/31a72fdfefd757726e2f5b3720ff3dedce0c54a8))
+
 ## [2.1.0](https://github.com/twds0x13/SourceSerializer/compare/v2.0.0...v2.1.0) (2026-07-15)
 
 ### Features
