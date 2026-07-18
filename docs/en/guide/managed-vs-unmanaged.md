@@ -22,9 +22,9 @@ public struct Point2D
 The serialization direction is also available. The source generator simultaneously emits an `Emit_Point2D` method that writes the instance to a `StringBuilder`:
 
 ```csharp
-SerializerEmitters.TryGetEmitter<Point2D>(out var emit);
+SerializerBlocks.TryGet<Point2D>(out var emit);
 var sb = new StringBuilder();
-emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+block.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
 // sb.ToString() == "3.5 -2.1"
 ```
 
@@ -46,7 +46,7 @@ Roslyn is the single source of truth. `IsUnmanagedType` covers the full definiti
 
 ### Serialization Direction (Partially Implemented)
 
-Serialization for the unmanaged path is fully implemented. The source generator uses `EmitCodeEmitter` to produce `SerializerEmitters.g.cs`, supporting:
+Serialization for the unmanaged path is fully implemented. The source generator uses `EmitCodeEmitter` to produce `SerializerBlocks.g.cs`, supporting:
 
 - Literal text output
 - Field serialization (built-in types, custom nested types, enum tags)

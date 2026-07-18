@@ -1,22 +1,23 @@
 # API 参考
 
+编译期 source generator 与运行时注册表的完整接口。
+
 ## Attributes
 
-| Attribute | 目标 | 说明 |
-|-----------|------|------|
-| [`[Template]`](./template-attribute) | struct, class | 声明类型的文本模板 |
-| [`[ExternalTemplate]`](./external-template-attribute) | assembly, class, struct | 为第三方类型声明模板 |
-| [`[Tag]`](./tag-attribute) | enum field | 为枚举成员声明字符串标签 |
-| [`[TypeAlias]`](./type-alias-attribute) | assembly | 注册类型别名 |
-| [`[TemplateIgnore]`](../guide/diagnostics#使用-templateignore-忽略字段) | field | 标记字段不参与序列化，阻止 SSR004 错误 |
+| 类型 | 说明 |
+|------|------|
+| [`[Template]`](./template-attribute) | 标记 struct/class，声明序列化布局模板 |
+| [`[ExternalTemplate]`](./external-template-attribute) | 外部类型模板覆盖，支持 BCL/第三方类型 |
+| [`[Tag]`](./tag-attribute) | 枚举成员标签，运行时 `tag → enum value` 映射 |
+| [`[TypeAlias]`](./type-alias-attribute) | 类型别名，将模板中的自定义名称映射到 C# 内置类型 |
+| [`[TemplateIgnore]`](../guide/diagnostics#ssr004---missing-template-dependency) | 跳过字段序列化 |
 
 ## Runtime
 
 | 类型 | 说明 |
 |------|------|
-| [`SerializerRegistry`](./serializer-registry) | 12 种内置类型的零分配 span 扫描器与发射器 |
-| [`SerializerScanners`](./serializer-scanners) | 反序列化注册入口，`TryGetScanner<T>` 获取生成的解析器 |
-| [`SerializerEmitters`](./serializer-emitters) | 序列化注册入口，`TryGetEmitter<T>` 获取生成的发射器 |
+| [`SerializerRegistry`](./serializer-registry) | 17 种内置类型的零分配 span 扫描器与发射器 |
+| [`SerializerBlocks`](./serializer-blocks) | 双向序列化器块注册表，`TryGet<T>` 获取 Scan + Emit 能力 |
 
 ## 类型关系
 
@@ -25,13 +26,8 @@ flowchart TD
     A["[Template] / [ExternalTemplate]"] --> B[Source Generator]
     C["[Tag]"] --> B
     D["[TypeAlias]"] --> B
-    B --> E[SerializerScanners.g.cs]
-    B --> E2[SerializerEmitters.g.cs]
-    E --> F[TryGetScanner]
-    F --> G[ScannerDelegate]
+    B --> E[SerializerBlocks.g.cs]
+    E --> F[TryGet&lt;T&gt;]
+    F --> G[ISerializerBlock&lt;T&gt;]
     H[SerializerRegistry] --> G
-    E2 --> K[TryGetEmitter]
-    K --> J[EmitterDelegate]
-    H --> I[Emit_Xxx 方法]
-    I --> J
 ```

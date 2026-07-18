@@ -83,7 +83,7 @@ flowchart TD
 
 ## Built-in Types
 
-12 C# built-in types are available without extra configuration:
+17 C# built-in types are available without extra configuration:
 
 float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char.
 

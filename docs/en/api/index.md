@@ -1,22 +1,23 @@
 # API Reference
 
+Complete interface for the compile-time source generator and runtime registries.
+
 ## Attributes
 
-| Attribute | Target | Description |
-|-----------|--------|-------------|
-| [`[Template]`](./template-attribute) | struct, class | Declares a text template for the type |
-| [`[ExternalTemplate]`](./external-template-attribute) | assembly, class, struct | Declares a template for a third-party type |
-| [`[Tag]`](./tag-attribute) | enum field | Declares a string tag for an enum member |
-| [`[TypeAlias]`](./type-alias-attribute) | assembly | Registers a type alias |
-| [`[TemplateIgnore]`](../guide/diagnostics#using-templateignore-to-skip-fields) | field | Excludes a field from serialization, prevents SSR004 error |
+| Type | Description |
+|------|-------------|
+| [`[Template]`](./template-attribute) | Marks a struct/class, declares the serialization layout template |
+| [`[ExternalTemplate]`](./external-template-attribute) | External type template override, supports BCL/third-party types |
+| [`[Tag]`](./tag-attribute) | Enum member tag, runtime `tag → enum value` mapping |
+| [`[TypeAlias]`](./type-alias-attribute) | Type alias, maps custom names in templates to C# built-in types |
+| [`[TemplateIgnore]`](../guide/diagnostics#ssr004---missing-template-dependency) | Skips a field from serialization |
 
 ## Runtime
 
 | Type | Description |
 |------|-------------|
-| [`SerializerRegistry`](./serializer-registry) | Zero-allocation span scanners and emitters for 12 built-in types |
-| [`SerializerScanners`](./serializer-scanners) | Deserialization registry entry point, `TryGetScanner<T>` |
-| [`SerializerEmitters`](./serializer-emitters) | Serialization registry entry point, `TryGetEmitter<T>` |
+| [`SerializerRegistry`](./serializer-registry) | Zero-allocation span scanners and emitters for 17 built-in types |
+| [`SerializerBlocks`](./serializer-blocks) | Bidirectional serializer block registry, `TryGet<T>` for Scan + Emit |
 
 ## Type Relationships
 
@@ -25,13 +26,8 @@ flowchart TD
     A["[Template] / [ExternalTemplate]"] --> B[Source Generator]
     C["[Tag]"] --> B
     D["[TypeAlias]"] --> B
-    B --> E[SerializerScanners.g.cs]
-    B --> E2[SerializerEmitters.g.cs]
-    E --> F[TryGetScanner]
-    F --> G[ScannerDelegate]
+    B --> E[SerializerBlocks.g.cs]
+    E --> F[TryGet&lt;T&gt;]
+    F --> G[ISerializerBlock&lt;T&gt;]
     H[SerializerRegistry] --> G
-    E2 --> K[TryGetEmitter]
-    K --> J[EmitterDelegate]
-    H --> I[Emit_Xxx methods]
-    I --> J
 ```

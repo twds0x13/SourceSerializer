@@ -22,9 +22,9 @@ public struct Point2D
 序列化方向同样可用。source generator 同时生成 `Emit_Point2D` 方法，将实例写入 `StringBuilder`：
 
 ```csharp
-SerializerEmitters.TryGetEmitter<Point2D>(out var emit);
+SerializerBlocks.TryGet<Point2D>(out var block);
 var sb = new StringBuilder();
-emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+block.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
 // sb.ToString() == "3.5 -2.1"
 ```
 
@@ -46,7 +46,7 @@ Roslyn 是编译期唯一真理来源。`IsUnmanagedType` 涵盖 C# 7.3+ `unmana
 
 ### 序列化方向（部分实现）
 
-Unmanaged 路径的序列化已完整实现。source generator 通过 `EmitCodeEmitter` 生成 `SerializerEmitters.g.cs`，支持：
+Unmanaged 路径的序列化已完整实现。source generator 通过 `EmitCodeEmitter` 生成 `SerializerBlocks.g.cs`，支持：
 
 - 裸文字（literal text）输出
 - 字段序列化（内置类型、自定义嵌套类型、枚举标签）

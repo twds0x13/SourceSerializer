@@ -22,9 +22,8 @@
 
 - `[Template("...")]` 声明结构体布局：字段、分隔符、可选块、可重复序列
 - Unmanaged 路径：span 扫描器，零堆分配，Burst 兼容
-- 序列化方向：编译期生成 `SerializerEmitters`，struct 到 StringBuilder 零分配
-- Managed 路径：两步走，无需 `$ref` 即可处理循环引用（规划中）
-- 12 种 C# 内置类型的内置扫描器与发射器（float、int、bool、char 等）
+- 序列化方向：编译期生成 `SerializerBlocks`，struct 到 StringBuilder 零分配
+- 17 种 C# 内置类型的内置扫描器与发射器（float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string、decimal、nint、nuint、Half）
 
 ## 安装
 
@@ -44,14 +43,13 @@ public struct DamageData
     public float multipliers;
 }
 
-SerializerScanners.TryGetScanner<DamageData>(out var scan);
-scan("42, 1.5, 2.0".AsSpan(), 0, out DamageData v);
+SerializerBlocks.TryGet<DamageData>(out var block);
+block.Scan("42, 1.5, 2.0".AsSpan(), 0, out DamageData v);
 // v.damage == 42, v.multipliers == 2.0
 
 // 序列化
-SerializerEmitters.TryGetEmitter<DamageData>(out var emit);
 var sb = new StringBuilder();
-emit(sb, v);  // sb.ToString() == "42, 1.5, 2.0"
+block.Emit(sb, v);  // sb.ToString() == "42, 1.5, 2.0"
 ```
 
 ## 文档

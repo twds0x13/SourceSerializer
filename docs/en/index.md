@@ -28,5 +28,5 @@ features:
   - title: Compile-time Error Diagnostics
     details: Circular dependency detection, readonly field rejection, missing type warnings, scalar-in-repetition errors. Errors surface at compile time, not at runtime.
   - title: Compile-time Emitter
-    details: Simultaneously generates the SerializerEmitters pipeline. Struct-to-StringBuilder serialization with zero allocation, supporting built-in types, custom nested types, and enum tags.
+    details: Simultaneously generates the SerializerBlocks pipeline. Struct-to-StringBuilder serialization with zero allocation, supporting built-in types, custom nested types, and enum tags.
 ---

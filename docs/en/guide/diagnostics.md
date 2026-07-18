@@ -72,7 +72,7 @@ The generated code uses `new Damage(__f_Attack, __f_CritRate)` instead of field-
 
 ## SSR004: Missing Template Dependency
 
-A field type is neither one of the 12 built-in types nor annotated with `[Template]`, and the field is not marked `[TemplateIgnore]`. Compilation will stop.
+A field type is neither one of the 17 built-in types nor annotated with `[Template]`, and the field is not marked `[TemplateIgnore]`. Compilation will stop.
 
 Example trigger:
 
