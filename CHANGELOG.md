@@ -1,3 +1,9 @@
+## [3.0.1](https://github.com/twds0x13/SourceSerializer/compare/v3.0.0...v3.0.1) (2026-07-18)
+
+### Bug Fixes
+
+* internal refactor for performance and maintainability ([659bade](https://github.com/twds0x13/SourceSerializer/commit/659bade42faf78e892a2f2c643fc2b4a8fb6799f))
+
 ## [3.0.0](https://github.com/twds0x13/SourceSerializer/compare/v2.1.0...v3.0.0) (2026-07-18)
 
 ### ⚠ BREAKING CHANGES
