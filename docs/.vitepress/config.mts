@@ -54,8 +54,7 @@ export default withMermaid(
                   collapsed: false,
                   items: [
                     { text: "SerializerRegistry", link: "/api/serializer-registry" },
-                    { text: "SerializerScanners", link: "/api/serializer-scanners" },
-                    { text: "SerializerEmitters", link: "/api/serializer-emitters" },
+                    { text: "SerializerBlocks", link: "/api/serializer-blocks" },
                   ],
                 },
               ],
@@ -105,9 +104,7 @@ export default withMermaid(
                   collapsed: false,
                   items: [
                     { text: "SerializerRegistry", link: "/en/api/serializer-registry" },
-                    { text: "SerializerScanners", link: "/en/api/serializer-scanners" },
-                    { text: "SerializerEmitters", link: "/en/api/serializer-emitters" },
-                  ],
+                    { text: "SerializerBlocks", link: "/en/api/serializer-blocks" },
                 },
               ],
             },
