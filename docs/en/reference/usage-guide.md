@@ -104,7 +104,17 @@ struct Skill
 // 输入: "100, 1.5, 2.0, 0.75"  → Multipliers=[1.5, 2.0, 0.75]
 ```
 
-**`List<T>`、`IList<T>`、`ICollection<T>`、`IEnumerable<T>`、`T[]` 全部自动识别。** 集合的内部模板（分隔符 `, ` + 元素）由 SG 内置，不需要手动编写。
+**Collection fields work directly in templates — no explicit template declaration needed.** The system provides default templates for these interfaces, and concrete types are matched through their implemented interfaces:
+
+| Default Interface | Covered Types | Separator |
+|-------------------|--------------|-----------|
+| `IList<T>` | `List<T>`, `T[]`, `IList<T>`, `ICollection<T>`, `IReadOnlyList<T>`, etc. | Comma |
+| `ISet<T>` | `HashSet<T>`, `SortedSet<T>`, `ISet<T>`, `IReadOnlySet<T>`, etc. | Comma |
+| `IReadOnlyList<T>` | `IReadOnlyList<T>`, etc. | Comma |
+| `IDictionary<K,V>` | `Dictionary<K,V>`, `SortedDictionary<K,V>`, `IDictionary<K,V>`, etc. | Colon |
+| `IReadOnlyDictionary<K,V>` | `IReadOnlyDictionary<K,V>`, etc. | Colon |
+
+**Interface-first principle:** for custom collection types, prefer defining an interface with a template rather than annotating each class. All types implementing that interface automatically inherit the template. Class-level `[ExternalTemplate]` takes precedence over interface templates.
 
 ```csharp
 [Template("<int Id><float[] Data>")]
@@ -359,6 +369,6 @@ struct Ability
 |------|------|
 | SSR001 | 模板语法错误 |
 | SSR002 | 循环依赖 |
-| SSR003 | readonly struct 不能用 `[Template]` |
+| SSR003 | Field referenced in template is readonly with no matching ctor — add ctor or remove readonly |
 | SSR004 | 字段类型缺少 `[Template]` — 加 `[Template]`、`[ExternalTemplate]`、或 `[TemplateIgnore]` |
 | SSR005 | 标量字段在重复块内 — 改用集合类型 |

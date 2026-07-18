@@ -6,11 +6,11 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceSerializer.Generator
 {
-    internal enum CollectionKind { None, List, Array }
+    internal enum CollectionKind { None, Sequential, Array }
 
     /// <summary>
     /// 编译期字段元数据，由 Roslyn 符号提取。
-    /// 用于 SG 管线生成逐字段扫描代码，并追踪哪些字段未来需要 Walk 阶段处理。
+    /// 用于 SG 管线生成逐字段扫描/发射代码。
     /// </summary>
     internal readonly struct FieldInfo
     {
@@ -19,33 +19,31 @@ namespace SourceSerializer.Generator
         public readonly CollectionKind Kind;
         public readonly string? ElemType;
         /// <summary>
-        /// 字段类型是否含 GC 引用。等价于 <c>!ITypeSymbol.IsUnmanagedType</c>。
-        /// 供未来 Walk 阶段使用，当前 CodeEmitter 未消费。
+        /// 字段自身是否声明为 <c>readonly</c>。与 struct 级别的 readonly 不同：
+        /// struct 级别 readonly 只影响 <c>this</c> 引用语义，不阻止外部代码对局部变量的字段赋值；
+        /// 字段级别 readonly 会阻止任何赋值，需要构造函数初始化。
         /// </summary>
-        public readonly bool NeedsWalkPhase;
+        public readonly bool IsReadonly;
 
         public FieldInfo(string name, string typeName, CollectionKind kind,
-            string? elemType, bool needsWalkPhase)
+            string? elemType, bool isReadonly = false)
         {
             Name = name;
             TypeName = typeName;
             Kind = kind;
             ElemType = elemType;
-            NeedsWalkPhase = needsWalkPhase;
+            IsReadonly = isReadonly;
         }
     }
 
     [Generator]
     public class SerializerGenerator : IIncrementalGenerator
     {
-        private static readonly HashSet<string> BuiltinTypes = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "float", "double", "int", "uint", "long", "ulong",
-            "short", "ushort", "byte", "sbyte", "bool", "char", "string",
-        };
 
         /// <summary>
-        /// 内置默认泛型模板。用户可通过 [ExternalTemplate(typeof(List<>), "...")] 覆盖。
+        /// 内置默认泛型模板，以接口为目标（非具体类）。
+        /// 具体类型（List, HashSet, Dictionary 等）通过 Roslyn AllInterfaces 自动匹配。
+        /// 用户可通过 [ExternalTemplate(typeof(IList<>), "...")] 或 [ExternalTemplate(typeof(List<>), "...")] 覆盖。
         /// 模板中类型参数占位符使用实际类型参数名（T, TKey, TValue 等），SG 按名称替换。
         /// </summary>
         private static List<StructTemplateInfo> GetDefaultGenericTemplates()
@@ -54,31 +52,73 @@ namespace SourceSerializer.Generator
             {
                 new StructTemplateInfo
                 {
-                    StructName = "List`1",
+                    StructName = "IList`1",
                     Template = "<first><T item></first><body>, <T item></body>",
-                    IsReadonly = false,
                     NeedsHeapAlloc = true,
-                    NeedsWalkPhase = true,
                     IsCollection = true,
-                    TypeKind = "class",
+
                     IsOpenGeneric = true,
                     TypeParameterNames = new[] { "T" },
                     ImplementedInterfaces = Array.Empty<string>(),
                     Fields = new List<FieldInfo>(),
+                    IsReadonlyStruct = false,
+                    MatchedCtorParams = null,
                 },
                 new StructTemplateInfo
                 {
-                    StructName = "Dictionary`2",
-                    Template = "<first><TKey key>: <TValue value></first><body>, <TKey key>: <TValue value></body>",
-                    IsReadonly = false,
+                    StructName = "ISet`1",
+                    Template = "<first><T item></first><body>, <T item></body>",
                     NeedsHeapAlloc = true,
-                    NeedsWalkPhase = true,
                     IsCollection = true,
-                    TypeKind = "class",
+
+                    IsOpenGeneric = true,
+                    TypeParameterNames = new[] { "T" },
+                    ImplementedInterfaces = Array.Empty<string>(),
+                    Fields = new List<FieldInfo>(),
+                    IsReadonlyStruct = false,
+                    MatchedCtorParams = null,
+                },
+                new StructTemplateInfo
+                {
+                    StructName = "IReadOnlyList`1",
+                    Template = "<first><T item></first><body>, <T item></body>",
+                    NeedsHeapAlloc = true,
+                    IsCollection = true,
+
+                    IsOpenGeneric = true,
+                    TypeParameterNames = new[] { "T" },
+                    ImplementedInterfaces = Array.Empty<string>(),
+                    Fields = new List<FieldInfo>(),
+                    IsReadonlyStruct = false,
+                    MatchedCtorParams = null,
+                },
+                new StructTemplateInfo
+                {
+                    StructName = "IDictionary`2",
+                    Template = "<first><TKey key>: <TValue value></first><body>, <TKey key>: <TValue value></body>",
+                    NeedsHeapAlloc = true,
+                    IsCollection = true,
+
                     IsOpenGeneric = true,
                     TypeParameterNames = new[] { "TKey", "TValue" },
                     ImplementedInterfaces = Array.Empty<string>(),
                     Fields = new List<FieldInfo>(),
+                    IsReadonlyStruct = false,
+                    MatchedCtorParams = null,
+                },
+                new StructTemplateInfo
+                {
+                    StructName = "IReadOnlyDictionary`2",
+                    Template = "<first><TKey key>: <TValue value></first><body>, <TKey key>: <TValue value></body>",
+                    NeedsHeapAlloc = true,
+                    IsCollection = true,
+
+                    IsOpenGeneric = true,
+                    TypeParameterNames = new[] { "TKey", "TValue" },
+                    ImplementedInterfaces = Array.Empty<string>(),
+                    Fields = new List<FieldInfo>(),
+                    IsReadonlyStruct = false,
+                    MatchedCtorParams = null,
                 },
             };
         }
@@ -90,9 +130,9 @@ namespace SourceSerializer.Generator
             "Struct '{0}' has a circular dependency via template field types: {1}",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
-        private static readonly DiagnosticDescriptor ReadonlyStructError = new(
-            "SSR003", "Readonly struct cannot use [Template]",
-            "Struct '{0}' is declared 'readonly'. [Template] requires mutable fields for field assignment. Remove the 'readonly' modifier from the struct or its fields.",
+        private static readonly DiagnosticDescriptor ReadonlyFieldError = new(
+            "SSR003", "Readonly field cannot be assigned by deserialization",
+            "Field '{0}' of '{1}' is declared 'readonly'. Deserialization writes to fields and cannot initialize readonly fields. Remove the 'readonly' modifier from the field, or add a constructor whose parameters match all fields by name and type.",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor MissingDependencyError = new(
@@ -154,14 +194,15 @@ namespace SourceSerializer.Generator
             var combined = structDeclarations.Collect()
                 .Combine(externalDeclarations.Collect())
                 .Combine(typeAliases)
-                .Combine(enumTags);
+                .Combine(enumTags)
+                .Combine(context.CompilationProvider);
             context.RegisterSourceOutput(combined, (spc, quad) =>
             {
-                var (((builtin, external), aliases), tags) = quad;
+                var ((((builtin, external), aliases), tags), compilation) = quad;
                 var merged = MergeDeclarations(builtin, external);
                 var enumTagMap = BuildEnumTagMap(tags);
                 foreach (var k in enumTagMap.Keys) _knownEnumTypes.Add(k);
-                GenerateSource(spc, merged, aliases, enumTagMap);
+                GenerateSource(spc, merged, aliases, enumTagMap, compilation);
             });
         }
 
@@ -185,60 +226,100 @@ namespace SourceSerializer.Generator
             return map.Values.ToList();
         }
 
-        private static StructTemplateInfo? GetStructInfo(GeneratorAttributeSyntaxContext ctx, bool fromExternal)
+        /// <summary>
+        /// 从 INamedTypeSymbol 提取字段元数据、运行构造器匹配、构建 StructTemplateInfo。
+        /// GetStructInfo 和 GetExternalInfo 的共享实现。
+        /// </summary>
+        /// <param name="allowInternalCtors">[Template] 为 true（同程序集），[ExternalTemplate] 为 false</param>
+        private static StructTemplateInfo BuildStructTemplateInfo(
+            INamedTypeSymbol typeSymbol, string template, bool allowInternalCtors)
         {
-            var structSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
-            bool isOpenGeneric = structSymbol.IsGenericType;
-            // 开放泛型 StructName 带元数后缀，避免与同名非泛型类型冲突
+            bool isOpenGeneric = typeSymbol.IsGenericType;
             var structName = isOpenGeneric
-                ? $"{structSymbol.Name}`{structSymbol.TypeParameters.Length}"
-                : structSymbol.Name;
+                ? $"{typeSymbol.Name}`{typeSymbol.TypeParameters.Length}"
+                : typeSymbol.Name;
             string[] typeParamNames = isOpenGeneric
-                ? structSymbol.TypeParameters.Select(tp => tp.Name).ToArray()
+                ? typeSymbol.TypeParameters.Select(tp => tp.Name).ToArray()
                 : Array.Empty<string>();
-            bool isReadonly = structSymbol.IsReadOnly;
-            bool isClass = structSymbol.TypeKind == TypeKind.Class;
-
-            string? template = ExtractTemplateArg(structSymbol, "TemplateAttribute");
-            if (string.IsNullOrEmpty(template))
-                return null;
+            bool isClass = typeSymbol.TypeKind == TypeKind.Class;
 
             var fields = new List<FieldInfo>();
-            foreach (var member in structSymbol.GetMembers())
+            var fieldSymbols = new List<IFieldSymbol>();
+            foreach (var member in typeSymbol.GetMembers())
             {
                 if (member is IFieldSymbol f && !f.IsStatic && f.DeclaredAccessibility == Accessibility.Public)
                 {
                     if (HasTemplateIgnoreAttribute(f))
                         continue;
-                    // 类型参数字段：记录为占位符，合成时替换为具体类型
                     if (f.Type is ITypeParameterSymbol tp)
                     {
-                        fields.Add(new FieldInfo(f.Name, tp.Name, CollectionKind.None, null, needsWalkPhase: false));
+                        fields.Add(new FieldInfo(f.Name, tp.Name, CollectionKind.None, null));
+                        fieldSymbols.Add(f);
                         continue;
                     }
                     var (kind, elemType) = ClassifyFieldType(f.Type);
-                    bool fieldNeedsWalk = !f.Type.IsUnmanagedType;
-                    fields.Add(new FieldInfo(f.Name, f.Type.ToDisplayString(), kind, elemType, fieldNeedsWalk));
+                    fields.Add(new FieldInfo(f.Name, f.Type.ToDisplayString(), kind, elemType, isReadonly: f.IsReadOnly));
+                    fieldSymbols.Add(f);
                 }
             }
 
-            string[] implementedInterfaces = structSymbol.AllInterfaces
-                .Select(i => i.ToDisplayString())
-                .ToArray();
+            // ── 构造器匹配 ──
+            bool isReadonlyStruct = typeSymbol.IsReadOnly && !isClass;
+            string[]? matchedCtorParams = null;
+            if (fieldSymbols.Count > 0)
+            {
+                foreach (var ctor in typeSymbol.Constructors)
+                {
+                    if (ctor.IsImplicitlyDeclared) continue;
+                    if (allowInternalCtors)
+                    {
+                        if (!(ctor.DeclaredAccessibility == Accessibility.Public
+                           || ctor.DeclaredAccessibility == Accessibility.Internal
+                           || ctor.DeclaredAccessibility == Accessibility.ProtectedOrInternal)) continue;
+                    }
+                    else
+                    {
+                        if (ctor.DeclaredAccessibility != Accessibility.Public) continue;
+                    }
+                    if (ctor.Parameters.Length < fieldSymbols.Count) continue;
+
+                    bool allMatch = true;
+                    foreach (var fs in fieldSymbols)
+                    {
+                        var match = ctor.Parameters.FirstOrDefault(p =>
+                            string.Equals(p.Name, fs.Name, StringComparison.OrdinalIgnoreCase)
+                            && SymbolEqualityComparer.Default.Equals(p.Type, fs.Type));
+                        if (match == null) { allMatch = false; break; }
+                    }
+                    if (allMatch)
+                    {
+                        matchedCtorParams = ctor.Parameters.Select(p => p.Name).ToArray();
+                        break;
+                    }
+                }
+            }
 
             return new StructTemplateInfo
             {
                 StructName = structName,
-                Template = template!,
-                IsReadonly = isReadonly,
+                Template = template,
                 NeedsHeapAlloc = isClass,
-                NeedsWalkPhase = !structSymbol.IsUnmanagedType,
-                TypeKind = isClass ? "class" : "struct",
                 Fields = fields,
                 IsOpenGeneric = isOpenGeneric,
                 TypeParameterNames = typeParamNames,
-                ImplementedInterfaces = implementedInterfaces,
+                ImplementedInterfaces = typeSymbol.AllInterfaces.Select(i => i.ToDisplayString()).ToArray(),
+                IsReadonlyStruct = isReadonlyStruct,
+                MatchedCtorParams = matchedCtorParams,
             };
+        }
+
+        private static StructTemplateInfo? GetStructInfo(GeneratorAttributeSyntaxContext ctx, bool fromExternal)
+        {
+            var structSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
+            string? template = ExtractTemplateArg(structSymbol, "TemplateAttribute");
+            if (string.IsNullOrEmpty(template))
+                return null;
+            return BuildStructTemplateInfo(structSymbol, template!, allowInternalCtors: true);
         }
 
         /// <summary>
@@ -247,7 +328,6 @@ namespace SourceSerializer.Generator
         /// </summary>
         private static StructTemplateInfo? GetExternalInfo(GeneratorAttributeSyntaxContext ctx)
         {
-            // ExternalTemplate 的 constructor: (Type targetType, string template)
             foreach (var attr in ctx.Attributes)
             {
                 if (attr.AttributeClass == null
@@ -255,57 +335,16 @@ namespace SourceSerializer.Generator
                     || attr.ConstructorArguments.Length < 2)
                     continue;
 
-                // 第一个参数是 typeof(X) → TypedConstant of kind Type
                 var typeArg = attr.ConstructorArguments[0];
                 if (typeArg.Kind != TypedConstantKind.Type || typeArg.Value == null)
                     continue;
 
                 var targetType = (INamedTypeSymbol)typeArg.Value;
-
-                bool isClass = targetType.TypeKind == TypeKind.Class;
-                bool isOpenGeneric = targetType.IsGenericType;
-                string[] typeParamNames = isOpenGeneric
-                    ? targetType.TypeParameters.Select(tp => tp.Name).ToArray()
-                    : Array.Empty<string>();
-
                 string? template = attr.ConstructorArguments[1].Value as string;
                 if (string.IsNullOrEmpty(template))
                     continue;
 
-                var fields = new List<FieldInfo>();
-                foreach (var member in targetType.GetMembers())
-                {
-                    if (member is IFieldSymbol f && !f.IsStatic && f.DeclaredAccessibility == Accessibility.Public)
-                    {
-                        if (HasTemplateIgnoreAttribute(f))
-                            continue;
-                        if (f.Type is ITypeParameterSymbol tp)
-                        {
-                            fields.Add(new FieldInfo(f.Name, tp.Name, CollectionKind.None, null, needsWalkPhase: false));
-                            continue;
-                        }
-                        var (kind, elemType) = ClassifyFieldType(f.Type);
-                        bool fieldNeedsWalk = !f.Type.IsUnmanagedType;
-                        fields.Add(new FieldInfo(f.Name, f.Type.ToDisplayString(), kind, elemType, fieldNeedsWalk));
-                    }
-                }
-
-                return new StructTemplateInfo
-                {
-                    StructName = isOpenGeneric
-                        ? $"{targetType.Name}`{targetType.TypeParameters.Length}"
-                        : targetType.Name,
-                    Template = template!,
-                    IsReadonly = targetType.IsReadOnly,
-                    NeedsHeapAlloc = isClass,
-                    NeedsWalkPhase = !targetType.IsUnmanagedType,
-                    TypeKind = isClass ? "class" : "struct",
-                    Fields = fields,
-                    IsOpenGeneric = isOpenGeneric,
-                    TypeParameterNames = typeParamNames,
-                    ImplementedInterfaces = targetType.AllInterfaces
-                        .Select(i => i.ToDisplayString()).ToArray(),
-                };
+                return BuildStructTemplateInfo(targetType, template!, allowInternalCtors: false);
             }
 
             return null;
@@ -379,8 +418,11 @@ namespace SourceSerializer.Generator
                 if (fullName == "System.Collections.Generic.List<T>" ||
                     fullName == "System.Collections.Generic.IList<T>" ||
                     fullName == "System.Collections.Generic.ICollection<T>" ||
-                    fullName == "System.Collections.Generic.IEnumerable<T>")
-                    return (CollectionKind.List, named.TypeArguments[0].ToDisplayString());
+                    fullName == "System.Collections.Generic.IEnumerable<T>" ||
+                    fullName == "System.Collections.Generic.ISet<T>" ||
+                    fullName == "System.Collections.Generic.IReadOnlyList<T>" ||
+                    fullName == "System.Collections.Generic.HashSet<T>")
+                    return (CollectionKind.Sequential, named.TypeArguments[0].ToDisplayString());
             }
 
             return (CollectionKind.None, null);
@@ -391,11 +433,6 @@ namespace SourceSerializer.Generator
         /// 直接委托 Roslyn 编译器权威判定 <see cref="ITypeSymbol.IsUnmanagedType"/>，
         /// 零行手动规则——编译器已递归验证所有字段。
         /// </summary>
-        private static bool IsManagedFieldType(ITypeSymbol type)
-        {
-            return !type.IsUnmanagedType;
-        }
-
         /// <summary>检查字段是否标注了 [TemplateIgnore]，若是则跳过不参与序列化。</summary>
         private static bool HasTemplateIgnoreAttribute(IFieldSymbol field)
         {
@@ -431,23 +468,12 @@ namespace SourceSerializer.Generator
 
         private static void GenerateSource(SourceProductionContext context, List<StructTemplateInfo> structs,
             System.Collections.Immutable.ImmutableArray<(string Alias, string CSharpType)> typeAliases,
-            Dictionary<string, List<(string MemberName, string Tag)>>? enumTagMap = null)
+            Dictionary<string, List<(string MemberName, string Tag)>>? enumTagMap,
+            Compilation compilation)
         {
             if (structs.Count == 0) return;
 
-            // ── Check readonly structs ──
-            foreach (var info in structs)
-            {
-                // SSR003 only applies to structs, not classes
-                if (info.IsReadonly && info.TypeKind == "struct")
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        ReadonlyStructError, Location.None, info.StructName));
-                }
-            }
-
-            // Filter out readonly structs
-            var writable = structs.Where(s => !s.IsReadonly).ToList();
+            var writable = structs.ToList();
 
             // 注入内置默认泛型模板（用户可通过 [ExternalTemplate] 覆盖）
             foreach (var def in GetDefaultGenericTemplates())
@@ -469,17 +495,19 @@ namespace SourceSerializer.Generator
                 }
 
                 // ── 1.5 Resolve generic type instances from field references ──
-                var generated = ResolveGenericTypeInstances(parsed);
+                var generated = ResolveGenericTypeInstances(parsed, compilation);
                 foreach (var (ginfo, gast) in generated)
                     parsed.Add((ginfo, gast));
 
                 // ── 1.6 Build interface→concrete dispatch map ──
+                // 仅收集用户自定义接口（排除 BCL System.* 接口——不生成 dispatch 方法）
                 var interfaceMap = new Dictionary<string, List<string>>(StringComparer.Ordinal);
                 foreach (var info in writable)
                 {
                     if (info.ImplementedInterfaces == null) continue;
                     foreach (var iface in info.ImplementedInterfaces)
                     {
+                        if (iface.StartsWith("System.", StringComparison.Ordinal)) continue;
                         if (!interfaceMap.TryGetValue(iface, out var list))
                             interfaceMap[iface] = list = new List<string>();
                         list.Add(info.StructName);
@@ -493,25 +521,38 @@ namespace SourceSerializer.Generator
                 // ── 2.5 Validate: no scalar fields inside <repetition> ──
                 ValidateRepetitionFields(context, parsed);
 
+                // ── 2.6 Validate: no readonly fields referenced in templates ──
+                ValidateFieldMutability(context, parsed);
+
                 // ── 3. Topological sort ──
                 var ordered = TopologicalSort(parsed, depGraph);
 
                 // ── 4. Emit code（开放泛型模板不生成代码，仅合成时使用）──
-                var emitList = new List<(string StructName, List<TemplateNode> Nodes,
-                    Dictionary<string, FieldInfo> FieldTypes, bool NeedsHeapAlloc, bool NeedsWalkPhase, bool IsCollection)>();
+                var emitList = new List<EmitEntry>();
                 foreach (var (info, ast) in ordered)
                 {
-                    if (info.IsOpenGeneric) continue; // 开放泛型仅作为合成模板
+                    if (info.IsOpenGeneric) continue;
+                    if (info.IsReadonlyStruct && info.MatchedCtorParams == null) continue;
                     var fieldTypes = new Dictionary<string, FieldInfo>(StringComparer.Ordinal);
                     foreach (var fi in info.Fields)
                         fieldTypes[fi.Name] = fi;
-                    emitList.Add((info.StructName, ast, fieldTypes, info.NeedsHeapAlloc, info.NeedsWalkPhase, info.IsCollection));
+                    emitList.Add(new EmitEntry
+                    {
+                        StructName = info.StructName,
+                        Nodes = ast,
+                        FieldTypes = fieldTypes,
+                        NeedsHeapAlloc = info.NeedsHeapAlloc,
+                        IsCollection = info.IsCollection,
+                        IsReadonlyStruct = info.IsReadonlyStruct,
+                        MatchedCtorParams = info.MatchedCtorParams,
+                    });
                 }
 
                 var emitDepGraph = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var (info, _) in ordered)
                 {
                     if (info.IsOpenGeneric) continue;
+                    if (info.IsReadonlyStruct && info.MatchedCtorParams == null) continue;
                     emitDepGraph[info.StructName] = CodeEmitter.GetScannerMethodName(info.StructName);
                 }
                 // 接口 dispatch 条目加入依赖图
@@ -527,6 +568,9 @@ namespace SourceSerializer.Generator
 
                 string emitSource = EmitCodeEmitter.EmitAll(emitList, emitDepGraph, aliasMap, enumTagMap, interfaceMap);
                 context.AddSource("SerializerEmitters.g.cs", emitSource);
+
+                string blockSource = BlockEmitter.EmitAll(emitList, interfaceMap);
+                context.AddSource("SerializerBlocks.g.cs", blockSource);
             }
             catch (FormatException ex)
             {
@@ -560,7 +604,7 @@ namespace SourceSerializer.Generator
                 var externalRefs = FindFieldTypeReferences(ast);
                 foreach (var refType in externalRefs)
                 {
-                    if (BuiltinTypes.Contains(refType))
+                    if (BuiltinTypeNames.All.Contains(refType))
                         continue;
 
                     // 别名映射到内置类型，不是真正的依赖
@@ -688,16 +732,68 @@ namespace SourceSerializer.Generator
         }
 
         /// <summary>
+        /// 验证模板中引用的字段没有标记为 <c>readonly</c>。
+        /// struct 级别的 readonly 不影响外部代码对局部变量字段的赋值，但字段级别的 readonly 会阻止赋值。
+        /// </summary>
+        private static void ValidateFieldMutability(
+            SourceProductionContext context,
+            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed)
+        {
+            foreach (var (info, ast) in parsed)
+            {
+                // 有匹配构造器的类型跳过——构造器会处理字段初始化
+                if (info.MatchedCtorParams != null) continue;
+
+                var fieldMap = new Dictionary<string, FieldInfo>(StringComparer.Ordinal);
+                foreach (var fi in info.Fields)
+                    fieldMap[fi.Name] = fi;
+
+                ValidateFieldNodesReadonly(context, info.StructName, ast, fieldMap);
+            }
+        }
+
+        private static void ValidateFieldNodesReadonly(
+            SourceProductionContext context,
+            string structName,
+            List<TemplateNode> nodes,
+            Dictionary<string, FieldInfo> fieldMap)
+        {
+            foreach (var node in nodes)
+            {
+                if (node is FieldDirectiveNode field)
+                {
+                    if (fieldMap.TryGetValue(field.FieldName, out var fi) && fi.IsReadonly)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            ReadonlyFieldError, Location.None,
+                            field.FieldName, structName));
+                    }
+                }
+                else if (node is OptionalBlockNode opt)
+                {
+                    ValidateFieldNodesReadonly(context, structName, opt.Body, fieldMap);
+                }
+                else if (node is RepetitionNode rep)
+                {
+                    var allNodes = new List<TemplateNode>();
+                    if (rep.First != null) allNodes.AddRange(rep.First);
+                    allNodes.AddRange(rep.Body);
+                    ValidateFieldNodesReadonly(context, structName, allNodes, fieldMap);
+                }
+            }
+        }
+
+        /// <summary>
         /// 扫描已解析模板的字段引用，为泛型集合类型（如 List&lt;NamedValue&gt;）
         /// 自动解析开放泛型模板并合成 StructTemplateInfo。
         /// 支持硬编码集合泛型（List/Dictionary）和用户定义开放泛型。
         /// 递归发现处理嵌套泛型（如 List&lt;Wrapper&lt;float&gt;&gt;）。
         /// </summary>
         private static List<(StructTemplateInfo Info, List<TemplateNode> Ast)> ResolveGenericTypeInstances(
-            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed)
+            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed, Compilation compilation)
         {
-            // 构建开放泛型索引：StructName（已含元数后缀如 "Pair`2"）→ (Info, AST)
-            var openGenerics = new Dictionary<string, (StructTemplateInfo, List<TemplateNode>)>(StringComparer.Ordinal);
+            // 构建开放泛型索引：StructName（已含元数后缀如 "IList`1"）→ (Info, AST)
+            var openGenerics = new Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)>(StringComparer.Ordinal);
             foreach (var (info, ast) in parsed)
                 if (info.IsOpenGeneric)
                     openGenerics[info.StructName] = (info, ast);
@@ -708,7 +804,7 @@ namespace SourceSerializer.Generator
                 seen.Add(info.StructName);
 
             // 递归发现：对每轮新合成的条目继续扫描字段引用
-            CollectAllGenericRefs(parsed, seen, result, openGenerics);
+            CollectAllGenericRefs(parsed, seen, result, openGenerics, compilation);
 
             return result;
         }
@@ -718,13 +814,14 @@ namespace SourceSerializer.Generator
             List<(StructTemplateInfo Info, List<TemplateNode> Ast)> entries,
             HashSet<string> seen,
             List<(StructTemplateInfo Info, List<TemplateNode> Ast)> result,
-            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics)
+            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics,
+            Compilation compilation)
         {
             int beforeCount = result.Count;
             foreach (var (info, ast) in entries)
             {
                 foreach (var node in ast)
-                    CollectGenericRefs(node, seen, result, openGenerics);
+                    CollectGenericRefs(node, seen, result, openGenerics, compilation);
             }
 
             // 本轮新合成的条目，递归扫描（处理 List&lt;Wrapper&lt;float&gt;&gt; 场景）
@@ -732,28 +829,32 @@ namespace SourceSerializer.Generator
             for (int i = beforeCount; i < result.Count; i++)
                 newEntries.Add(result[i]);
             if (newEntries.Count > 0)
-                CollectAllGenericRefs(newEntries, seen, result, openGenerics);
+                CollectAllGenericRefs(newEntries, seen, result, openGenerics, compilation);
         }
 
         private static void CollectGenericRefs(TemplateNode node, HashSet<string> seen,
             List<(StructTemplateInfo Info, List<TemplateNode> Ast)> result,
-            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics)
+            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics,
+            Compilation compilation)
         {
             if (node is FieldDirectiveNode field)
             {
                 // 解析泛型类型实例：List<float>, Wrapper<int>, Dict<string,float> 等
                 var (openGeneric, elemTypes, _) = ParseGenericType(field.TypeAlias, openGenerics);
+
                 if (openGeneric != null && elemTypes != null
-                    && openGenerics.TryGetValue($"{openGeneric}`{elemTypes.Length}", out var openGen))
+                    && TryGetOpenGenericTemplate(openGeneric, elemTypes.Length, openGenerics, compilation,
+                        out var openInfo, out var openAst))
                 {
                     string instanceName = field.TypeAlias;
                     if (seen.Add(instanceName))
                     {
-                        var openInfo = openGen.Info;
-
-                        // 1. 模板字符串中替换类型参数
+                        // 1. 模板字符串中替换类型参数（按名称长度降序，避免 T 损坏 TKey）
+                        var tpOrder = Enumerable.Range(0, elemTypes.Length)
+                            .OrderByDescending(i => openInfo.TypeParameterNames[i].Length)
+                            .ToArray();
                         string resolved = openInfo.Template;
-                        for (int ti = 0; ti < elemTypes.Length; ti++)
+                        foreach (var ti in tpOrder)
                             resolved = resolved.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
 
                         // 2. 重新解析替换后的模板
@@ -766,16 +867,13 @@ namespace SourceSerializer.Generator
                         foreach (var fi in openInfo.Fields)
                         {
                             string concreteType = fi.TypeName;
-                            for (int ti = 0; ti < elemTypes.Length; ti++)
+                            foreach (var ti in tpOrder)
                                 concreteType = concreteType.Replace(openInfo.TypeParameterNames[ti], elemTypes[ti]);
                             var (kind, elemType) = ClassifyFieldTypeByName(concreteType);
                             synthFields.Add(new FieldInfo(fi.Name, concreteType, kind, elemType,
-                                needsWalkPhase: concreteType == "string" || !BuiltinTypes.Contains(concreteType)));
+                                isReadonly: fi.IsReadonly));
                         }
 
-                        // 4. 计算合成标志
-                        bool synthNeedsWalkPhase = openInfo.TypeKind == "class"
-                            || elemTypes.Any(arg => arg == "string" || !BuiltinTypes.Contains(arg));
                         // 集合检测：开放泛型模板含 <first>/<body> 时自动标记为集合
                         bool synthIsCollection = openInfo.IsCollection
                             || (openInfo.Template.Contains("<first>") && openInfo.Template.Contains("<body>"));
@@ -784,12 +882,11 @@ namespace SourceSerializer.Generator
                         {
                             StructName = instanceName,
                             Template = resolved,
-                            IsReadonly = openInfo.IsReadonly,
-                            NeedsHeapAlloc = openInfo.TypeKind == "class",
-                            NeedsWalkPhase = synthNeedsWalkPhase,
+                            NeedsHeapAlloc = openInfo.NeedsHeapAlloc,
                             IsCollection = synthIsCollection,
-                            TypeKind = openInfo.TypeKind,
                             Fields = synthFields,
+                            IsReadonlyStruct = openInfo.IsReadonlyStruct,
+                            MatchedCtorParams = openInfo.MatchedCtorParams,
                         };
                         result.Add((synthInfo, ast));
                     }
@@ -798,18 +895,137 @@ namespace SourceSerializer.Generator
             else if (node is OptionalBlockNode opt)
             {
                 foreach (var child in opt.Body)
-                    CollectGenericRefs(child, seen, result, openGenerics);
+                    CollectGenericRefs(child, seen, result, openGenerics, compilation);
             }
             else if (node is RepetitionNode rep)
             {
                 foreach (var child in rep.Body)
-                    CollectGenericRefs(child, seen, result, openGenerics);
+                    CollectGenericRefs(child, seen, result, openGenerics, compilation);
             }
         }
 
         /// <summary>
+        /// 尝试为泛型字段查找开放泛型模板。先在 openGenerics 精确查找（类级/接口级显式模板），
+        /// 失败后通过 Roslyn AllInterfaces 查找匹配的默认接口模板。
+        /// 优先级：类级显式模板 &gt; 接口级显式模板 &gt; 默认接口模板。
+        /// </summary>
+        private static bool TryGetOpenGenericTemplate(
+            string baseName, int arity,
+            Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics,
+            Compilation compilation,
+            out StructTemplateInfo info, out List<TemplateNode> ast)
+        {
+            info = default;
+            ast = default!;
+
+            string key = $"{baseName}`{arity}";
+
+            // 1. 精确匹配（类级 + 接口级显式模板 + 默认接口模板）
+            if (openGenerics.TryGetValue(key, out var entry))
+            {
+                info = entry.Info;
+                ast = entry.Ast;
+                return true;
+            }
+
+            // 2. Roslyn 回退：通过 AllInterfaces 查找匹配的默认接口模板（仅 BCL 类型）
+            if (compilation != null)
+            {
+                var resolved = TryResolveViaInterfaces(baseName, arity, openGenerics, compilation);
+                if (resolved != null)
+                {
+                    info = resolved.Value.Info;
+                    ast = resolved.Value.Ast;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 当类型不在 openGenerics 中时，通过 Roslyn 解析 BCL 类型并检查其 AllInterfaces
+        /// 是否有匹配的开放泛型接口模板（默认模板均以接口为目标）。
+        /// </summary>
+        private static (StructTemplateInfo Info, List<TemplateNode> Ast)?
+            TryResolveViaInterfaces(
+                string typeBaseName, int arity,
+                Dictionary<string, (StructTemplateInfo Info, List<TemplateNode> Ast)> openGenerics,
+                Compilation compilation)
+        {
+            // 解析 BCL 类型：System.Collections.Generic.{Name}`{arity}
+            string fullName = $"System.Collections.Generic.{typeBaseName}`{arity}";
+            var typeSymbol = compilation.GetTypeByMetadataName(fullName);
+            if (typeSymbol == null) return null;
+
+            // 收集类型实现的所有开放泛型接口，查找匹配的模板
+            var matches = new List<(INamedTypeSymbol Interface, string ArityKey, StructTemplateInfo Info,
+                List<TemplateNode> Ast)>();
+            foreach (var iface in typeSymbol.AllInterfaces)
+            {
+                if (!iface.IsGenericType) continue;
+                var original = iface.OriginalDefinition;
+                string k = $"{original.Name}`{original.TypeParameters.Length}";
+                if (openGenerics.TryGetValue(k, out var entry))
+                {
+                    matches.Add((original, k, entry.Info, entry.Ast));
+                }
+            }
+
+            if (matches.Count == 0) return null;
+            if (matches.Count == 1)
+            {
+                var m = matches[0];
+                return (m.Info, m.Ast);
+            }
+
+            // 多重匹配：用 Roslyn 继承关系筛选最派生接口
+            var mostDerived = new List<int>();
+            for (int a = 0; a < matches.Count; a++)
+            {
+                bool isExtended = false;
+                for (int b = 0; b < matches.Count; b++)
+                {
+                    if (a == b) continue;
+                    foreach (var super in matches[a].Interface.AllInterfaces)
+                    {
+                        if (SymbolEqualityComparer.Default.Equals(
+                            super.OriginalDefinition, matches[b].Interface))
+                        {
+                            isExtended = true;
+                            break;
+                        }
+                    }
+                    if (isExtended) break;
+                }
+                if (!isExtended) mostDerived.Add(a);
+            }
+
+            // 若仍多个平级：按固定优先级
+            if (mostDerived.Count == 1)
+            {
+                var m = matches[mostDerived[0]];
+                return (m.Info, m.Ast);
+            }
+
+            // 固定优先级：IList > ISet > IReadOnlyList > IDictionary > IReadOnlyDictionary
+            var prio = new[] { "IList`1", "ISet`1", "IReadOnlyList`1", "IDictionary`2", "IReadOnlyDictionary`2" };
+            foreach (var p in prio)
+            {
+                foreach (var idx in mostDerived)
+                {
+                    if (matches[idx].ArityKey == p)
+                        return (matches[idx].Info, matches[idx].Ast);
+                }
+            }
+            // 最终 fallback: 第一个
+            var first = matches[mostDerived[0]];
+            return (first.Info, first.Ast);
+        }
+
+        /// <summary>
         /// 将 "List&lt;NamedValue&gt;" / "Wrapper&lt;float&gt;" 解析为泛型实例。
-        /// 两阶段查找：先查硬编码集合泛型模板，再查用户定义开放泛型模板。
+        /// 先在 openGenerics 中精确查找；失败后由调用方通过 TryResolveViaInterfaces 走 Roslyn 回退。
         /// </summary>
         /// <returns>(开放泛型标识, 类型参数[], 是否集合类型)</returns>
         private static (string? OpenGeneric, string[]? ElementTypes, bool IsCollection) ParseGenericType(
@@ -837,21 +1053,25 @@ namespace SourceSerializer.Generator
             }
             args.Add(argsStr.Substring(lastSplit).Trim());
 
-            // 按基名+元数查找开放泛型模板（默认 + 用户定义 + ExternalTemplate）
-            string openKey = $"{baseName}`{args.Count}";
-            if (openGenerics.TryGetValue(openKey, out _))
-                return (baseName, args.ToArray(), false);
-
-            return (null, null, false);
+            // 返回解析出的基名和类型参数，查找由调用方 TryGetOpenGenericTemplate 完成
+            //（支持 Roslyn 回退查找接口模板）
+            return (baseName, args.ToArray(), false);
         }
 
         /// <summary>字符串版本的类型分类（仅用于合成类型，无 Roslyn 符号可用）。</summary>
         private static (CollectionKind Kind, string? ElemType) ClassifyFieldTypeByName(string typeName)
         {
-            if (typeName.StartsWith("List<") || typeName.StartsWith("System.Collections.Generic.List<"))
+            // 泛型集合类/接口 → 单参数 Sequential（与 Roslyn ClassifyFieldType 对齐）
+            if (typeName.StartsWith("List<") || typeName.StartsWith("System.Collections.Generic.List<") ||
+                typeName.StartsWith("IList<") || typeName.StartsWith("System.Collections.Generic.IList<") ||
+                typeName.StartsWith("ICollection<") || typeName.StartsWith("System.Collections.Generic.ICollection<") ||
+                typeName.StartsWith("IEnumerable<") || typeName.StartsWith("System.Collections.Generic.IEnumerable<") ||
+                typeName.StartsWith("ISet<") || typeName.StartsWith("System.Collections.Generic.ISet<") ||
+                typeName.StartsWith("HashSet<") || typeName.StartsWith("System.Collections.Generic.HashSet<") ||
+                typeName.StartsWith("IReadOnlyList<") || typeName.StartsWith("System.Collections.Generic.IReadOnlyList<"))
             {
                 string? elem = ExtractFirstGenericArg(typeName);
-                return elem != null ? (CollectionKind.List, elem) : (CollectionKind.None, null);
+                return elem != null ? (CollectionKind.Sequential, elem) : (CollectionKind.None, null);
             }
             if (typeName.EndsWith("[]"))
                 return (CollectionKind.Array, typeName.Substring(0, typeName.Length - 2));
@@ -948,19 +1168,12 @@ namespace SourceSerializer.Generator
         {
             public string StructName;
             public string Template;
-            public bool IsReadonly;
             /// <summary>
             /// 类型是否为 class（引用类型）。控制生成代码使用 <c>new T()</c>（堆分配）还是 <c>default</c>（栈）。
             /// struct 始终用 <c>default</c>，不论是否含 managed 字段。
             /// </summary>
             public bool NeedsHeapAlloc;
-            /// <summary>
-            /// 类型是否不是 unmanaged 类型。等价于 <c>!ITypeSymbol.IsUnmanagedType</c>。
-            /// 供未来 Walk 阶段两遍序列化使用。当前传递到 CodeEmitter 但未生成分支代码。
-            /// </summary>
-            public bool NeedsWalkPhase;
             public bool IsCollection; // true for List<T> etc. — field assignment → .Add()
-            public string TypeKind; // "struct" or "class"
             public List<FieldInfo> Fields;
             /// <summary>是否为开放泛型类型（如 Wrapper&lt;T&gt;）</summary>
             public bool IsOpenGeneric;
@@ -968,6 +1181,10 @@ namespace SourceSerializer.Generator
             public string[] TypeParameterNames;
             /// <summary>此类型实现的所有接口全名。用于编译期接口自动分发。</summary>
             public string[] ImplementedInterfaces;
+            /// <summary>结构体是否为 readonly（readonly struct）。C# 强制所有字段为 readonly，需延迟构造。</summary>
+            public bool IsReadonlyStruct;
+            /// <summary>匹配构造器的参数名列表（按参数顺序）。null 表示无匹配构造器。</summary>
+            public string[]? MatchedCtorParams;
         }
     }
 }

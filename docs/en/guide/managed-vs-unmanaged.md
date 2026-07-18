@@ -41,7 +41,6 @@ The Source Generator uses Roslyn's `ITypeSymbol.IsUnmanagedType` as the authorit
 | Dimension | Meaning | Roslyn Source | Codegen Impact |
 |-----------|---------|---------------|----------------|
 | `NeedsHeapAlloc` | Is the type a class? | `TypeKind == Class` | `new T()` vs `default` |
-| `NeedsWalkPhase` | Does the type contain GC references? | `!IsUnmanagedType` | Reserved for future Walk phase |
 
 Roslyn is the single source of truth. `IsUnmanagedType` covers the full definition of C# 7.3+ `unmanaged` constraints (including generic specialization), requiring zero lines of manual rules in the SG.
 
@@ -58,9 +57,9 @@ Two-phase serialization for the managed path is still planned:
 1. **Walk**: traverse the object graph, assign sequential int IDs to each object
 2. **Serialize**: replace reference fields with int IDs
 
-Circular references are handled natively without `$ref` annotations or graph analysis. `NeedsWalkPhase` determines at compile time whether two-phase codegen is needed.
+Circular references are handled natively without `$ref` annotations or graph analysis. Type strategy is determined at compile time via Roslyn `IsUnmanagedType`.
 
-`<repetition>` block serialization currently emits a stub, deferred to the managed Walk phase.
+`<repetition>` block serialization uses `foreach` iteration over collection elements, symmetric with the scanning direction.
 
 ## Selection Guide
 

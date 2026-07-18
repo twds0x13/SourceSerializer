@@ -5,6 +5,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Nullable>enable</Nullable>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <!-- Runtime source files from the UPM package -->
@@ -14,9 +15,8 @@
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TypeAliasAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/ExternalTemplateAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TemplateIgnoreAttribute.cs" />
-    <Compile Include="../../packages/sourceserializer/Runtime/SerializerScanners.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerRegistry.cs" />
-    <Compile Include="../../packages/sourceserializer/Runtime/SerializerEmitters.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/SerializerBlocks.cs" />
   </ItemGroup>
 
   <!-- Test source files -->

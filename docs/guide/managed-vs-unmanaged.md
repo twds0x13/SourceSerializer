@@ -6,7 +6,7 @@ SourceSerializer 在编译期根据 `typeof(T)` 判别策略。
 
 约束 `T : unmanaged` 时走单次解析策略。
 
-source generator 生成一个 `Scan_TypeName` 方法，接收 `ReadOnlySpan<char>`，逐字段填充 stackalloc 的 struct 实例。全程零堆分配，Burst 兼容。
+source generator 生成一个 `Scan_TypeName` 方法，接收 `ReadOnlySpan<char>`，逐字段填充 struct 实例。全程零堆分配，Burst 兼容。
 
 ```csharp
 [Template("<float X> <float Y>")]
@@ -41,7 +41,6 @@ Source Generator 根据 Roslyn 的 `ITypeSymbol.IsUnmanagedType` 判定分叉，
 | 维度 | 含义 | Roslyn 来源 | 代码生成影响 |
 |------|------|------------|-------------|
 | `NeedsHeapAlloc` | 类型是否为 class | `TypeKind == Class` | `new T()` vs `default` |
-| `NeedsWalkPhase` | 类型是否含 GC 引用 | `!IsUnmanagedType` | 供未来 Walk 阶段使用 |
 
 Roslyn 是编译期唯一真理来源。`IsUnmanagedType` 涵盖 C# 7.3+ `unmanaged` 约束的完整定义（含泛型特化），SG 零行手动规则。
 
@@ -58,9 +57,9 @@ Managed 路径的两步走序列化仍在规划中：
 1. **Walk**：遍历对象图，依次为每个对象分配 int 编号
 2. **Serialize**：引用字段替换为 int 编号
 
-天然支持循环引用，无需 `$ref` 标注或图分析。`NeedsWalkPhase` 在编译期判定是否需要两阶段代码。
+天然支持循环引用，无需 `$ref` 标注或图分析。编译期通过 Roslyn `IsUnmanagedType` 判定类型策略。
 
-`<repetition>` 块的序列化当前输出 stub，延后到 managed Walk 阶段实现。
+`<repetition>` 块的序列化通过 `foreach` 迭代集合元素实现，与扫描方向对称。
 
 ## 选择指南
 

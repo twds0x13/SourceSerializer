@@ -110,7 +110,7 @@ Console.WriteLine(sb.ToString()); // "3.5 -2.1"
 
 ## Limitations
 
-`<repetition>` blocks currently emit a stub comment. Collection serialization is deferred to the managed Walk phase.
+`<repetition>` blocks use `foreach` iteration: first element uses separator-free pattern, subsequent elements use separator-included pattern. Both scanning and emitting are implemented for collection types.
 
 ## See Also
 

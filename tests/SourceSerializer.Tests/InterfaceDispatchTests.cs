@@ -73,8 +73,8 @@ public class InterfaceDispatchTests
     [Test]
     public void IVector_Scan_Vec2()
     {
-        Assert.That(SerializerScanners.TryGetScanner<IVector>(out var scan), Is.True);
-        int r = scan("1.5, -2".AsSpan(), 0, out IVector v);
+        Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
+        int r = block.Scan("1.5, -2".AsSpan(), 0, out IVector v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Vec2>());
         var v2 = (Vec2)v;
@@ -85,8 +85,8 @@ public class InterfaceDispatchTests
     [Test]
     public void IVector_Scan_Vec3D()
     {
-        Assert.That(SerializerScanners.TryGetScanner<IVector>(out var scan), Is.True);
-        int r = scan("3, 5, 7".AsSpan(), 0, out IVector v);
+        Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
+        int r = block.Scan("3, 5, 7".AsSpan(), 0, out IVector v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Vec3D>());
         var v3 = (Vec3D)v;
@@ -100,8 +100,8 @@ public class InterfaceDispatchTests
     [Test]
     public void VectorWrapper_Scan()
     {
-        Assert.That(SerializerScanners.TryGetScanner<VectorWrapper>(out var scan), Is.True);
-        int r = scan("1.5, -2".AsSpan(), 0, out VectorWrapper v);
+        Assert.That(SerializerBlocks.TryGet<VectorWrapper>(out var block), Is.True);
+        int r = block.Scan("1.5, -2".AsSpan(), 0, out VectorWrapper v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.V, Is.InstanceOf<Vec2>());
     }
@@ -111,8 +111,8 @@ public class InterfaceDispatchTests
     [Test]
     public void Attack_Scan_EmptyTargets()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Attack>(out var scan), Is.True);
-        int r = scan("100".AsSpan(), 0, out Attack v);
+        Assert.That(SerializerBlocks.TryGet<Attack>(out var block), Is.True);
+        int r = block.Scan("100".AsSpan(), 0, out Attack v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Targets, Is.Not.Null);
@@ -122,8 +122,8 @@ public class InterfaceDispatchTests
     [Test]
     public void Attack_Scan_MixedTargets()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Attack>(out var scan), Is.True);
-        int r = scan("100, 1.5, -2, 3, 5, 7".AsSpan(), 0, out Attack v);
+        Assert.That(SerializerBlocks.TryGet<Attack>(out var block), Is.True);
+        int r = block.Scan("100, 1.5, -2, 3, 5, 7".AsSpan(), 0, out Attack v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Targets.Count, Is.EqualTo(2));
@@ -143,31 +143,30 @@ public class InterfaceDispatchTests
     [Test]
     public void IVector_Emit_Vec2()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<IVector>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
         var sb = new StringBuilder();
-        emit(sb, new Vec2 { X = 1.5f, Y = -2f });
+        block.Emit(sb, new Vec2 { X = 1.5f, Y = -2f });
         Assert.That(sb.ToString(), Is.EqualTo("1.5, -2"));
     }
 
     [Test]
     public void IVector_Emit_Vec3D()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<IVector>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
         var sb = new StringBuilder();
-        emit(sb, new Vec3D { X = 3f, Y = 5f, Z = 7f });
+        block.Emit(sb, new Vec3D { X = 3f, Y = 5f, Z = 7f });
         Assert.That(sb.ToString(), Is.EqualTo("3, 5, 7"));
     }
 
     [Test]
     public void IVector_Roundtrip()
     {
-        Assert.That(SerializerScanners.TryGetScanner<IVector>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<IVector>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
 
         var original = new Vec3D { X = 3f, Y = 5f, Z = 7f };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out IVector parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out IVector parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed, Is.InstanceOf<Vec3D>());
         var v3 = (Vec3D)parsed;
@@ -181,8 +180,8 @@ public class InterfaceDispatchTests
     [Test]
     public void IValue_Scan_IntValue()
     {
-        Assert.That(SerializerScanners.TryGetScanner<IValue>(out var scan), Is.True);
-        int r = scan("42".AsSpan(), 0, out IValue v);
+        Assert.That(SerializerBlocks.TryGet<IValue>(out var block), Is.True);
+        int r = block.Scan("42".AsSpan(), 0, out IValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<IntValue>());
         Assert.That(((IntValue)v).Val, Is.EqualTo(42));
@@ -191,8 +190,8 @@ public class InterfaceDispatchTests
     [Test]
     public void IValue_Scan_StringValue()
     {
-        Assert.That(SerializerScanners.TryGetScanner<IValue>(out var scan), Is.True);
-        int r = scan("hello".AsSpan(), 0, out IValue v);
+        Assert.That(SerializerBlocks.TryGet<IValue>(out var block), Is.True);
+        int r = block.Scan("hello".AsSpan(), 0, out IValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<StringValue>());
         Assert.That(((StringValue)v).Val, Is.EqualTo("hello"));
@@ -203,8 +202,8 @@ public class InterfaceDispatchTests
     [Test]
     public void IVector_InvalidInput_ReturnsStart()
     {
-        Assert.That(SerializerScanners.TryGetScanner<IVector>(out var scan), Is.True);
-        int r = scan("not_a_vector".AsSpan(), 0, out _);
+        Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
+        int r = block.Scan("not_a_vector".AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 }

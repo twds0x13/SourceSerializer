@@ -110,7 +110,7 @@ Console.WriteLine(sb.ToString()); // "3.5 -2.1"
 
 ## 限制
 
-`<repetition>` 块当前输出 stub 注释，集合类型的序列化延后到 managed Walk 阶段实现。
+`<repetition>` 块通过 `foreach` 迭代集合元素：首元素使用无分隔符模式，后续元素使用含分隔符模式。集合类型的扫描和发射均已实现。
 
 ## 参见
 

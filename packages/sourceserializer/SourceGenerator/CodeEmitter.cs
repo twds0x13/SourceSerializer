@@ -7,8 +7,35 @@ using System.Text;
 namespace SourceSerializer.Generator
 {
     /// <summary>
+    /// 发射策略：控制字段赋值模式（逐字段 vs 构造器）。
+    /// </summary>
+    internal readonly struct EmitStrategy
+    {
+        private readonly bool _useConstructor;
+        public EmitStrategy(bool useConstructor) => _useConstructor = useConstructor;
+        public bool UseConstructor => _useConstructor;
+        public string AssignTarget(string fieldName) =>
+            _useConstructor ? $"__f_{fieldName}" : $"value.@{fieldName}";
+        public string RepetitionTargetPrefix => _useConstructor ? "__f_" : "value.@";
+    }
+
+    /// <summary>
+    /// 发射器入口：封装一个待生成代码的结构体/类。
+    /// </summary>
+    internal struct EmitEntry
+    {
+        public string StructName;
+        public List<TemplateNode> Nodes;
+        public Dictionary<string, FieldInfo> FieldTypes;
+        public bool NeedsHeapAlloc;
+        public bool IsCollection;
+        public bool IsReadonlyStruct;
+        public string[]? MatchedCtorParams;
+    }
+
+    /// <summary>
     /// 将模板 AST 编译为 C# span scanner 源代码。
-    /// 生成代码注入到 internal static partial class SerializerScanners。
+    /// 生成代码注入到 internal static partial class SerializerBlocks。
     /// </summary>
     // 纯编译期代码发射器，运行时从不实例化
     [ExcludeFromCodeCoverage]
@@ -17,12 +44,6 @@ namespace SourceSerializer.Generator
         // ═══════════════════════════════════════════════════════
         // 常量
         // ═══════════════════════════════════════════════════════
-
-        private static readonly HashSet<string> BuiltinTypes = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "float", "double", "int", "uint", "long", "ulong",
-            "short", "ushort", "byte", "sbyte", "bool", "char", "string",
-        };
 
         /// <summary>顶层方法体单层缩进（12 空格 = 3 层嵌套: class > method > body）</summary>
         private const string IndentTop = "            ";
@@ -37,15 +58,14 @@ namespace SourceSerializer.Generator
         private static int _varCounter;
         private static int _repCounter;
         private static int _optCounter;
+        private static Dictionary<string, string> _scanVarMap = new(StringComparer.Ordinal);
 
         // ═══════════════════════════════════════════════════════
         // 主入口
         // ═══════════════════════════════════════════════════════
 
         public static string EmitAll(
-            List<(string StructName, List<TemplateNode> Nodes,
-                Dictionary<string, FieldInfo> FieldTypes,
-                bool NeedsHeapAlloc, bool NeedsWalkPhase, bool IsCollection)> structs,
+            List<EmitEntry> structs,
             Dictionary<string, string> dependencyGraph,
             Dictionary<string, string>? typeAliases = null,
             Dictionary<string, List<(string MemberName, string Tag)>>? enumTagMap = null,
@@ -69,40 +89,12 @@ namespace SourceSerializer.Generator
             sb.AppendLine();
             sb.AppendLine("namespace SourceSerializer");
             sb.AppendLine("{");
-            sb.AppendLine("    partial class SerializerScanners");
+            sb.AppendLine("    partial class SerializerBlocks");
             sb.AppendLine("    {");
 
-            bool hasAny = structs.Count > 0 || iMap.Count > 0;
-            if (hasAny)
+            foreach (var e in structs)
             {
-                sb.AppendLine("        static SerializerScanners()");
-                sb.AppendLine("        {");
-                foreach (var (name, _, _, _, _, _) in structs)
-                {
-                    string methodName = GetScannerMethodName(name);
-                    sb.AppendLine($"            ScannerRegistry<{name}>.Scanner = (ReadOnlySpan<char> s, int p, out {name} v) =>");
-                    sb.AppendLine($"            {{");
-                    sb.AppendLine($"                int r = {methodName}(s, p, out v);");
-                    sb.AppendLine($"                return r;");
-                    sb.AppendLine($"            }};");
-                }
-                // 接口 dispatch 注册
-                foreach (var ifaceName in iMap.Keys)
-                {
-                    string methodName = GetScannerMethodName(ifaceName);
-                    sb.AppendLine($"            ScannerRegistry<{ifaceName}>.Scanner = (ReadOnlySpan<char> s, int p, out {ifaceName} v) =>");
-                    sb.AppendLine($"            {{");
-                    sb.AppendLine($"                int r = {methodName}(s, p, out v);");
-                    sb.AppendLine($"                return r;");
-                    sb.AppendLine($"            }};");
-                }
-                sb.AppendLine("        }");
-                sb.AppendLine();
-            }
-
-            foreach (var (name, nodes, fieldTypes, needsHeapAlloc, needsWalkPhase, isCollection) in structs)
-            {
-                sb.Append(EmitMethod(name, nodes, needsHeapAlloc, needsWalkPhase, isCollection, dependencyGraph, tAliases, eTags, fieldTypes));
+                sb.Append(EmitMethod(e.StructName, e.Nodes, e.NeedsHeapAlloc, e.IsCollection, e.MatchedCtorParams, dependencyGraph, tAliases, eTags, e.FieldTypes));
                 sb.AppendLine();
             }
 
@@ -169,7 +161,8 @@ namespace SourceSerializer.Generator
         }
 
         private static string EmitMethod(
-            string structTypeName, List<TemplateNode> nodes, bool needsHeapAlloc, bool needsWalkPhase, bool isCollection,
+            string structTypeName, List<TemplateNode> nodes, bool needsHeapAlloc, bool isCollection,
+            string[]? matchedCtorParams,
             Dictionary<string, string> dependencyGraph,
             Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
@@ -177,25 +170,36 @@ namespace SourceSerializer.Generator
         {
             var sb = new StringBuilder();
             string methodName = GetScannerMethodName(structTypeName);
+            // 只有构造器路径才需要延迟构造。readonly struct 无构造器由 GenerateSource 拦截。
+            var strategy = new EmitStrategy(matchedCtorParams != null);
 
             sb.AppendLine($"        /// <summary>字面量扫描器：{structTypeName}</summary>");
             sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
             sb.AppendLine($"        internal static int {methodName}(ReadOnlySpan<char> src, int pos, out {structTypeName} value)");
             sb.AppendLine("        {");
-            if (needsHeapAlloc)
-                sb.AppendLine($"            value = new {structTypeName}();");
-            else
-                sb.AppendLine("            value = default;");
 
-            // 初始化集合字段为空集合（仅对用户 struct，不处理 synthetic collection 类型）
-            if (!isCollection)
+            if (strategy.UseConstructor)
             {
-                foreach (var kv in fieldTypes)
+                sb.AppendLine("            value = default;");
+                _scanVarMap.Clear();
+            }
+            else
+            {
+                if (needsHeapAlloc)
+                    sb.AppendLine($"            value = new {structTypeName}();");
+                else
+                    sb.AppendLine("            value = default;");
+
+                // 初始化集合字段为空集合（仅对用户 struct，不处理 synthetic collection 类型）
+                if (!isCollection)
                 {
-                    if (kv.Value.Kind == CollectionKind.List)
-                        sb.AppendLine($"            value.{kv.Key} = new System.Collections.Generic.List<{kv.Value.ElemType}>();");
-                    else if (kv.Value.Kind == CollectionKind.Array)
-                        sb.AppendLine($"            value.{kv.Key} = System.Array.Empty<{kv.Value.ElemType}>();");
+                    foreach (var kv in fieldTypes)
+                    {
+                        if (kv.Value.Kind == CollectionKind.Sequential)
+                            sb.AppendLine($"            value.{kv.Key} = {ResolveCollectionType(kv.Value.TypeName, kv.Value.ElemType!)}();");
+                        else if (kv.Value.Kind == CollectionKind.Array)
+                            sb.AppendLine($"            value.{kv.Key} = System.Array.Empty<{kv.Value.ElemType}>();");
+                    }
                 }
             }
 
@@ -204,7 +208,19 @@ namespace SourceSerializer.Generator
             sb.AppendLine();
 
             // 顶层 failure mode: 直接 return start
-            EmitNodeList(sb, nodes, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, IndentTop, failureLabel: null, isInRepetition: false, isCollection: isCollection);
+            EmitNodeList(sb, nodes, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, IndentTop, failureLabel: null, isInRepetition: false, isCollection: isCollection, strategy: strategy);
+
+            if (strategy.UseConstructor)
+            {
+                sb.AppendLine();
+                var args = string.Join(", ", matchedCtorParams!.Select(p =>
+                {
+                    var fld = fieldTypes.Keys.FirstOrDefault(k =>
+                        string.Equals(k, p, StringComparison.OrdinalIgnoreCase));
+                    return fld != null && _scanVarMap.TryGetValue(fld, out var sv) ? sv : "default";
+                }));
+                sb.AppendLine($"            value = new {structTypeName}({args});");
+            }
 
             sb.AppendLine();
             sb.AppendLine("            return pos;");
@@ -221,11 +237,12 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, string? failureLabel, bool isInRepetition, bool isCollection = false)
+            string indent, string? failureLabel, bool isInRepetition, bool isCollection = false,
+            EmitStrategy strategy = default)
         {
             for (int i = 0; i < nodes.Count; i++)
             {
-                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, failureLabel, isInRepetition, isCollection);
+                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, failureLabel, isInRepetition, isCollection, strategy);
             }
         }
 
@@ -234,7 +251,8 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, string? failureLabel, bool isInRepetition, bool isCollection = false)
+            string indent, string? failureLabel, bool isInRepetition, bool isCollection = false,
+            EmitStrategy strategy = default)
         {
             switch (node)
             {
@@ -242,13 +260,13 @@ namespace SourceSerializer.Generator
                     EmitLiteralText(sb, lit, indent, failureLabel);
                     break;
                 case FieldDirectiveNode field:
-                    EmitFieldDirective(sb, field, indent, dependencyGraph, typeAliases, enumTags, fieldTypes, failureLabel, isInRepetition, isCollection);
+                    EmitFieldDirective(sb, field, indent, dependencyGraph, typeAliases, enumTags, fieldTypes, failureLabel, isInRepetition, isCollection, strategy);
                     break;
                 case OptionalBlockNode opt:
-                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection);
+                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, strategy);
                     break;
                 case RepetitionNode rep:
-                    EmitRepetitionBlock(sb, rep, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection);
+                    EmitRepetitionBlock(sb, rep, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, strategy);
                     break;
             }
         }
@@ -289,7 +307,8 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string? failureLabel, bool isInRepetition, bool structIsCollection = false)
+            string? failureLabel, bool isInRepetition, bool structIsCollection = false,
+            EmitStrategy strategy = default)
         {
             string typeAlias = field.TypeAlias;
             string fieldName = field.FieldName;
@@ -305,11 +324,17 @@ namespace SourceSerializer.Generator
             bool isCollection = ft.Kind != CollectionKind.None;
             bool useBuffer = isInRepetition && isCollection;
 
-            string assignTarget = useBuffer
-                ? $"__buf_{fieldName}[__cnt_{fieldName}]"
-                : structIsCollection
-                    ? $"value"
-                    : $"value.{fieldName}";
+            // 构造器路径：记录扫描变量名，跳过中间赋值，末尾直接用扫描变量构造
+            bool skipAssign = strategy.UseConstructor && !useBuffer && !structIsCollection;
+            if (skipAssign) _scanVarMap[fieldName] = localVar;
+
+            string assignTarget;
+            if (useBuffer)
+                assignTarget = $"__buf_{fieldName}[__cnt_{fieldName}]";
+            else if (structIsCollection)
+                assignTarget = "value";
+            else
+                assignTarget = strategy.AssignTarget(fieldName);
             string assignOp = structIsCollection && !useBuffer
                 ? $".Add"
                 : " =";
@@ -325,7 +350,7 @@ namespace SourceSerializer.Generator
                 ? $"{indent}__cnt_{fieldName}++;"
                 : "";
 
-            if (BuiltinTypes.Contains(resolvedType))
+            if (BuiltinTypeNames.All.Contains(resolvedType))
             {
                 string scannerMethod = $"Scan_{char.ToUpperInvariant(resolvedType[0])}{resolvedType.Substring(1)}";
                 string csharpType = resolvedType.ToLowerInvariant();
@@ -339,7 +364,7 @@ namespace SourceSerializer.Generator
                 sb.AppendLine(isCollection
                     ? $"{indent}// (collection — empty is valid)"
                     : $"{indent}if (pos == {preVar}) {fail}");
-                sb.AppendLine($"{indent}{assignTarget}{assignOp}{assignSuffix}");
+                if (!skipAssign) sb.AppendLine($"{indent}{assignTarget}{assignOp}{assignSuffix}");
                 if (useBuffer) sb.AppendLine(bufferIncrement);
             }
             else if (enumTags.TryGetValue(typeAlias, out var tags))
@@ -350,7 +375,7 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{indent}int {preVar} = pos;");
                 sb.AppendLine($"{indent}pos = Scan_Enum_{typeAlias}(src, pos, out {typeAlias} {localVar});");
                 sb.AppendLine($"{indent}if (pos == {preVar}) {fail}");
-                sb.AppendLine($"{indent}{assignTarget}{assignOp}{assignSuffix}");
+                if (!skipAssign) sb.AppendLine($"{indent}{assignTarget}{assignOp}{assignSuffix}");
                 if (useBuffer) sb.AppendLine(bufferIncrement);
             }
             else
@@ -365,7 +390,7 @@ namespace SourceSerializer.Generator
                     sb.AppendLine(isCollection
                         ? $"{indent}// (collection — empty is valid)"
                         : $"{indent}if (pos == {preVar}) {fail}");
-                    sb.AppendLine($"{indent}{assignTarget}{assignOp}{assignSuffix}");
+                    if (!skipAssign) sb.AppendLine($"{indent}{assignTarget}{assignOp}{assignSuffix}");
                     if (useBuffer) sb.AppendLine(bufferIncrement);
                 }
                 else
@@ -408,7 +433,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false)
+            string indent, bool isCollection = false, EmitStrategy strategy = default)
         {
             if (rep.Body.Count == 0) return;
 
@@ -473,20 +498,21 @@ namespace SourceSerializer.Generator
             }
 
             // ── 循环后: 缓存数组 → 目标字段单次转换 ──
+            string targetPrefix = strategy.RepetitionTargetPrefix;
             foreach (var (fieldName, elemType) in collectionFields)
             {
                 var ft = fieldTypes[fieldName];
-                if (ft.Kind == CollectionKind.List)
+                if (ft.Kind == CollectionKind.Sequential)
                 {
                     sb.AppendLine($"{indent}var __final_{fieldName} = new {elemType}[__cnt_{fieldName}];");
                     sb.AppendLine($"{indent}Array.Copy(__buf_{fieldName}, __final_{fieldName}, __cnt_{fieldName});");
-                    sb.AppendLine($"{indent}value.{fieldName} = new System.Collections.Generic.List<{elemType}>(__final_{fieldName});");
+                    sb.AppendLine($"{indent}{targetPrefix}{fieldName} = {ResolveCollectionType(ft.TypeName, elemType!)}(__final_{fieldName});");
                 }
                 else // Array
                 {
                     sb.AppendLine($"{indent}var __final_{fieldName} = new {elemType}[__cnt_{fieldName}];");
                     sb.AppendLine($"{indent}Array.Copy(__buf_{fieldName}, __final_{fieldName}, __cnt_{fieldName});");
-                    sb.AppendLine($"{indent}value.{fieldName} = __final_{fieldName};");
+                    sb.AppendLine($"{indent}{targetPrefix}{fieldName} = __final_{fieldName};");
                 }
             }
 
@@ -536,7 +562,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false)
+            string indent, bool isCollection = false, EmitStrategy strategy = default)
         {
             int id = _optCounter++;
             string skipLabel = $"skipOpt_{id}";
@@ -563,14 +589,14 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{innerIndent}    pos += {text.Length};");
                 var rest = GetRest(opt.Body, 1);
                 if (rest.Count > 0)
-                    EmitNodeList(sb, rest, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent + IndentStep, skipLabel, isInRepetition: false, isCollection: isCollection);
+                    EmitNodeList(sb, rest, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent + IndentStep, skipLabel, isInRepetition: false, isCollection: isCollection, strategy: strategy);
                 sb.AppendLine($"{innerIndent}    goto {endLabel};");
                 sb.AppendLine($"{innerIndent}}}");
             }
             else
             {
                 // 无前置字面量：直接尝试 body
-                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, skipLabel, isInRepetition: false, isCollection: isCollection);
+                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, skipLabel, isInRepetition: false, isCollection: isCollection, strategy: strategy);
                 sb.AppendLine($"{innerIndent}goto {endLabel};");
             }
 
@@ -592,8 +618,19 @@ namespace SourceSerializer.Generator
 
         // ── 辅助 ──────────────────────────────────────
 
+        /// <summary>根据字段类型名选择合适的集合构造类型（List vs HashSet）。</summary>
+        private static string ResolveCollectionType(string fieldTypeName, string elemType)
+        {
+            bool isSet = fieldTypeName.StartsWith("HashSet<") ||
+                         fieldTypeName.StartsWith("System.Collections.Generic.HashSet<") ||
+                         fieldTypeName.StartsWith("ISet<") ||
+                         fieldTypeName.StartsWith("System.Collections.Generic.ISet<");
+            string collType = isSet ? "System.Collections.Generic.HashSet" : "System.Collections.Generic.List";
+            return $"new {collType}<{elemType}>";
+        }
+
         public static string GetScannerMethodName(string structTypeName)
-            => $"Scan_{structTypeName.Replace("<", "_").Replace(">", "").Replace(",", "_")}";
+            => $"Scan_{structTypeName.Replace(".", "_").Replace("<", "_").Replace(">", "").Replace(",", "_")}";
 
         private static string GetUniqueVar(string fieldName) => $"_{fieldName}_{_varCounter++}";
 

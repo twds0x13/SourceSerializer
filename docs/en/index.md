@@ -18,15 +18,15 @@ hero:
 
 features:
   - title: Zero Reflection, Zero Boxing
-    details: Compile-time SG emits C# span scanners. Runtime stackalloc allocation, no heap memory, Burst-compatible.
+    details: Compile-time SG emits C# span scanners. Runtime zero heap allocation, no heap memory, Burst-compatible.
   - title: Managed / Unmanaged Dual Strategy
-    details: unmanaged types use single-pass span scanning; managed types use two-phase Walk-Serialize with native circular reference support.
+    details: unmanaged types use single-pass span scanning, zero heap allocation; managed type deserialization is implemented, determined at compile time via Roslyn IsUnmanagedType.
   - title: Four XML Primitives
     details: Literal text, field, optional block, repetition block. Compact syntax and XML syntax are equivalent and interchangeable.
   - title: 12 Built-in Type Scanners
     details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char. Hand-written zero-allocation span scanners.
   - title: Compile-time Error Diagnostics
-    details: Circular dependency detection, readonly struct rejection, missing type warnings, scalar-in-repetition errors. Errors surface at compile time, not at runtime.
+    details: Circular dependency detection, readonly field rejection, missing type warnings, scalar-in-repetition errors. Errors surface at compile time, not at runtime.
   - title: Compile-time Emitter
     details: Simultaneously generates the SerializerEmitters pipeline. Struct-to-StringBuilder serialization with zero allocation, supporting built-in types, custom nested types, and enum tags.
 ---

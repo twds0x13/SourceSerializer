@@ -35,8 +35,8 @@ public class TemplateIgnoreTests
     [Test]
     public void IgnoredField_SkipsSerialization()
     {
-        Assert.That(SerializerScanners.TryGetScanner<ContainerWithIgnoredField>(out var scan), Is.True);
-        int pos = scan("3.5".AsSpan(), 0, out ContainerWithIgnoredField v);
+        Assert.That(SerializerBlocks.TryGet<ContainerWithIgnoredField>(out var block), Is.True);
+        int pos = block.Scan("3.5".AsSpan(), 0, out ContainerWithIgnoredField v);
         Assert.That(pos, Is.GreaterThan(0));
         Assert.That(v.Value, Is.EqualTo(3.5f));
         Assert.That(v.InternalData.X, Is.EqualTo(0f)); // default, 未被扫描
@@ -48,7 +48,7 @@ public class TemplateIgnoreTests
     public void IgnoredField_DoesNotTriggerSSR004()
     {
         // 如果 SSR004 触发，编译会失败，此测试根本不会运行
-        Assert.That(SerializerScanners.TryGetScanner<ContainerWithIgnoredField>(out _), Is.True);
+        Assert.That(SerializerBlocks.TryGet<ContainerWithIgnoredField>(out _), Is.True);
     }
 
     // ── 无 [TemplateIgnore] 但有 Template —— 正常的反序列化工作 ──
@@ -56,7 +56,7 @@ public class TemplateIgnoreTests
     [Test]
     public void TryGetScanner_RegisteredType_ReturnsTrue()
     {
-        Assert.That(SerializerScanners.TryGetScanner<ContainerWithIgnoredField>(out var scan), Is.True);
-        Assert.That(scan, Is.Not.Null);
+        Assert.That(SerializerBlocks.TryGet<ContainerWithIgnoredField>(out var block), Is.True);
+        Assert.That(block, Is.Not.Null);
     }
 }

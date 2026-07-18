@@ -14,14 +14,14 @@ Compile-time serialization: declare schema with attributes, source generator emi
 |-----------|--------------------------|--------------------------------|
 | Schema location | Reflected from types at runtime | Compile-time attribute declarations |
 | Parser generation | Runtime schema interpretation | Compile-time SG emits C# |
-| Memory allocation | Heap allocation + boxing | stackalloc, zero GC |
+| Memory allocation | Heap allocation + boxing | zero heap allocation, zero GC |
 | Type safety | `object` passthrough | `out TData value` strongly typed |
 | Error discovery | Runtime NRE | Compile-time diagnostics |
 
 ## Features
 
 - `[Template("...")]` declares struct layout: fields, separators, optional blocks, repeatable sequences
-- Unmanaged path: `stackalloc` span scanner, zero heap allocation, Burst-compatible
+- Unmanaged path: span scanner, zero heap allocation, Burst-compatible
 - Serialization direction: compile-time generated `SerializerEmitters`, struct to StringBuilder with zero allocation
 - Managed path: two-phase walk-then-serialize, circular references without `$ref` (planned)
 - Built-in scanners and emitters for 12 C# primitive types (float, int, bool, char, etc.)

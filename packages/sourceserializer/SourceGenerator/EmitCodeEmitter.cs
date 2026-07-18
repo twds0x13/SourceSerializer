@@ -8,16 +8,8 @@ namespace SourceSerializer.Generator
     [ExcludeFromCodeCoverage]
     internal static class EmitCodeEmitter
     {
-        private static readonly HashSet<string> BuiltinTypes = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "float", "double", "int", "uint", "long", "ulong",
-            "short", "ushort", "byte", "sbyte", "bool", "char", "string",
-        };
-
         public static string EmitAll(
-            List<(string StructName, List<TemplateNode> Nodes,
-                Dictionary<string, FieldInfo> FieldTypes,
-                bool NeedsHeapAlloc, bool NeedsWalkPhase, bool IsCollection)> structs,
+            List<EmitEntry> structs,
             Dictionary<string, string> dependencyGraph,
             Dictionary<string, string>? typeAliases = null,
             Dictionary<string, List<(string MemberName, string Tag)>>? enumTagMap = null,
@@ -34,38 +26,12 @@ namespace SourceSerializer.Generator
             sb.AppendLine();
             sb.AppendLine("namespace SourceSerializer");
             sb.AppendLine("{");
-            sb.AppendLine("    partial class SerializerEmitters");
+            sb.AppendLine("    partial class SerializerBlocks");
             sb.AppendLine("    {");
 
-            bool hasAny = structs.Count > 0 || iMap.Count > 0;
-            if (hasAny)
+            foreach (var e in structs)
             {
-                sb.AppendLine("        static SerializerEmitters()");
-                sb.AppendLine("        {");
-                foreach (var (name, _, _, _, _, _) in structs)
-                {
-                    string methodName = GetEmitMethodName(name);
-                    sb.AppendLine($"            EmitterRegistry<{name}>.Emitter = (StringBuilder s, {name} v) =>");
-                    sb.AppendLine($"            {{");
-                    sb.AppendLine($"                {methodName}(s, v);");
-                    sb.AppendLine($"            }};");
-                }
-                // 接口 dispatch 注册
-                foreach (var ifaceName in iMap.Keys)
-                {
-                    string methodName = GetEmitMethodName(ifaceName);
-                    sb.AppendLine($"            EmitterRegistry<{ifaceName}>.Emitter = (StringBuilder s, {ifaceName} v) =>");
-                    sb.AppendLine($"            {{");
-                    sb.AppendLine($"                {methodName}(s, v);");
-                    sb.AppendLine($"            }};");
-                }
-                sb.AppendLine("        }");
-                sb.AppendLine();
-            }
-
-            foreach (var (name, nodes, fieldTypes, needsHeapAlloc, needsWalkPhase, isCollection) in structs)
-            {
-                sb.Append(EmitMethod(name, nodes, isCollection, dependencyGraph, tAliases, eTags, fieldTypes));
+                sb.Append(EmitMethod(e.StructName, e.Nodes, e.IsCollection, dependencyGraph, tAliases, eTags, e.FieldTypes));
                 sb.AppendLine();
             }
 
@@ -142,11 +108,11 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false)
+            string indent, bool isCollection = false, string valueName = "value")
         {
             for (int i = 0; i < nodes.Count; i++)
             {
-                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection);
+                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName);
             }
         }
 
@@ -155,7 +121,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false)
+            string indent, bool isCollection = false, string valueName = "value")
         {
             switch (node)
             {
@@ -163,13 +129,13 @@ namespace SourceSerializer.Generator
                     EmitLiteralText(sb, lit, indent);
                     break;
                 case FieldDirectiveNode field:
-                    EmitFieldDirective(sb, field, indent, dependencyGraph, typeAliases, enumTags, fieldTypes, isCollection);
+                    EmitFieldDirective(sb, field, indent, dependencyGraph, typeAliases, enumTags, fieldTypes, isCollection, valueName);
                     break;
                 case OptionalBlockNode opt:
-                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection);
+                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName);
                     break;
                 case RepetitionNode rep:
-                    EmitRepetitionStub(sb, rep, indent);
+                    EmitRepetitionBlock(sb, rep, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection);
                     break;
             }
         }
@@ -185,7 +151,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            bool structIsCollection = false)
+            bool structIsCollection = false, string valueName = "value")
         {
             string typeAlias = field.TypeAlias;
             string fieldName = field.FieldName;
@@ -194,10 +160,10 @@ namespace SourceSerializer.Generator
                 ? backing : typeAlias;
 
             string valueExpr = structIsCollection
-                ? "value"
-                : $"value.{fieldName}";
+                ? valueName
+                : $"{valueName}.@{fieldName}";
 
-            if (BuiltinTypes.Contains(resolvedType))
+            if (BuiltinTypeNames.All.Contains(resolvedType))
             {
                 string emitMethod = $"Emit_{char.ToUpperInvariant(resolvedType[0])}{resolvedType.Substring(1)}";
                 sb.AppendLine($"{indent}SerializerRegistry.{emitMethod}(sb, {valueExpr});");
@@ -239,26 +205,26 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false)
+            string indent, bool isCollection = false, string valueName = "value")
         {
             var optFields = FindOptFields(opt.Body);
             if (optFields.Count == 0)
             {
-                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection);
+                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName);
                 return;
             }
 
             var conditions = new List<string>();
             foreach (var f in optFields)
             {
-                string valueExpr = isCollection ? "value" : $"value.{f}";
+                string valueExpr = isCollection ? valueName : $"{valueName}.@{f}";
                 conditions.Add($"!{valueExpr}.Equals(default({ResolveFieldTypeName(f, fieldTypes)}))");
             }
             string condition = string.Join(" || ", conditions);
 
             sb.AppendLine($"{indent}if ({condition})");
             sb.AppendLine($"{indent}{{");
-            EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent + "    ", isCollection);
+            EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent + "    ", isCollection, valueName);
             sb.AppendLine($"{indent}}}");
         }
 
@@ -300,12 +266,55 @@ namespace SourceSerializer.Generator
             return fieldName;
         }
 
-        private static void EmitRepetitionStub(StringBuilder sb, RepetitionNode rep, string indent)
+        /// <summary>集合类型序列化：foreach 迭代元素，首元素走 First 模式（无分隔符），后续走 Body 模式。</summary>
+        private static void EmitRepetitionBlock(
+            StringBuilder sb, RepetitionNode rep, string structTypeName,
+            Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
+            Dictionary<string, List<(string, string)>> enumTags,
+            Dictionary<string, FieldInfo> fieldTypes,
+            string indent, bool isCollection)
         {
-            sb.AppendLine($"{indent}// <repetition>: 集合类型序列化延后到 managed 阶段");
+            string itemVar = $"__elem_{_emitVarCounter++}";
+            bool hasFirst = rep.First != null;
+            string step = indent + "    ";
+            // 循环内 body 节点使用 __elem 作为值表达式
+            string elemValueName = "__elem";
+
+            if (hasFirst)
+            {
+                // 首元素：First 模式（无前导分隔符）
+                sb.AppendLine($"{indent}// first element");
+                sb.AppendLine($"{indent}{{");
+                sb.AppendLine($"{step}var {itemVar} = System.Linq.Enumerable.First(value);");
+                sb.AppendLine($"{step}var {elemValueName} = {itemVar};");
+                EmitNodeList(sb, rep.First!, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step, isCollection, elemValueName);
+                sb.AppendLine($"{indent}}}");
+
+                // 后续元素：Body 模式，foreach 跳过首元素
+                sb.AppendLine($"{indent}// remaining elements");
+                int flagId = _emitVarCounter++;
+                sb.AppendLine($"{indent}bool __first_{flagId} = true;");
+                sb.AppendLine($"{indent}foreach (var {itemVar} in value)");
+                sb.AppendLine($"{indent}{{");
+                sb.AppendLine($"{step}if (__first_{flagId}) {{ __first_{flagId} = false; continue; }}");
+                sb.AppendLine($"{step}var {elemValueName} = {itemVar};");
+                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step, isCollection, elemValueName);
+                sb.AppendLine($"{indent}}}");
+            }
+            else
+            {
+                // 无 First：所有元素使用 Body 模式
+                sb.AppendLine($"{indent}foreach (var {itemVar} in value)");
+                sb.AppendLine($"{indent}{{");
+                sb.AppendLine($"{step}var {elemValueName} = {itemVar};");
+                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step, isCollection, elemValueName);
+                sb.AppendLine($"{indent}}}");
+            }
         }
 
+        private static int _emitVarCounter;
+
         public static string GetEmitMethodName(string structTypeName)
-            => "Emit_" + structTypeName.Replace("<", "_").Replace(">", "").Replace(",", "_");
+            => "Emit_" + structTypeName.Replace(".", "_").Replace("<", "_").Replace(">", "").Replace(",", "_");
     }
 }

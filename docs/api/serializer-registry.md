@@ -1,6 +1,6 @@
 # `SerializerRegistry`
 
-内置类型注册表。提供 12 种 C# 内置 unmanaged 类型的零分配 span 扫描方法。
+内置类型注册表。提供 16 种 C# 内置 unmanaged 类型的零分配 span 扫描方法。
 
 ## 签名
 

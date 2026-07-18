@@ -8,8 +8,8 @@ public class EmitterTests
     [Test]
     public void TryGetEmitter_UnregisteredType_ReturnsFalse()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<DateTime>(out var emit), Is.False);
-        Assert.That(emit, Is.Null);
+        Assert.That(SerializerBlocks.TryGet<DateTime>(out var block), Is.False);
+        Assert.That(block, Is.Null);
     }
 
     [Test]
@@ -171,14 +171,13 @@ public class EmitterTests
     [Test]
     public void Point2D_Emit_Roundtrip()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<Point2D>(out var emit), Is.True);
-        Assert.That(SerializerScanners.TryGetScanner<Point2D>(out var scan), Is.True);
+        Assert.That(SerializerBlocks.TryGet<Point2D>(out var block), Is.True);
 
         var original = new Point2D { X = 3.5f, Y = -2.1f };
         var sb = new StringBuilder();
-        emit(sb, original);
+        block.Emit(sb, original);
 
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.X, Is.EqualTo(3.5f).Within(1e-5f));
         Assert.That(parsed.Y, Is.EqualTo(-2.1f).Within(1e-5f));
@@ -187,14 +186,13 @@ public class EmitterTests
     [Test]
     public void Vec3_Emit_Roundtrip()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<Vec3>(out var emit), Is.True);
-        Assert.That(SerializerScanners.TryGetScanner<Vec3>(out var scan), Is.True);
+        Assert.That(SerializerBlocks.TryGet<Vec3>(out var block), Is.True);
 
         var original = new Vec3 { X = 1f, Y = 2f, Z = 3f };
         var sb = new StringBuilder();
-        emit(sb, original);
+        block.Emit(sb, original);
 
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.X, Is.EqualTo(1f));
         Assert.That(parsed.Y, Is.EqualTo(2f));
@@ -204,14 +202,13 @@ public class EmitterTests
     [Test]
     public void Entity_Emit_Roundtrip()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<Entity>(out var emit), Is.True);
-        Assert.That(SerializerScanners.TryGetScanner<Entity>(out var scan), Is.True);
+        Assert.That(SerializerBlocks.TryGet<Entity>(out var block), Is.True);
 
         var original = new Entity { Pos = new Vec3 { X = 1f, Y = 2f, Z = 3f } };
         var sb = new StringBuilder();
-        emit(sb, original);
+        block.Emit(sb, original);
 
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.Pos.X, Is.EqualTo(1f));
         Assert.That(parsed.Pos.Y, Is.EqualTo(2f));
@@ -223,17 +220,16 @@ public class EmitterTests
     [Test]
     public void SpellCard_Full_Roundtrip()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<SpellCard>(out var emit), Is.True);
-        Assert.That(SerializerScanners.TryGetScanner<SpellCard>(out var scan), Is.True);
+        Assert.That(SerializerBlocks.TryGet<SpellCard>(out var block), Is.True);
 
         const string input = "10.5|draw 2|idx:1";
-        int r = scan(input.AsSpan(), 0, out var card);
+        int r = block.Scan(input.AsSpan(), 0, out var card);
         Assert.That(r, Is.GreaterThan(0));
 
         var sb = new StringBuilder();
-        emit(sb, card);
+        block.Emit(sb, card);
 
-        r = scan(sb.ToString().AsSpan(), 0, out var card2);
+        r = block.Scan(sb.ToString().AsSpan(), 0, out var card2);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(card2.Damage, Is.EqualTo(card.Damage).Within(1e-5f));
         Assert.That(card2.DrawsProvide, Is.EqualTo(card.DrawsProvide));
@@ -243,11 +239,11 @@ public class EmitterTests
     [Test]
     public void SpellCard_WithoutOptional_Omitted()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<SpellCard>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<SpellCard>(out var block), Is.True);
 
         var card = new SpellCard { Damage = 10f, DrawsProvide = 0, StartIndex = 1 };
         var sb = new StringBuilder();
-        emit(sb, card);
+        block.Emit(sb, card);
 
         string result = sb.ToString();
         Assert.That(result, Does.Not.Contain("draw"));
@@ -259,15 +255,14 @@ public class EmitterTests
     [Test]
     public void TaggedSpell_Emit_Roundtrip()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<TaggedSpell>(out var emit), Is.True);
-        Assert.That(SerializerScanners.TryGetScanner<TaggedSpell>(out var scan), Is.True);
+        Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
 
         const string input = "fire|10";
-        int r = scan(input.AsSpan(), 0, out var spell);
+        int r = block.Scan(input.AsSpan(), 0, out var spell);
         Assert.That(r, Is.GreaterThan(0));
 
         var sb = new StringBuilder();
-        emit(sb, spell);
+        block.Emit(sb, spell);
 
         Assert.That(sb.ToString(), Is.EqualTo("fire|10"));
     }
@@ -277,14 +272,13 @@ public class EmitterTests
     [Test]
     public void NamedValue_Emit_Roundtrip()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<NamedValue>(out var emit), Is.True);
-        Assert.That(SerializerScanners.TryGetScanner<NamedValue>(out var scan), Is.True);
+        Assert.That(SerializerBlocks.TryGet<NamedValue>(out var block), Is.True);
 
         var original = new NamedValue { Name = "sword", Value = 3.5f };
         var sb = new StringBuilder();
-        emit(sb, original);
+        block.Emit(sb, original);
 
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.Name, Is.EqualTo("sword"));
         Assert.That(parsed.Value, Is.EqualTo(3.5f).Within(1e-5f));

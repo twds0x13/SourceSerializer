@@ -44,8 +44,8 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_Compact_ZeroExtra()
     {
-        Assert.That(SerializerScanners.TryGetScanner<DamageCompact>(out var scan), Is.True);
-        int r = scan("42".AsSpan(), 0, out DamageCompact v);
+        Assert.That(SerializerBlocks.TryGet<DamageCompact>(out var block), Is.True);
+        int r = block.Scan("42".AsSpan(), 0, out DamageCompact v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Damage, Is.EqualTo(42f));
         Assert.That(v.Multipliers, Is.Not.Null);
@@ -55,8 +55,8 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_Compact_OneExtra()
     {
-        Assert.That(SerializerScanners.TryGetScanner<DamageCompact>(out var scan), Is.True);
-        int r = scan("42, 1.5".AsSpan(), 0, out DamageCompact v);
+        Assert.That(SerializerBlocks.TryGet<DamageCompact>(out var block), Is.True);
+        int r = block.Scan("42, 1.5".AsSpan(), 0, out DamageCompact v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Damage, Is.EqualTo(42f));
         Assert.That(v.Multipliers, Is.Not.Null);
@@ -67,8 +67,8 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_Xml_MultipleExtra()
     {
-        Assert.That(SerializerScanners.TryGetScanner<DamageWithMultipliers>(out var scan), Is.True);
-        int r = scan("42, 1.5, 2.0, 3.5".AsSpan(), 0, out DamageWithMultipliers v);
+        Assert.That(SerializerBlocks.TryGet<DamageWithMultipliers>(out var block), Is.True);
+        int r = block.Scan("42, 1.5, 2.0, 3.5".AsSpan(), 0, out DamageWithMultipliers v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Damage, Is.EqualTo(42f));
         Assert.That(v.Multipliers, Is.Not.Null);
@@ -80,8 +80,8 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_MultipleMatches_KeepsAll()
     {
-        Assert.That(SerializerScanners.TryGetScanner<RepetitionMulti>(out var scan), Is.True);
-        int r = scan("10, 20, 30".AsSpan(), 0, out RepetitionMulti v);
+        Assert.That(SerializerBlocks.TryGet<RepetitionMulti>(out var block), Is.True);
+        int r = block.Scan("10, 20, 30".AsSpan(), 0, out RepetitionMulti v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.X, Is.EqualTo(10f));
         Assert.That(v.Rest, Is.Not.Null);

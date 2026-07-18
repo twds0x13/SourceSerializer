@@ -81,6 +81,15 @@ public struct HasListOfWrapper
     public List<Wrapper<float>> Items;
 }
 
+[Template("<HashSet<float> Items>")]
+public struct UsesHashSet { public HashSet<float> Items; }
+
+[Template("<string Name>")]
+public struct UsesString { public string Name; }
+
+[Template("<List<HashSet<float>> Nested>")]
+public struct HasNestedHashSet { public List<HashSet<float>> Nested; }
+
 // ═══════════════════════════════════════════════════════
 // 用户自定义泛型类型 — 测试
 // ═══════════════════════════════════════════════════════
@@ -92,8 +101,8 @@ public class GenericTemplateTests
     [Test]
     public void Wrapper_Float_Scan()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesWrapper>(out var scan), Is.True);
-        int r = scan("3.5".AsSpan(), 0, out UsesWrapper v);
+        Assert.That(SerializerBlocks.TryGet<UsesWrapper>(out var block), Is.True);
+        int r = block.Scan("3.5".AsSpan(), 0, out UsesWrapper v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.W.Value, Is.EqualTo(3.5f).Within(1e-5f));
     }
@@ -101,23 +110,22 @@ public class GenericTemplateTests
     [Test]
     public void Wrapper_Float_Emit()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesWrapper>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesWrapper>(out var block), Is.True);
         var sb = new StringBuilder();
         var val = new UsesWrapper { W = new Wrapper<float> { Value = 3.5f } };
-        emit(sb, val);
+        block.Emit(sb, val);
         Assert.That(sb.ToString(), Is.EqualTo("3.5"));
     }
 
     [Test]
     public void Wrapper_Float_Roundtrip()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesWrapper>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesWrapper>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesWrapper>(out var block), Is.True);
 
         var original = new UsesWrapper { W = new Wrapper<float> { Value = -1.5f } };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.W.Value, Is.EqualTo(-1.5f).Within(1e-5f));
     }
@@ -127,8 +135,8 @@ public class GenericTemplateTests
     [Test]
     public void Pair_FloatInt_Scan()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesPair>(out var scan), Is.True);
-        int r = scan("3.5, 42".AsSpan(), 0, out UsesPair v);
+        Assert.That(SerializerBlocks.TryGet<UsesPair>(out var block), Is.True);
+        int r = block.Scan("3.5, 42".AsSpan(), 0, out UsesPair v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.P.First, Is.EqualTo(3.5f).Within(1e-5f));
         Assert.That(v.P.Second, Is.EqualTo(42));
@@ -137,23 +145,22 @@ public class GenericTemplateTests
     [Test]
     public void Pair_FloatInt_Emit()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesPair>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesPair>(out var block), Is.True);
         var sb = new StringBuilder();
         var val = new UsesPair { P = new Pair<float, int> { First = 3.5f, Second = 42 } };
-        emit(sb, val);
+        block.Emit(sb, val);
         Assert.That(sb.ToString(), Is.EqualTo("3.5, 42"));
     }
 
     [Test]
     public void Pair_FloatInt_Roundtrip()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesPair>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesPair>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesPair>(out var block), Is.True);
 
         var original = new UsesPair { P = new Pair<float, int> { First = 7.5f, Second = -3 } };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.P.First, Is.EqualTo(7.5f).Within(1e-5f));
         Assert.That(parsed.P.Second, Is.EqualTo(-3));
@@ -164,8 +171,8 @@ public class GenericTemplateTests
     [Test]
     public void Box_String_Scan()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesBox>(out var scan), Is.True);
-        int r = scan("hello".AsSpan(), 0, out UsesBox v);
+        Assert.That(SerializerBlocks.TryGet<UsesBox>(out var block), Is.True);
+        int r = block.Scan("hello".AsSpan(), 0, out UsesBox v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.B.Value, Is.EqualTo("hello"));
     }
@@ -173,10 +180,10 @@ public class GenericTemplateTests
     [Test]
     public void Box_String_Emit()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesBox>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesBox>(out var block), Is.True);
         var sb = new StringBuilder();
         var val = new UsesBox { B = new Box<string> { Value = "world" } };
-        emit(sb, val);
+        block.Emit(sb, val);
         Assert.That(sb.ToString(), Is.EqualTo("world"));
     }
 
@@ -186,8 +193,8 @@ public class GenericTemplateTests
     public void Pair_IntBool_Scan()
     {
         // Pair<int,bool> — 整数和布尔组合
-        Assert.That(SerializerScanners.TryGetScanner<Pair<int, bool>>(out var scan), Is.True);
-        int r = scan("5, true".AsSpan(), 0, out Pair<int, bool> v);
+        Assert.That(SerializerBlocks.TryGet<Pair<int, bool>>(out var block), Is.True);
+        int r = block.Scan("5, true".AsSpan(), 0, out Pair<int, bool> v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.First, Is.EqualTo(5));
         Assert.That(v.Second, Is.True);
@@ -197,8 +204,8 @@ public class GenericTemplateTests
     public void Pair_DoubleLong_Scan()
     {
         // Pair<double,long> — 更多内置类型组合
-        Assert.That(SerializerScanners.TryGetScanner<Pair<double, long>>(out var scan), Is.True);
-        int r = scan("3.14, -999".AsSpan(), 0, out Pair<double, long> v);
+        Assert.That(SerializerBlocks.TryGet<Pair<double, long>>(out var block), Is.True);
+        int r = block.Scan("3.14, -999".AsSpan(), 0, out Pair<double, long> v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.First, Is.EqualTo(3.14d).Within(1e-9));
         Assert.That(v.Second, Is.EqualTo(-999L));
@@ -209,8 +216,8 @@ public class GenericTemplateTests
     [Test]
     public void Wrapper_Float_Scan_Direct()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Wrapper<float>>(out var scan), Is.True);
-        int r = scan("99".AsSpan(), 0, out Wrapper<float> v);
+        Assert.That(SerializerBlocks.TryGet<Wrapper<float>>(out var block), Is.True);
+        int r = block.Scan("99".AsSpan(), 0, out Wrapper<float> v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Value, Is.EqualTo(99f).Within(1e-5f));
     }
@@ -218,8 +225,8 @@ public class GenericTemplateTests
     [Test]
     public void Pair_FloatInt_Scan_Direct()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Pair<float, int>>(out var scan), Is.True);
-        int r = scan("1.5, 10".AsSpan(), 0, out Pair<float, int> v);
+        Assert.That(SerializerBlocks.TryGet<Pair<float, int>>(out var block), Is.True);
+        int r = block.Scan("1.5, 10".AsSpan(), 0, out Pair<float, int> v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.First, Is.EqualTo(1.5f).Within(1e-5f));
         Assert.That(v.Second, Is.EqualTo(10));
@@ -230,8 +237,8 @@ public class GenericTemplateTests
     [Test]
     public void ListOfWrapper_Float_Scan()
     {
-        Assert.That(SerializerScanners.TryGetScanner<List<Wrapper<float>>>(out var scan), Is.True);
-        int r = scan("3.5, 7, -1".AsSpan(), 0, out List<Wrapper<float>> v);
+        Assert.That(SerializerBlocks.TryGet<List<Wrapper<float>>>(out var block), Is.True);
+        int r = block.Scan("3.5, 7, -1".AsSpan(), 0, out List<Wrapper<float>> v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Count, Is.EqualTo(3));
         Assert.That(v[0].Value, Is.EqualTo(3.5f).Within(1e-5f));
@@ -242,8 +249,8 @@ public class GenericTemplateTests
     [Test]
     public void ListOfWrapper_Float_Empty()
     {
-        Assert.That(SerializerScanners.TryGetScanner<List<Wrapper<float>>>(out var scan), Is.True);
-        int r = scan("".AsSpan(), 0, out List<Wrapper<float>> v);
+        Assert.That(SerializerBlocks.TryGet<List<Wrapper<float>>>(out var block), Is.True);
+        int r = block.Scan("".AsSpan(), 0, out List<Wrapper<float>> v);
         // "<first>..." with no input: fails at first element attempt
         Assert.That(r, Is.EqualTo(0));
     }
@@ -253,8 +260,8 @@ public class GenericTemplateTests
     [Test]
     public void Pair_FloatInt_InOptional_Present()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Pair<float, int>>(out var scan), Is.True);
-        int r = scan("3.5, 10".AsSpan(), 0, out Pair<float, int> v);
+        Assert.That(SerializerBlocks.TryGet<Pair<float, int>>(out var block), Is.True);
+        int r = block.Scan("3.5, 10".AsSpan(), 0, out Pair<float, int> v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.First, Is.EqualTo(3.5f).Within(1e-5f));
         Assert.That(v.Second, Is.EqualTo(10));
@@ -263,8 +270,8 @@ public class GenericTemplateTests
     [Test]
     public void Pair_FloatInt_InvalidInput()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Pair<float, int>>(out var scan), Is.True);
-        int r = scan("not_a_number".AsSpan(), 0, out Pair<float, int> v);
+        Assert.That(SerializerBlocks.TryGet<Pair<float, int>>(out var block), Is.True);
+        int r = block.Scan("not_a_number".AsSpan(), 0, out Pair<float, int> v);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -273,13 +280,12 @@ public class GenericTemplateTests
     [Test]
     public void Box_String_Roundtrip()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesBox>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesBox>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesBox>(out var block), Is.True);
 
         var original = new UsesBox { B = new Box<string> { Value = "roundtrip" } };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.B.Value, Is.EqualTo("roundtrip"));
     }
@@ -289,22 +295,21 @@ public class GenericTemplateTests
     [Test]
     public void Wrapper_Int_EmitDirect()
     {
-        Assert.That(SerializerEmitters.TryGetEmitter<Wrapper<int>>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<Wrapper<int>>(out var block), Is.True);
         var sb = new StringBuilder();
-        emit(sb, new Wrapper<int> { Value = 42 });
+        block.Emit(sb, new Wrapper<int> { Value = 42 });
         Assert.That(sb.ToString(), Is.EqualTo("42"));
     }
 
     [Test]
     public void Wrapper_Int_RoundtripDirect()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Wrapper<int>>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<Wrapper<int>>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<Wrapper<int>>(out var block), Is.True);
 
         var original = new Wrapper<int> { Value = -7 };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out Wrapper<int> parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out Wrapper<int> parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.Value, Is.EqualTo(-7));
     }
@@ -314,13 +319,12 @@ public class GenericTemplateTests
     [Test]
     public void Pair_IntBool_Roundtrip()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesPairIntBool>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesPairIntBool>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesPairIntBool>(out var block), Is.True);
 
         var original = new UsesPairIntBool { P = new Pair<int, bool> { First = 1, Second = true } };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.P.First, Is.EqualTo(1));
         Assert.That(parsed.P.Second, Is.True);
@@ -329,13 +333,12 @@ public class GenericTemplateTests
     [Test]
     public void Pair_DoubleLong_Roundtrip()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesPairDoubleLong>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesPairDoubleLong>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesPairDoubleLong>(out var block), Is.True);
 
         var original = new UsesPairDoubleLong { P = new Pair<double, long> { First = 6.28d, Second = 123L } };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.P.First, Is.EqualTo(6.28d).Within(1e-9));
         Assert.That(parsed.P.Second, Is.EqualTo(123L));
@@ -344,13 +347,12 @@ public class GenericTemplateTests
     [Test]
     public void Wrapper_Int_RoundtripWithContainer()
     {
-        Assert.That(SerializerScanners.TryGetScanner<UsesWrapperInt>(out var scan), Is.True);
-        Assert.That(SerializerEmitters.TryGetEmitter<UsesWrapperInt>(out var emit), Is.True);
+        Assert.That(SerializerBlocks.TryGet<UsesWrapperInt>(out var block), Is.True);
 
         var original = new UsesWrapperInt { W = new Wrapper<int> { Value = -7 } };
         var sb = new StringBuilder();
-        emit(sb, original);
-        int r = scan(sb.ToString().AsSpan(), 0, out var parsed);
+        block.Emit(sb, original);
+        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.W.Value, Is.EqualTo(-7));
     }
@@ -360,16 +362,101 @@ public class GenericTemplateTests
     [Test]
     public void Wrapper_Float_InvalidInput_ReturnsStart()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Wrapper<float>>(out var scan), Is.True);
-        int r = scan("abc".AsSpan(), 0, out _);
+        Assert.That(SerializerBlocks.TryGet<Wrapper<float>>(out var block), Is.True);
+        int r = block.Scan("abc".AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
     [Test]
     public void Wrapper_Float_EmptyInput_ReturnsStart()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Wrapper<float>>(out var scan), Is.True);
-        int r = scan("".AsSpan(), 0, out _);
+        Assert.That(SerializerBlocks.TryGet<Wrapper<float>>(out var block), Is.True);
+        int r = block.Scan("".AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
+    }
+
+    [Test] public void HasListOfWrapper_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<HasListOfWrapper>(out var b), Is.True);
+        var o = new HasListOfWrapper { Items = new List<Wrapper<float>> { new Wrapper<float> { Value = 1.5f }, new Wrapper<float> { Value = 2.5f } } };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p.Items, Has.Count.EqualTo(2));
+    }
+    [Test] public void UsesHashSet_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<UsesHashSet>(out var b), Is.True);
+        var o = new UsesHashSet { Items = new HashSet<float> { 1.5f, 2.5f } };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p.Items, Is.EquivalentTo(o.Items));
+    }
+    [Test] public void UsesString_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<UsesString>(out var b), Is.True);
+        var o = new UsesString { Name = "hello" };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p.Name, Is.EqualTo("hello"));
+    }
+    [Test] public void HasNestedHashSet_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<HasNestedHashSet>(out var b), Is.True);
+        var o = new HasNestedHashSet { Nested = new List<HashSet<float>> { new HashSet<float> { 1.5f, 2.5f } } };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p.Nested, Has.Count.EqualTo(1));
+    }
+    [Test] public void List_Wrapper_float_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<List<Wrapper<float>>>(out var b), Is.True);
+        var o = new List<Wrapper<float>> { new Wrapper<float> { Value = 1.5f }, new Wrapper<float> { Value = 2.5f } };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p, Has.Count.EqualTo(2));
+    }
+    [Test] public void HashSet_float_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<HashSet<float>>(out var b), Is.True);
+        var o = new HashSet<float> { 1.5f, 2.5f };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p, Is.EquivalentTo(o));
+    }
+    [Test] public void List_HashSet_float_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<List<HashSet<float>>>(out var b), Is.True);
+        var o = new List<HashSet<float>> { new HashSet<float> { 1.5f, 2.5f } };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p, Has.Count.EqualTo(1));
+    }
+    [Test] public void Block_Scan() {
+        Assert.That(SerializerBlocks.TryGet<UsesWrapper>(out var b), Is.True);
+        int r = b.Scan("3.5".AsSpan(), 0, out var v);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(v.W.Value, Is.EqualTo(3.5f).Within(1e-5f));
+    }
+    [Test] public void Block_Emit() {
+        Assert.That(SerializerBlocks.TryGet<UsesWrapper>(out var b), Is.True);
+        var o = new UsesWrapper { W = new Wrapper<float> { Value = 3.5f } };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        Assert.That(sb.ToString(), Is.EqualTo("3.5"));
+    }
+    [Test] public void Block_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<Point2D>(out var b), Is.True);
+        var o = new Point2D { X = 3.5f, Y = -2.1f };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p.X, Is.EqualTo(3.5f).Within(1e-5f));
+        Assert.That(p.Y, Is.EqualTo(-2.1f).Within(1e-5f));
+    }
+    [Test] public void Serialize_Deserialize_Roundtrip() {
+        var o = new UsesWrapper { W = new Wrapper<float> { Value = 3.5f } };
+        string text = SerializerBlocks.Serialize(o);
+        Assert.That(text, Is.EqualTo("3.5"));
+        var loaded = SerializerBlocks.Deserialize<UsesWrapper>(text);
+        Assert.That(loaded.W.Value, Is.EqualTo(3.5f).Within(1e-5f));
     }
 }

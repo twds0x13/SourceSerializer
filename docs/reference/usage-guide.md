@@ -27,7 +27,7 @@ struct Range { float Min; float Max; }
 // 输入: "10 to 100"
 ```
 
-**全部内置类型**：`float` `double` `int` `uint` `long` `ulong` `short` `ushort` `byte` `sbyte` `bool` `char` `string`
+**全部内置类型**：`float` `double` `int` `uint` `long` `ulong` `short` `ushort` `byte` `sbyte` `bool` `char` `string` `decimal` `nint` `nuint` `Half`
 
 ---
 
@@ -104,7 +104,19 @@ struct Skill
 // 输入: "100, 1.5, 2.0, 0.75"  → Multipliers=[1.5, 2.0, 0.75]
 ```
 
-**`List<T>`、`IList<T>`、`ICollection<T>`、`IEnumerable<T>`、`T[]` 全部自动识别。** `List<>` 和 `Dictionary<,>` 提供默认模板（逗号分隔），可通过 `[ExternalTemplate(typeof(List<>), "...")]` 覆盖分隔符或格式。
+**集合字段在模板中直接使用，无需显式声明模板。** 系统为以下接口提供了默认模板，具体类型通过其实现的接口自动匹配：
+
+| 默认接口模板 | 覆盖的集合类型 | 分隔符 |
+|-------------|--------------|--------|
+| `IList<T>` | `List<T>`, `T[]`, `IList<T>`, `ICollection<T>`, `IReadOnlyList<T>` 等 | 逗号 |
+| `ISet<T>` | `HashSet<T>`, `SortedSet<T>`, `ISet<T>`, `IReadOnlySet<T>` 等 | 逗号 |
+| `IReadOnlyList<T>` | `IReadOnlyList<T>` 等 | 逗号 |
+| `IDictionary<K,V>` | `Dictionary<K,V>`, `SortedDictionary<K,V>`, `IDictionary<K,V>` 等 | 冒号 |
+| `IReadOnlyDictionary<K,V>` | `IReadOnlyDictionary<K,V>` 等 | 冒号 |
+
+**接口优先原则**：如果你有自定义集合类型，推荐定义接口并标注模板，而非逐个类标注。所有实现该接口的类型自动获得模板。类级 `[ExternalTemplate]` 优先级高于接口模板。
+
+用户可通过 `[ExternalTemplate]` 覆盖任何默认模板（参见第 10 节）。
 
 ```csharp
 [Template("<int Id><float[] Data>")]
@@ -204,13 +216,25 @@ struct Stats { float Health; float Mana; }
 
 ## 10. 外部类型模板
 
-用于给第三方库的类型注册模板：
+给非自有代码的类型注册模板（第三方库、系统类型、泛型集合）：
+
+**具体类型**：
 
 ```csharp
 [assembly: ExternalTemplate(typeof(Vector3), "<float x>, <float y>, <float z>")]
-
-// SG 自动为 UnityEngine.Vector3 生成扫描/发射代码
 ```
+
+**覆盖泛型集合默认模板**：
+
+```csharp
+// 用分号替换逗号分隔
+[assembly: ExternalTemplate(typeof(List<>), "<first><T item></first><body>; <T item></body>")]
+
+// 用等号替换冒号
+[assembly: ExternalTemplate(typeof(Dictionary<,>), "<first><TKey key>=<TValue value></first><body>, <TKey key>=<TValue value></body>")]
+```
+
+`typeof(List<>)` 和 `typeof(Dictionary<,>)` 引用开放泛型类型。模板中的类型参数占位符必须与真实类型参数名一致（`T`、`TKey`、`TValue`），SG 在合成具体实例时按名称替换。
 
 ---
 
@@ -359,6 +383,6 @@ struct Ability
 |------|------|
 | SSR001 | 模板语法错误 |
 | SSR002 | 循环依赖 |
-| SSR003 | readonly struct 不能用 `[Template]` |
+| SSR003 | 模板引用的字段是 readonly 且无匹配构造器 — 添加构造器或移除 readonly |
 | SSR004 | 字段类型缺少 `[Template]` — 加 `[Template]`、`[ExternalTemplate]`、或 `[TemplateIgnore]` |
 | SSR005 | 标量字段在重复块内 — 改用集合类型 |

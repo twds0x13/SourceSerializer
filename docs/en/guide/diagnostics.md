@@ -8,7 +8,7 @@ All SourceSerializer errors and warnings are reported at compile time via Roslyn
 |------|----------|-------|---------|
 | SSR001 | Error | Template Parse Error | The template string cannot be parsed as valid compact or XML format |
 | SSR002 | Error | Circular template dependency | Two or more templates reference each other, forming a cycle |
-| SSR003 | Error | Readonly struct cannot use `[Template]` | A `readonly struct` has `[Template]` applied, but its fields cannot be assigned |
+| SSR003 | Error | Readonly field cannot be assigned | A field referenced in the template is `readonly` and no matching constructor exists |
 | SSR004 | Error | Missing template dependency | Template references a type without `[Template]` and the field is not marked `[TemplateIgnore]` |
 | SSR005 | Error | Scalar field inside `<repetition>` | A non-collection field appears inside a `<repetition>` block |
 
@@ -41,18 +41,34 @@ public struct B { public A Other; }
 
 Fix: break the cycle by converting one reference to a built-in type or removing the outer reference.
 
-## SSR003: Readonly Struct
+## SSR003: Readonly Field
 
-A `readonly struct` has `[Template]` applied. Deserialization requires writing to fields, which readonly structs forbid.
+A field is declared `readonly` and cannot be assigned by deserialization code. All fields of a `readonly struct` are implicitly readonly (C# CS8340), requiring a matching constructor.
 
 Example trigger:
 
 ```csharp
-[Template("<float X>")]
-public readonly struct Point { public float X; }  // SSR003
+[Template("<float Attack> <float CritRate>")]
+public readonly struct Damage
+{
+    public readonly float Attack;   // SSR003 (no matching constructor)
+    public readonly float CritRate; // SSR003
+}
 ```
 
-Fix: remove the `readonly` modifier.
+Fix: add a constructor whose parameters match all fields by name and type. SourceSerializer discovers it automatically via greedy constructor matching:
+
+```csharp
+[Template("<float Attack> <float CritRate>")]
+public readonly struct Damage
+{
+    public readonly float Attack;
+    public readonly float CritRate;
+    public Damage(float attack, float critRate) { Attack = attack; CritRate = critRate; }
+}
+```
+
+The generated code uses `new Damage(__f_Attack, __f_CritRate)` instead of field-by-field assignment.
 
 ## SSR004: Missing Template Dependency
 

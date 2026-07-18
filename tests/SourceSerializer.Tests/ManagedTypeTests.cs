@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using NUnit.Framework;
 using SourceSerializer;
 
@@ -44,8 +45,8 @@ public class ManagedTypeTests
     [Test]
     public void NamedValue_ParsesStringAndFloat()
     {
-        Assert.That(SerializerScanners.TryGetScanner<NamedValue>(out var scan), Is.True);
-        int r = scan("sword|3.5".AsSpan(), 0, out NamedValue v);
+        Assert.That(SerializerBlocks.TryGet<NamedValue>(out var block), Is.True);
+        int r = block.Scan("sword|3.5".AsSpan(), 0, out NamedValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Name, Is.EqualTo("sword"));
         Assert.That(v.Value, Is.EqualTo(3.5f).Within(1e-5f));
@@ -54,8 +55,8 @@ public class ManagedTypeTests
     [Test]
     public void NamedValue_QuotedString()
     {
-        Assert.That(SerializerScanners.TryGetScanner<NamedValue>(out var scan), Is.True);
-        int r = scan("\"fire sword\"|10".AsSpan(), 0, out NamedValue v);
+        Assert.That(SerializerBlocks.TryGet<NamedValue>(out var block), Is.True);
+        int r = block.Scan("\"fire sword\"|10".AsSpan(), 0, out NamedValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Name, Is.EqualTo("fire sword"));
         Assert.That(v.Value, Is.EqualTo(10f));
@@ -64,8 +65,8 @@ public class ManagedTypeTests
     [Test]
     public void Pair_ParsesNestedClasses()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Pair>(out var scan), Is.True);
-        int r = scan("(sword|1) , (shield|2)".AsSpan(), 0, out Pair v);
+        Assert.That(SerializerBlocks.TryGet<Pair>(out var block), Is.True);
+        int r = block.Scan("(sword|1) , (shield|2)".AsSpan(), 0, out Pair v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.A.Name, Is.EqualTo("sword"));
         Assert.That(v.A.Value, Is.EqualTo(1f));
@@ -76,8 +77,8 @@ public class ManagedTypeTests
     [Test]
     public void Modifiable_WithManagedList()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Modifiable>(out var scan), Is.True);
-        int r = scan("100, sword|1.5, shield|2.5".AsSpan(), 0, out Modifiable v);
+        Assert.That(SerializerBlocks.TryGet<Modifiable>(out var block), Is.True);
+        int r = block.Scan("100, sword|1.5, shield|2.5".AsSpan(), 0, out Modifiable v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Mods, Is.Not.Null);
@@ -90,8 +91,8 @@ public class ManagedTypeTests
     [Test]
     public void Modifiable_EmptyMods()
     {
-        Assert.That(SerializerScanners.TryGetScanner<Modifiable>(out var scan), Is.True);
-        int r = scan("100".AsSpan(), 0, out Modifiable v);
+        Assert.That(SerializerBlocks.TryGet<Modifiable>(out var block), Is.True);
+        int r = block.Scan("100".AsSpan(), 0, out Modifiable v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Mods, Is.Not.Null);
@@ -101,10 +102,29 @@ public class ManagedTypeTests
     [Test]
     public void InventoryItem_ManagedStruct()
     {
-        Assert.That(SerializerScanners.TryGetScanner<InventoryItem>(out var scan), Is.True);
-        int r = scan("item001 5".AsSpan(), 0, out InventoryItem v);
+        Assert.That(SerializerBlocks.TryGet<InventoryItem>(out var block), Is.True);
+        int r = block.Scan("item001 5".AsSpan(), 0, out InventoryItem v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Id, Is.EqualTo("item001"));
         Assert.That(v.Count, Is.EqualTo(5));
+    }
+
+    [Test] public void NamedValue_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<NamedValue>(out var b), Is.True);
+        var o = new NamedValue { Name = "sword", Value = 1.5f };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p.Name, Is.EqualTo("sword"));
+        Assert.That(p.Value, Is.EqualTo(1.5f).Within(1e-5f));
+    }
+    [Test] public void InventoryItem_Roundtrip() {
+        Assert.That(SerializerBlocks.TryGet<InventoryItem>(out var b), Is.True);
+        var o = new InventoryItem { Id = "item001", Count = 5 };
+        var sb = new StringBuilder(); b.Emit(sb, o);
+        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(p.Id, Is.EqualTo("item001"));
+        Assert.That(p.Count, Is.EqualTo(5));
     }
 }
