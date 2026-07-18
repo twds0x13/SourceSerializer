@@ -31,7 +31,7 @@ namespace SourceSerializer.Generator
 
             foreach (var e in structs)
             {
-                sb.Append(EmitMethod(e.StructName, e.Nodes, e.IsCollection, dependencyGraph, tAliases, eTags, e.FieldTypes));
+                sb.Append(EmitMethod(e.Common.StructName, e.Nodes, e.Common.IsCollection, dependencyGraph, tAliases, eTags, e.FieldTypes));
                 sb.AppendLine();
             }
 
@@ -59,7 +59,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph)
         {
             var sb = new StringBuilder();
-            string methodName = GetEmitMethodName(ifaceName);
+            string methodName = EmitHelpers.GetMethodName("Emit",ifaceName);
 
             sb.AppendLine($"        /// <summary>接口分发序列化器：{ifaceName}</summary>");
             sb.AppendLine($"        internal static void {methodName}(StringBuilder sb, {ifaceName} value)");
@@ -71,7 +71,7 @@ namespace SourceSerializer.Generator
             {
                 string emitMethod = dependencyGraph.TryGetValue(concrete, out var m)
                     ? m.Replace("Scan_", "Emit_")
-                    : GetEmitMethodName(concrete);
+                    : EmitHelpers.GetMethodName("Emit",concrete);
                 sb.AppendLine($"                case {concrete} v: {emitMethod}(sb, v); break;");
             }
 
@@ -89,7 +89,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, FieldInfo> fieldTypes)
         {
             var sb = new StringBuilder();
-            string methodName = GetEmitMethodName(structTypeName);
+            string methodName = EmitHelpers.GetMethodName("Emit",structTypeName);
 
             sb.AppendLine($"        /// <summary>序列化器：{structTypeName}</summary>");
             sb.AppendLine("        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]");
@@ -274,7 +274,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, FieldInfo> fieldTypes,
             string indent, bool isCollection)
         {
-            string itemVar = $"__elem_{_emitVarCounter++}";
+            string itemVar = $"__elem_{EmitHelpers.NextEmitId()}";
             bool hasFirst = rep.First != null;
             string step = indent + "    ";
             // 循环内 body 节点使用 __elem 作为值表达式
@@ -292,7 +292,7 @@ namespace SourceSerializer.Generator
 
                 // 后续元素：Body 模式，foreach 跳过首元素
                 sb.AppendLine($"{indent}// remaining elements");
-                int flagId = _emitVarCounter++;
+                int flagId = EmitHelpers.NextEmitId();
                 sb.AppendLine($"{indent}bool __first_{flagId} = true;");
                 sb.AppendLine($"{indent}foreach (var {itemVar} in value)");
                 sb.AppendLine($"{indent}{{");
@@ -312,9 +312,5 @@ namespace SourceSerializer.Generator
             }
         }
 
-        private static int _emitVarCounter;
-
-        public static string GetEmitMethodName(string structTypeName)
-            => "Emit_" + structTypeName.Replace(".", "_").Replace("<", "_").Replace(">", "").Replace(",", "_");
     }
 }

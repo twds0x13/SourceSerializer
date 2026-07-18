@@ -538,13 +538,9 @@ namespace SourceSerializer.Generator
                         fieldTypes[fi.Name] = fi;
                     emitList.Add(new EmitEntry
                     {
-                        StructName = info.StructName,
+                        Common = info.ToCommon(),
                         Nodes = ast,
                         FieldTypes = fieldTypes,
-                        NeedsHeapAlloc = info.NeedsHeapAlloc,
-                        IsCollection = info.IsCollection,
-                        IsReadonlyStruct = info.IsReadonlyStruct,
-                        MatchedCtorParams = info.MatchedCtorParams,
                     });
                 }
 
@@ -553,11 +549,11 @@ namespace SourceSerializer.Generator
                 {
                     if (info.IsOpenGeneric) continue;
                     if (info.IsReadonlyStruct && info.MatchedCtorParams == null) continue;
-                    emitDepGraph[info.StructName] = CodeEmitter.GetScannerMethodName(info.StructName);
+                    emitDepGraph[info.StructName] = EmitHelpers.GetMethodName("Scan",info.StructName);
                 }
                 // 接口 dispatch 条目加入依赖图
                 foreach (var ifaceName in interfaceMap.Keys)
-                    emitDepGraph[ifaceName] = CodeEmitter.GetScannerMethodName(ifaceName);
+                    emitDepGraph[ifaceName] = EmitHelpers.GetMethodName("Scan",ifaceName);
 
                 var aliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var (alias, csharpType) in typeAliases)
@@ -1185,6 +1181,25 @@ namespace SourceSerializer.Generator
             public bool IsReadonlyStruct;
             /// <summary>匹配构造器的参数名列表（按参数顺序）。null 表示无匹配构造器。</summary>
             public string[]? MatchedCtorParams;
+
+            public TemplateCommon ToCommon() => new()
+            {
+                StructName = StructName,
+                NeedsHeapAlloc = NeedsHeapAlloc,
+                IsCollection = IsCollection,
+                IsReadonlyStruct = IsReadonlyStruct,
+                MatchedCtorParams = MatchedCtorParams,
+            };
         }
+    }
+
+    /// <summary>StructTemplateInfo 与 EmitEntry 的共享字段。</summary>
+    internal struct TemplateCommon
+    {
+        public string StructName;
+        public bool NeedsHeapAlloc;
+        public bool IsCollection;
+        public bool IsReadonlyStruct;
+        public string[]? MatchedCtorParams;
     }
 }

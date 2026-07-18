@@ -24,13 +24,9 @@ namespace SourceSerializer.Generator
     /// </summary>
     internal struct EmitEntry
     {
-        public string StructName;
+        public TemplateCommon Common;
         public List<TemplateNode> Nodes;
         public Dictionary<string, FieldInfo> FieldTypes;
-        public bool NeedsHeapAlloc;
-        public bool IsCollection;
-        public bool IsReadonlyStruct;
-        public string[]? MatchedCtorParams;
     }
 
     /// <summary>
@@ -55,8 +51,6 @@ namespace SourceSerializer.Generator
         // 发射计数器 — 每次 EmitAll 重置，确保增量生成输出稳定
         // ═══════════════════════════════════════════════════════
 
-        private static int _varCounter;
-        private static int _repCounter;
         private static int _optCounter;
         private static Dictionary<string, string> _scanVarMap = new(StringComparer.Ordinal);
 
@@ -76,8 +70,7 @@ namespace SourceSerializer.Generator
             var iMap = interfaceMap ?? new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
             // 每次 EmitAll 重置所有计数器，确保增量生成输出稳定
-            _varCounter = 0;
-            _repCounter = 0;
+            EmitHelpers.ResetCounters();
             _optCounter = 0;
 
             var sb = new StringBuilder();
@@ -94,7 +87,7 @@ namespace SourceSerializer.Generator
 
             foreach (var e in structs)
             {
-                sb.Append(EmitMethod(e.StructName, e.Nodes, e.NeedsHeapAlloc, e.IsCollection, e.MatchedCtorParams, dependencyGraph, tAliases, eTags, e.FieldTypes));
+                sb.Append(EmitMethod(e.Common.StructName, e.Nodes, e.Common.NeedsHeapAlloc, e.Common.IsCollection, e.Common.MatchedCtorParams, dependencyGraph, tAliases, eTags, e.FieldTypes));
                 sb.AppendLine();
             }
 
@@ -124,9 +117,9 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph)
         {
             var sb = new StringBuilder();
-            string methodName = GetScannerMethodName(ifaceName);
-            string bestVar = GetUniqueVar("best");
-            string bestValueVar = GetUniqueVar("bestVal");
+            string methodName = EmitHelpers.GetMethodName("Scan",ifaceName);
+            string bestVar = EmitHelpers.GetUniqueVar("best");
+            string bestValueVar = EmitHelpers.GetUniqueVar("bestVal");
 
             sb.AppendLine($"        /// <summary>接口分发扫描器：{ifaceName}</summary>");
             sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
@@ -143,9 +136,9 @@ namespace SourceSerializer.Generator
             {
                 string concrete = concreteTypes[i];
                 string scanMethod = dependencyGraph.TryGetValue(concrete, out var m)
-                    ? m : GetScannerMethodName(concrete);
-                string localVar = GetUniqueVar(concrete);
-                string rVar = GetUniqueVar("r");
+                    ? m : EmitHelpers.GetMethodName("Scan",concrete);
+                string localVar = EmitHelpers.GetUniqueVar(concrete);
+                string rVar = EmitHelpers.GetUniqueVar("r");
 
                 sb.AppendLine($"            // try {concrete}");
                 sb.AppendLine($"            int {rVar} = {scanMethod}(src, pos, out {concrete} {localVar});");
@@ -169,7 +162,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, FieldInfo> fieldTypes)
         {
             var sb = new StringBuilder();
-            string methodName = GetScannerMethodName(structTypeName);
+            string methodName = EmitHelpers.GetMethodName("Scan",structTypeName);
             // 只有构造器路径才需要延迟构造。readonly struct 无构造器由 GenerateSource 拦截。
             var strategy = new EmitStrategy(matchedCtorParams != null);
 
@@ -312,7 +305,7 @@ namespace SourceSerializer.Generator
         {
             string typeAlias = field.TypeAlias;
             string fieldName = field.FieldName;
-            string localVar = GetUniqueVar(fieldName);
+            string localVar = EmitHelpers.GetUniqueVar(fieldName);
             string fail = MakeFailure(failureLabel);
 
             // 别名映射：用户定义的名称 → 实际内置类型
@@ -355,7 +348,7 @@ namespace SourceSerializer.Generator
                 string scannerMethod = $"Scan_{char.ToUpperInvariant(resolvedType[0])}{resolvedType.Substring(1)}";
                 string csharpType = resolvedType.ToLowerInvariant();
                 string aliasNote = resolvedType != typeAlias ? $" (alias→{resolvedType})" : "";
-                string preVar = GetUniqueVar("pre");
+                string preVar = EmitHelpers.GetUniqueVar("pre");
 
                 sb.AppendLine($"{indent}// <{typeAlias} {fieldName}>{aliasNote}");
                 if (useBuffer) sb.AppendLine(bufferResize);
@@ -369,7 +362,7 @@ namespace SourceSerializer.Generator
             }
             else if (enumTags.TryGetValue(typeAlias, out var tags))
             {
-                string preVar = GetUniqueVar("pre");
+                string preVar = EmitHelpers.GetUniqueVar("pre");
                 sb.AppendLine($"{indent}// <{typeAlias} {fieldName}> (enum tag)");
                 if (useBuffer) sb.AppendLine(bufferResize);
                 sb.AppendLine($"{indent}int {preVar} = pos;");
@@ -382,7 +375,7 @@ namespace SourceSerializer.Generator
             {
                 if (dependencyGraph.TryGetValue(typeAlias, out string depMethod))
                 {
-                    string preVar = GetUniqueVar("pre");
+                    string preVar = EmitHelpers.GetUniqueVar("pre");
                     sb.AppendLine($"{indent}// <{typeAlias} {fieldName}> (nested)");
                     if (useBuffer) sb.AppendLine(bufferResize);
                     sb.AppendLine($"{indent}int {preVar} = pos;");
@@ -437,7 +430,7 @@ namespace SourceSerializer.Generator
         {
             if (rep.Body.Count == 0) return;
 
-            int id = _repCounter++;
+            int id = EmitHelpers.NextRepId();
             string failLabel = $"repFail_{id}";
             string innerIndent = indent + IndentStep;
 
@@ -628,11 +621,6 @@ namespace SourceSerializer.Generator
             string collType = isSet ? "System.Collections.Generic.HashSet" : "System.Collections.Generic.List";
             return $"new {collType}<{elemType}>";
         }
-
-        public static string GetScannerMethodName(string structTypeName)
-            => $"Scan_{structTypeName.Replace(".", "_").Replace("<", "_").Replace(">", "").Replace(",", "_")}";
-
-        private static string GetUniqueVar(string fieldName) => $"_{fieldName}_{_varCounter++}";
 
         private static string EscapeForComment(string text)
             => text.Replace("\n", "\\n").Replace("\r", "\\r");

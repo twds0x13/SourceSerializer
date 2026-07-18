@@ -3,10 +3,6 @@ using System.Text;
 
 namespace SourceSerializer.Generator
 {
-    /// <summary>
-    /// 生成 SerializerBlocks.g.cs——为每个 [Template] 类型生成实现 ISerializerBlock&lt;T&gt; 的 struct，
-    /// 将 scan 和 emit 合并为一次注册、一次查找。
-    /// </summary>
     internal static class BlockEmitter
     {
         public static string EmitAll(List<EmitEntry> structs, Dictionary<string, List<string>>? interfaceMap = null)
@@ -32,70 +28,57 @@ namespace SourceSerializer.Generator
                 sb.AppendLine("        {");
                 foreach (var e in structs)
                 {
-                    string blockName = $"Block_{CodeEmitter.GetScannerMethodName(e.StructName).Substring(5)}";
-                    sb.AppendLine($"            Store<{e.StructName}>(new {blockName}());");
+                    string blockName = BlockName(e.Common.StructName);
+                    sb.AppendLine($"            Store<{e.Common.StructName}>(new {blockName}());");
                 }
                 foreach (var ifaceName in iMap.Keys)
                 {
-                    string blockName = $"Block_{CodeEmitter.GetScannerMethodName(ifaceName).Substring(5)}";
+                    string blockName = BlockName(ifaceName);
                     sb.AppendLine($"            Store<{ifaceName}>(new {blockName}());");
                 }
                 sb.AppendLine("        }");
                 sb.AppendLine();
             }
 
-            // 生成每个 concrete 类型的 struct
             foreach (var e in structs)
             {
-                string blockName = $"Block_{CodeEmitter.GetScannerMethodName(e.StructName).Substring(5)}";
-                string scanMethod = CodeEmitter.GetScannerMethodName(e.StructName);
-                string emitMethod = EmitCodeEmitter.GetEmitMethodName(e.StructName);
-
-                sb.AppendLine("        [ExcludeFromCodeCoverage]");
-                sb.AppendLine($"        readonly struct {blockName} : ISerializerBlock<{e.StructName}>");
-                sb.AppendLine("        {");
-                sb.AppendLine($"            public int Scan(ReadOnlySpan<char> text, int pos, out {e.StructName} value)");
-                sb.AppendLine("            {");
-                sb.AppendLine($"                int r = SerializerBlocks.{scanMethod}(text, pos, out value);");
-                sb.AppendLine("                return r;");
-                sb.AppendLine("            }");
-                sb.AppendLine();
-                sb.AppendLine($"            public void Emit(StringBuilder sb, {e.StructName} value)");
-                sb.AppendLine("            {");
-                sb.AppendLine($"                SerializerBlocks.{emitMethod}(sb, value);");
-                sb.AppendLine("            }");
-                sb.AppendLine("        }");
-                sb.AppendLine();
+                EmitBlock(sb, e.Common.StructName, false);
             }
-
-            // 生成接口 dispatch 类型的 struct
             foreach (var ifaceName in iMap.Keys)
             {
-                string blockName = $"Block_{CodeEmitter.GetScannerMethodName(ifaceName).Substring(5)}";
-                string scanMethod = CodeEmitter.GetScannerMethodName(ifaceName);
-                string emitMethod = EmitCodeEmitter.GetEmitMethodName(ifaceName);
-
-                sb.AppendLine("        [ExcludeFromCodeCoverage]");
-                sb.AppendLine($"        readonly struct {blockName} : ISerializerBlock<{ifaceName}>");
-                sb.AppendLine("        {");
-                sb.AppendLine($"            public int Scan(ReadOnlySpan<char> text, int pos, out {ifaceName} value)");
-                sb.AppendLine("            {");
-                sb.AppendLine($"                int r = SerializerBlocks.{scanMethod}(text, pos, out value);");
-                sb.AppendLine("                return r;");
-                sb.AppendLine("            }");
-                sb.AppendLine();
-                sb.AppendLine($"            public void Emit(StringBuilder sb, {ifaceName} value)");
-                sb.AppendLine("            {");
-                sb.AppendLine($"                SerializerBlocks.{emitMethod}(sb, value);");
-                sb.AppendLine("            }");
-                sb.AppendLine("        }");
-                sb.AppendLine();
+                EmitBlock(sb, ifaceName, true);
             }
 
             sb.AppendLine("    }");
             sb.AppendLine("}");
 
             return sb.ToString();
+        }
+
+        private static string BlockName(string typeName)
+            => "Block_" + EmitHelpers.GetMethodName("Scan", typeName).Substring(5);
+
+        private static void EmitBlock(StringBuilder sb, string typeName, bool isInterface)
+        {
+            string blockName = BlockName(typeName);
+            string scanMethod = EmitHelpers.GetMethodName("Scan", typeName);
+            string emitMethod = EmitHelpers.GetMethodName("Emit", typeName);
+
+            sb.AppendLine("        [ExcludeFromCodeCoverage]");
+            sb.AppendLine($"        readonly struct {blockName} : ISerializerBlock<{typeName}>");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            public int Scan(ReadOnlySpan<char> text, int pos, out {typeName} value)");
+            sb.AppendLine("            {");
+            sb.AppendLine($"                int r = SerializerBlocks.{scanMethod}(text, pos, out value);");
+            sb.AppendLine("                return r;");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine($"            public void Emit(StringBuilder sb, {typeName} value)");
+            sb.AppendLine("            {");
+            sb.AppendLine($"                SerializerBlocks.{emitMethod}(sb, value);");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine();
         }
     }
 }
