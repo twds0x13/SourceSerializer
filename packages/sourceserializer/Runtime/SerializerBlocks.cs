@@ -21,9 +21,9 @@ namespace SourceSerializer
     /// 序列化器块注册表。SG 在编译期为每个 [Template] 类型生成实现 <see cref="ISerializerBlock{TData}"/>
     /// 的 struct 并在此注册。
     /// </summary>
-    internal static partial class SerializerBlocks
+    public static partial class SerializerBlocks
     {
-        internal static bool TryGet<TData>([NotNullWhen(true)] out ISerializerBlock<TData>? block)
+        public static bool TryGet<TData>([NotNullWhen(true)] out ISerializerBlock<TData>? block)
         {
             if (BlockRegistry<TData>.Instance != null)
             {
