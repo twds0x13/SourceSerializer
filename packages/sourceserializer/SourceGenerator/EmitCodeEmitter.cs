@@ -274,6 +274,13 @@ namespace SourceSerializer.Generator
             Dictionary<string, FieldInfo> fieldTypes,
             string indent, bool isCollection)
         {
+            // Only generate foreach for self-collection types (List<T>, HashSet<T>, etc.)
+            // Non-collection structs with collection fields are handled inline by EmitFieldDirective
+            if (!isCollection)
+            {
+                sb.AppendLine($"{indent}// <repetition>: collection field emit handled inline");
+                return;
+            }
             string itemVar = $"__elem_{EmitHelpers.NextEmitId()}";
             bool hasFirst = rep.First != null;
             string step = indent + "    ";

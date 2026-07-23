@@ -28,7 +28,7 @@ Compile-time serialization: declare schema with attributes, source generator emi
 ## Installation
 
 ```json
-"com.twds0x13.sourceserializer": "https://github.com/twds0x13/SourceSerializer.git#main"
+"com.twds0x13.sourceserializer": "https://github.com/twds0x13/SourceSerializer.git?path=packages/sourceserializer#main"
 ```
 
 ## Quick Start
