@@ -1,3 +1,9 @@
+## [3.0.3](https://github.com/twds0x13/SourceSerializer/compare/v3.0.2...v3.0.3) (2026-07-23)
+
+### Bug Fixes
+
+* make SerializerBlocks class and TryGet method public ([aada471](https://github.com/twds0x13/SourceSerializer/commit/aada471cb89f707feb28045c2f1b16ca96696371))
+
 ## [3.0.2](https://github.com/twds0x13/SourceSerializer/compare/v3.0.1...v3.0.2) (2026-07-23)
 
 ### Bug Fixes
