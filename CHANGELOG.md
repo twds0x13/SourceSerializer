@@ -1,3 +1,9 @@
+## [3.0.2](https://github.com/twds0x13/SourceSerializer/compare/v3.0.1...v3.0.2) (2026-07-23)
+
+### Bug Fixes
+
+* add .meta files and correct README installation URL ([3a9304d](https://github.com/twds0x13/SourceSerializer/commit/3a9304dc165adbd4d9a1149ae25164bbff82d9fc))
+
 ## [3.0.1](https://github.com/twds0x13/SourceSerializer/compare/v3.0.0...v3.0.1) (2026-07-18)
 
 ### Bug Fixes
