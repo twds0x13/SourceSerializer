@@ -16,7 +16,7 @@ namespace SourceSerializer
     /// <see cref="ExternalTemplateAttribute"/> 声明模板后，由 source generator
     /// 编译期生成对应的 <c>Scan_Xxx</c> 方法，递归进入嵌套类型的扫描器。</para>
     /// </remarks>
-    internal static partial class SerializerRegistry
+    public static partial class SerializerRegistry
     {
         // ═══════════════════════════════════════════════════════
         // 内置类型注册表
@@ -26,7 +26,7 @@ namespace SourceSerializer
         /// 内置类型别名字典：alias → (regex_pattern, display_name)。
         /// 用于 source generator 在编译期查找对应类型的扫描方法名。
         /// </summary>
-        internal static readonly Dictionary<string, (string Pattern, string DisplayName)> BuiltinTypes = new()
+        public static readonly Dictionary<string, (string Pattern, string DisplayName)> BuiltinTypes = new()
         {
             ["float"]  = (@"-?\d+(?:\.\d+)?[fFdD]?", "float"),
             ["double"] = (@"-?\d+(?:\.\d+)?[dD]?",     "double"),
@@ -54,7 +54,7 @@ namespace SourceSerializer
         /// 获取内置类型对应的 span 扫描方法名，如 "Scan_Float"、"Scan_Int"。
         /// </summary>
         [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-        internal static string GetScannerMethodName(string alias)
+        public static string GetScannerMethodName(string alias)
         {
             if (BuiltinTypes.TryGetValue(alias, out var info))
                 return $"Scan_{info.DisplayName[0].ToString().ToUpperInvariant()}{info.DisplayName.Substring(1)}";
@@ -68,7 +68,7 @@ namespace SourceSerializer
         // ═══════════════════════════════════════════════════════
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Float(ReadOnlySpan<char> src, int pos, out float value)
+        public static int Scan_Float(ReadOnlySpan<char> src, int pos, out float value)
         {
             value = default;
             if (pos >= src.Length) return pos;
@@ -110,7 +110,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Double(ReadOnlySpan<char> src, int pos, out double value)
+        public static int Scan_Double(ReadOnlySpan<char> src, int pos, out double value)
         {
             value = default;
             if (pos >= src.Length) return pos;
@@ -155,7 +155,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Int(ReadOnlySpan<char> src, int pos, out int value)
+        public static int Scan_Int(ReadOnlySpan<char> src, int pos, out int value)
         {
             value = default;
             if (pos >= src.Length) return pos;
@@ -179,7 +179,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Uint(ReadOnlySpan<char> src, int pos, out uint value)
+        public static int Scan_Uint(ReadOnlySpan<char> src, int pos, out uint value)
         {
             value = default;
             if (pos >= src.Length) return pos;
@@ -201,7 +201,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Long(ReadOnlySpan<char> src, int pos, out long value)
+        public static int Scan_Long(ReadOnlySpan<char> src, int pos, out long value)
         {
             value = default;
             if (pos >= src.Length) return pos;
@@ -228,7 +228,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Ulong(ReadOnlySpan<char> src, int pos, out ulong value)
+        public static int Scan_Ulong(ReadOnlySpan<char> src, int pos, out ulong value)
         {
             value = default;
             if (pos >= src.Length) return pos;
@@ -255,7 +255,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Short(ReadOnlySpan<char> src, int pos, out short value)
+        public static int Scan_Short(ReadOnlySpan<char> src, int pos, out short value)
         {
             int result = Scan_Int(src, pos, out int iVal);
             value = result > pos ? (short)iVal : default;
@@ -263,7 +263,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Ushort(ReadOnlySpan<char> src, int pos, out ushort value)
+        public static int Scan_Ushort(ReadOnlySpan<char> src, int pos, out ushort value)
         {
             int result = Scan_Uint(src, pos, out uint uVal);
             value = result > pos ? (ushort)uVal : default;
@@ -271,7 +271,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Byte(ReadOnlySpan<char> src, int pos, out byte value)
+        public static int Scan_Byte(ReadOnlySpan<char> src, int pos, out byte value)
         {
             int result = Scan_Uint(src, pos, out uint uVal);
             value = result > pos ? (byte)uVal : default;
@@ -279,7 +279,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Sbyte(ReadOnlySpan<char> src, int pos, out sbyte value)
+        public static int Scan_Sbyte(ReadOnlySpan<char> src, int pos, out sbyte value)
         {
             int result = Scan_Int(src, pos, out int iVal);
             value = result > pos ? (sbyte)iVal : default;
@@ -287,7 +287,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Bool(ReadOnlySpan<char> src, int pos, out bool value)
+        public static int Scan_Bool(ReadOnlySpan<char> src, int pos, out bool value)
         {
             value = default;
             // 'true'
@@ -311,7 +311,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_Char(ReadOnlySpan<char> src, int pos, out char value)
+        public static int Scan_Char(ReadOnlySpan<char> src, int pos, out char value)
         {
             value = default;
             if (pos >= src.Length)
@@ -321,7 +321,7 @@ namespace SourceSerializer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int Scan_String(ReadOnlySpan<char> src, int pos, out string value)
+        public static int Scan_String(ReadOnlySpan<char> src, int pos, out string value)
         {
             value = default!;
             if (pos >= src.Length) return pos;
@@ -370,7 +370,7 @@ namespace SourceSerializer
         /// <summary>
         /// 将字符串追加到 StringBuilder，始终加引号以消除与数值类型的歧义。
         /// </summary>
-        internal static void Emit_String(System.Text.StringBuilder sb, string value)
+        public static void Emit_String(System.Text.StringBuilder sb, string value)
         {
             if (value == null) return;
             sb.Append('"');
@@ -384,46 +384,46 @@ namespace SourceSerializer
         // ═══════════════════════════════════════════════════════
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Float(StringBuilder sb, float value)
+        public static void Emit_Float(StringBuilder sb, float value)
         {
             sb.Append(value.ToString("G9", CultureInfo.InvariantCulture));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Double(StringBuilder sb, double value)
+        public static void Emit_Double(StringBuilder sb, double value)
         {
             sb.Append(value.ToString("G17", CultureInfo.InvariantCulture));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Int(StringBuilder sb, int value) => sb.Append(value);
+        public static void Emit_Int(StringBuilder sb, int value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Uint(StringBuilder sb, uint value) => sb.Append(value);
+        public static void Emit_Uint(StringBuilder sb, uint value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Long(StringBuilder sb, long value) => sb.Append(value);
+        public static void Emit_Long(StringBuilder sb, long value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Ulong(StringBuilder sb, ulong value) => sb.Append(value);
+        public static void Emit_Ulong(StringBuilder sb, ulong value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Short(StringBuilder sb, short value) => sb.Append(value);
+        public static void Emit_Short(StringBuilder sb, short value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Ushort(StringBuilder sb, ushort value) => sb.Append(value);
+        public static void Emit_Ushort(StringBuilder sb, ushort value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Byte(StringBuilder sb, byte value) => sb.Append(value);
+        public static void Emit_Byte(StringBuilder sb, byte value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Sbyte(StringBuilder sb, sbyte value) => sb.Append(value);
+        public static void Emit_Sbyte(StringBuilder sb, sbyte value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Bool(StringBuilder sb, bool value) => sb.Append(value ? "true" : "false");
+        public static void Emit_Bool(StringBuilder sb, bool value) => sb.Append(value ? "true" : "false");
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Emit_Char(StringBuilder sb, char value) => sb.Append(value);
+        public static void Emit_Char(StringBuilder sb, char value) => sb.Append(value);
 
         // ═══════════════════════════════════════════════════════
         // 内置类型 ISerializerBlock<T> 包装器
@@ -431,67 +431,67 @@ namespace SourceSerializer
         // 通过 SerializerBlocks.AddBlock<T>() 统一注册。
         // ═══════════════════════════════════════════════════════
 
-        internal readonly struct BuiltinBlock_Float : ISerializerBlock<float>
+        public readonly struct BuiltinBlock_Float : ISerializerBlock<float>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out float value) => Scan_Float(text, pos, out value);
             public void Emit(StringBuilder sb, float value) => Emit_Float(sb, value);
         }
-        internal readonly struct BuiltinBlock_Double : ISerializerBlock<double>
+        public readonly struct BuiltinBlock_Double : ISerializerBlock<double>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out double value) => Scan_Double(text, pos, out value);
             public void Emit(StringBuilder sb, double value) => Emit_Double(sb, value);
         }
-        internal readonly struct BuiltinBlock_Int : ISerializerBlock<int>
+        public readonly struct BuiltinBlock_Int : ISerializerBlock<int>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out int value) => Scan_Int(text, pos, out value);
             public void Emit(StringBuilder sb, int value) => Emit_Int(sb, value);
         }
-        internal readonly struct BuiltinBlock_Uint : ISerializerBlock<uint>
+        public readonly struct BuiltinBlock_Uint : ISerializerBlock<uint>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out uint value) => Scan_Uint(text, pos, out value);
             public void Emit(StringBuilder sb, uint value) => Emit_Uint(sb, value);
         }
-        internal readonly struct BuiltinBlock_Long : ISerializerBlock<long>
+        public readonly struct BuiltinBlock_Long : ISerializerBlock<long>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out long value) => Scan_Long(text, pos, out value);
             public void Emit(StringBuilder sb, long value) => Emit_Long(sb, value);
         }
-        internal readonly struct BuiltinBlock_Ulong : ISerializerBlock<ulong>
+        public readonly struct BuiltinBlock_Ulong : ISerializerBlock<ulong>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out ulong value) => Scan_Ulong(text, pos, out value);
             public void Emit(StringBuilder sb, ulong value) => Emit_Ulong(sb, value);
         }
-        internal readonly struct BuiltinBlock_Short : ISerializerBlock<short>
+        public readonly struct BuiltinBlock_Short : ISerializerBlock<short>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out short value) => Scan_Short(text, pos, out value);
             public void Emit(StringBuilder sb, short value) => Emit_Short(sb, value);
         }
-        internal readonly struct BuiltinBlock_Ushort : ISerializerBlock<ushort>
+        public readonly struct BuiltinBlock_Ushort : ISerializerBlock<ushort>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out ushort value) => Scan_Ushort(text, pos, out value);
             public void Emit(StringBuilder sb, ushort value) => Emit_Ushort(sb, value);
         }
-        internal readonly struct BuiltinBlock_Byte : ISerializerBlock<byte>
+        public readonly struct BuiltinBlock_Byte : ISerializerBlock<byte>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out byte value) => Scan_Byte(text, pos, out value);
             public void Emit(StringBuilder sb, byte value) => Emit_Byte(sb, value);
         }
-        internal readonly struct BuiltinBlock_Sbyte : ISerializerBlock<sbyte>
+        public readonly struct BuiltinBlock_Sbyte : ISerializerBlock<sbyte>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out sbyte value) => Scan_Sbyte(text, pos, out value);
             public void Emit(StringBuilder sb, sbyte value) => Emit_Sbyte(sb, value);
         }
-        internal readonly struct BuiltinBlock_Bool : ISerializerBlock<bool>
+        public readonly struct BuiltinBlock_Bool : ISerializerBlock<bool>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out bool value) => Scan_Bool(text, pos, out value);
             public void Emit(StringBuilder sb, bool value) => Emit_Bool(sb, value);
         }
-        internal readonly struct BuiltinBlock_Char : ISerializerBlock<char>
+        public readonly struct BuiltinBlock_Char : ISerializerBlock<char>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out char value) => Scan_Char(text, pos, out value);
             public void Emit(StringBuilder sb, char value) => Emit_Char(sb, value);
         }
-        internal readonly struct BuiltinBlock_String : ISerializerBlock<string>
+        public readonly struct BuiltinBlock_String : ISerializerBlock<string>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out string value) => Scan_String(text, pos, out value);
             public void Emit(StringBuilder sb, string value) => Emit_String(sb, value);

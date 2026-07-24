@@ -77,6 +77,22 @@ namespace SourceSerializer
         }
 
         /// <summary>
+        /// 非泛型重载：通过 Type 和 block 实例注册。
+        /// 用于动态加载的程序集——调用方在编译期不持有类型。
+        /// block 必须实现 <see cref="ISerializerBlock{TData}"/>。
+        /// </summary>
+        public static Builder AddBlock(Type dataType, ISerializerBlock block)
+        {
+            if (dataType == null) throw new ArgumentNullException(nameof(dataType));
+            if (block == null) throw new ArgumentNullException(nameof(block));
+            lock (_syncRoot)
+            {
+                _blocks[dataType] = block;
+            }
+            return new Builder();
+        }
+
+        /// <summary>
         /// 批量注册异构 block。每个 block 的泛型参数通过反射推导。
         /// </summary>
         public static void AddBlocks(params ISerializerBlock[] blocks)
@@ -107,6 +123,18 @@ namespace SourceSerializer
             lock (_syncRoot)
             {
                 _blocks.Remove(typeof(T));
+            }
+        }
+
+        /// <summary>
+        /// 非泛型重载：通过 Type 移除 block。类型未注册时静默成功。
+        /// </summary>
+        public static void RemoveBlock(Type dataType)
+        {
+            if (dataType == null) throw new ArgumentNullException(nameof(dataType));
+            lock (_syncRoot)
+            {
+                _blocks.Remove(dataType);
             }
         }
 
@@ -167,6 +195,13 @@ namespace SourceSerializer
                 return this;
             }
 
+            /// <inheritdoc cref="SerializerBlocks.AddBlock(Type, ISerializerBlock)"/>
+            public Builder AddBlock(Type dataType, ISerializerBlock block)
+            {
+                SerializerBlocks.AddBlock(dataType, block);
+                return this;
+            }
+
             /// <inheritdoc cref="SerializerBlocks.AddBlocks"/>
             public Builder AddBlocks(params ISerializerBlock[] blocks)
             {
@@ -178,6 +213,13 @@ namespace SourceSerializer
             public Builder RemoveBlock<T>()
             {
                 SerializerBlocks.RemoveBlock<T>();
+                return this;
+            }
+
+            /// <inheritdoc cref="SerializerBlocks.RemoveBlock(Type)"/>
+            public Builder RemoveBlock(Type dataType)
+            {
+                SerializerBlocks.RemoveBlock(dataType);
                 return this;
             }
         }
