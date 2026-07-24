@@ -334,4 +334,14 @@ public class PrimitiveScannerTests
         Assert.That(r, Is.GreaterThan(0));
         assert(original, parsed);
     }
+
+    // ── 原语边界值 ──
+
+    [Test] public void Scan_Int_MinValue() { Assert.That(SerializerBlocks.TryGet<IntOnly>(out var b), Is.True); int r = b.Scan(int.MinValue.ToString().AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(int.MinValue)); }
+    [Test] public void Scan_Int_MaxValue() { Assert.That(SerializerBlocks.TryGet<IntOnly>(out var b), Is.True); int r = b.Scan(int.MaxValue.ToString().AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(int.MaxValue)); }
+    [Test] public void Scan_Uint_MaxValue() { Assert.That(SerializerBlocks.TryGet<UintField>(out var b), Is.True); int r = b.Scan(uint.MaxValue.ToString().AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(uint.MaxValue)); }
+    [Test] public void Scan_Short_MinValue() { Assert.That(SerializerBlocks.TryGet<ShortField>(out var b), Is.True); int r = b.Scan(short.MinValue.ToString().AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(short.MinValue)); }
+    [Test] public void Scan_Double_MaxValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); int r = b.Scan(double.MaxValue.ToString("G17").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MaxValue)); }
+    [Test] public void Scan_Double_MinValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); int r = b.Scan(double.MinValue.ToString("G17").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MinValue)); }
+    [Test] public void Scan_Float_NegZero() { Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var b), Is.True); int r = b.Scan("-0".AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(-0f)); }
 }

@@ -179,4 +179,31 @@ public class EdgeCaseTests
         int r = block.Scan("t".AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
+
+    // ── 空白处理 ──
+
+    [Test]
+    public void Scan_LeadingWhitespace_NoMatch()
+    {
+        Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var block), Is.True);
+        int r = block.Scan("  3.5".AsSpan(), 0, out _);
+        Assert.That(r, Is.EqualTo(0));  // Scanner 不自动调过空白
+    }
+
+    [Test]
+    public void Scan_TrailingWhitespace_StopsBefore()
+    {
+        Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var block), Is.True);
+        int r = block.Scan("3.5  ".AsSpan(), 0, out _);
+        Assert.That(r, Is.GreaterThan(0));
+    }
+
+    [Test]
+    public void Scan_TabSeparated()
+    {
+        // Point2D template 使用空格分隔符，制表符不匹配——预期返回 start
+        Assert.That(SerializerBlocks.TryGet<Point2D>(out var block), Is.True);
+        int r = block.Scan("1.5\t-2".AsSpan(), 0, out _);
+        Assert.That(r, Is.EqualTo(0));
+    }
 }

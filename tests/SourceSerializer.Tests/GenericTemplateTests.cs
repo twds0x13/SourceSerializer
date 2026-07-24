@@ -184,7 +184,7 @@ public class GenericTemplateTests
         var sb = new StringBuilder();
         var val = new UsesBox { B = new Box<string> { Value = "world" } };
         block.Emit(sb, val);
-        Assert.That(sb.ToString(), Is.EqualTo("world"));
+        Assert.That(sb.ToString(), Is.EqualTo("\"world\""));
     }
 
     // ── 不同内置类型组合 ──
@@ -238,7 +238,7 @@ public class GenericTemplateTests
     public void ListOfWrapper_Float_Scan()
     {
         Assert.That(SerializerBlocks.TryGet<List<Wrapper<float>>>(out var block), Is.True);
-        int r = block.Scan("3.5, 7, -1".AsSpan(), 0, out List<Wrapper<float>> v);
+        int r = block.Scan("List(3.5, 7, -1)".AsSpan(), 0, out List<Wrapper<float>> v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Count, Is.EqualTo(3));
         Assert.That(v[0].Value, Is.EqualTo(3.5f).Within(1e-5f));
@@ -250,9 +250,9 @@ public class GenericTemplateTests
     public void ListOfWrapper_Float_Empty()
     {
         Assert.That(SerializerBlocks.TryGet<List<Wrapper<float>>>(out var block), Is.True);
-        int r = block.Scan("".AsSpan(), 0, out List<Wrapper<float>> v);
-        // "<first>..." with no input: fails at first element attempt
-        Assert.That(r, Is.EqualTo(0));
+        int r = block.Scan("List()".AsSpan(), 0, out List<Wrapper<float>> v);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(v.Count, Is.EqualTo(0));
     }
 
     // ── Optional 块内的泛型字段 ──

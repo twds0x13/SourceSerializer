@@ -78,7 +78,7 @@ public class ManagedTypeTests
     public void Modifiable_WithManagedList()
     {
         Assert.That(SerializerBlocks.TryGet<Modifiable>(out var block), Is.True);
-        int r = block.Scan("100, sword|1.5, shield|2.5".AsSpan(), 0, out Modifiable v);
+        int r = block.Scan("100, List(sword|1.5, shield|2.5)".AsSpan(), 0, out Modifiable v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Mods, Is.Not.Null);

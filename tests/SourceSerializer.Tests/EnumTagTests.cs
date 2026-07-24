@@ -62,4 +62,35 @@ public class EnumTagTests
         int r = block.Scan("water|10".AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
+
+    // ── : int 后端枚举 ──
+
+    [Test]
+    public void IntBackedEnum_ScanAndEmit()
+    {
+        Assert.That(SerializerBlocks.TryGet<IntSpell>(out var block), Is.True);
+        int r = block.Scan("Fire 10".AsSpan(), 0, out var v);
+        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(v.Elem, Is.EqualTo(IntElement.Fire));
+        Assert.That(v.Power, Is.EqualTo(10));
+        var sb = new System.Text.StringBuilder();
+        block.Emit(sb, v);
+        Assert.That(sb.ToString(), Is.EqualTo("Fire 10"));
+    }
+
+    // ── 无 [Tag] 枚举 — 当前 SG 不支持（无 [Tag] 枚举触发 SSR004）
+    // 待 SG 添加 enum 值名 fallback 后补充测试。
+}
+
+public enum IntElement : int
+{
+    [Tag("Fire")] Fire = 0,
+    [Tag("Ice")]  Ice  = 1,
+}
+
+[Template("<IntElement Elem> <int Power>")]
+public struct IntSpell
+{
+    public IntElement Elem;
+    public int Power;
 }

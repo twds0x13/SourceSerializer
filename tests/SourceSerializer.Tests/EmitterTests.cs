@@ -149,11 +149,11 @@ public class EmitterTests
     }
 
     [Test]
-    public void Emit_String_Plain()
+    public void Emit_String_AlwaysQuoted()
     {
         var sb = new StringBuilder();
         SerializerRegistry.Emit_String(sb, "hello");
-        Assert.That(sb.ToString(), Is.EqualTo("hello"));
+        Assert.That(sb.ToString(), Is.EqualTo("\"hello\""));
     }
 
     [Test]
