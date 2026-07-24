@@ -24,13 +24,14 @@ public static class SerializerRegistry
 | `sbyte` | `Scan_Sbyte` | Delegates to Scan_Int, result truncated to sbyte |
 | `bool` | `Scan_Bool` | Exact match of `true` or `false` |
 | `char` | `Scan_Char` | Reads a single character |
+| `string` | `Scan_String` | Quoted or unquoted character sequence; Emit always adds quotes |
 
 ## Scanner Method Convention
 
 All scanner methods follow a uniform signature:
 
 ```csharp
-internal static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
+public static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
 ```
 
 Return value convention: `> pos` indicates successful match and returns the end position; `== pos` indicates no match (parse failure), value is `default`.

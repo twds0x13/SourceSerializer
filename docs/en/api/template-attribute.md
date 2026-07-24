@@ -61,7 +61,7 @@ Deserialization (scan):
 
 ```csharp
 SerializerBlocks.TryGet<Point2D>(out var scan);
-scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+scan.Scan("Point2D(3.5, -2.1)".AsSpan(), 0, out Point2D v);
 ```
 
 Serialization (emit):
@@ -69,6 +69,6 @@ Serialization (emit):
 ```csharp
 SerializerBlocks.TryGet<Point2D>(out var emit);
 var sb = new StringBuilder();
-block.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
-Console.WriteLine(sb.ToString()); // "3.5 -2.1"
+emit.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+Console.WriteLine(sb.ToString()); // "Point2D(3.5, -2.1)"
 ```

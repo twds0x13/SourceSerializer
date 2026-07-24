@@ -123,6 +123,26 @@ public struct Stats
 
 注意：被标记的字段不应出现在模板字符串中。若模板字符串仍引用该字段的类型，source generator 仍会报告 SSR004 错误。
 
+## SSR006：模板歧义
+
+同一接口的两种具现类型的模板互为前缀，导致接口分派无法可靠区分。编译将停止。
+
+触发示例：
+
+```csharp
+interface IVector { }
+
+[Template("Vec(<float X>, <float Y>)")]
+struct Vec2 : IVector { float X; float Y; }
+
+[Template("Vec(<float X>, <float Y>, <float Z>)")]
+struct Vec3 : IVector { float X; float Y; float Z; }
+// Vec2 的模板 "Vec(<float X>, <float Y>)" 是 Vec3 模板的前缀
+// 扫描时无法确定何时停止 → SSR006
+```
+
+修复方法：调整模板使各具现类型的前缀可区分，例如 `Vec2(...)` 和 `Vec3(...)` 使用不同前缀。
+
 ## 参见
 
 - [模板语法](./template-syntax): compact 与 XML 格式

@@ -123,6 +123,26 @@ public struct Stats
 
 Note: marked fields should not appear in the template string. If the template string still references the field's type, the source generator will still report SSR004.
 
+## SSR006: Template Ambiguity
+
+Two concrete types implementing the same interface have templates that are prefixes of each other, making interface dispatch unable to reliably distinguish them. Compilation will stop.
+
+Trigger example:
+
+```csharp
+interface IVector { }
+
+[Template("Vec(<float X>, <float Y>)")]
+struct Vec2 : IVector { float X; float Y; }
+
+[Template("Vec(<float X>, <float Y>, <float Z>)")]
+struct Vec3 : IVector { float X; float Y; float Z; }
+// Vec2's template "Vec(<float X>, <float Y>)" is a prefix of Vec3's template
+// The scanner cannot determine when to stop → SSR006
+```
+
+Fix: adjust templates so each concrete type's prefix is distinguishable, e.g., `Vec2(...)` and `Vec3(...)` with different prefixes.
+
 ## See Also
 
 - [Template Syntax](./template-syntax): Compact and XML formats

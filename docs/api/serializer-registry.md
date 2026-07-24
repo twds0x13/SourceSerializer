@@ -24,13 +24,14 @@ public static class SerializerRegistry
 | `sbyte` | `Scan_Sbyte` | 委托到 Scan_Int，结果截断为 sbyte |
 | `bool` | `Scan_Bool` | 精确匹配 `true` 或 `false` |
 | `char` | `Scan_Char` | 读取单个字符 |
+| `string` | `Scan_String` | 引号包裹或非空白字符序列，Emit 始终加引号 |
 
 ## 扫描方法约定
 
 所有扫描方法遵循统一签名：
 
 ```csharp
-internal static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
+public static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
 ```
 
 返回值约定：`> pos` 表示匹配成功并返回结束位置；`== pos` 表示未匹配（解析失败），value 为 `default`。
