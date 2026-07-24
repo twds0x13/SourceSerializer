@@ -1,3 +1,9 @@
+## [3.1.0](https://github.com/twds0x13/SourceSerializer/compare/v3.0.3...v3.1.0) (2026-07-24)
+
+### Features
+
+* array emit, collection List() format, string always-quoted, T[] synthesis ([23fbdf5](https://github.com/twds0x13/SourceSerializer/commit/23fbdf50c4083493314c953acbe25344aec05dd3))
+
 ## [3.0.3](https://github.com/twds0x13/SourceSerializer/compare/v3.0.2...v3.0.3) (2026-07-23)
 
 ### Bug Fixes
