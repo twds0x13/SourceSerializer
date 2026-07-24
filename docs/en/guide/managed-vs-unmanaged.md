@@ -9,7 +9,7 @@ When `T : unmanaged`, uses single-pass parsing.
 The source generator emits a `Scan_TypeName` method that receives a `ReadOnlySpan<char>`, fills a stack-allocated struct instance field by field. Zero heap allocation, Burst-compatible.
 
 ```csharp
-[Template("<float X> <float Y>")]
+[Template("Point2D(<float X>, <float Y>)")]
 public struct Point2D
 {
     public float X;

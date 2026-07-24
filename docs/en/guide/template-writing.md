@@ -2,29 +2,30 @@
 
 This guide demonstrates complete template syntax through concrete data structures. Each example includes the C# type definition, template string, and sample inputs.
 
+The recommended unified style: **`TypeName(<type field>, <type field>, ...)`** — function-call wrapping with comma+space separators. This mirrors the `List(...)`, `Dict(...)`, and `HashSet(...)` collection format for visual consistency.
+
 ---
 
 ## 1. Primitive Value Types
 
 ```csharp
-// float / int / double / bool / string / long / byte / char / short ...
-[Template("<float X>, <float Y>")]
+[Template("Point(<float X>, <float Y>)")]
 struct Point { float X; float Y; }
 
-// Input: "3.5, -2"
-// Input: "100, 0.5"
+// Input: "Point(3.5, -2)"
+// Input: "Point(100, 0.5)"
 ```
 
-Separators and literal text are freely chosen: commas, pipes, spaces, and parentheses all work:
+Multiple fields use comma separators. String values are always quoted:
 
 ```csharp
-[Template("<string Name>|<int Level>")]
+[Template("Player(<string Name>, <int Level>)")]
 struct Player { string Name; int Level; }
-// Input: "warrior|5"
+// Input: "Player(\"warrior\", 5)"
 
-[Template("<float Min> to <float Max>")]
+[Template("Range(<float Min>, <float Max>)")]
 struct Range { float Min; float Max; }
-// Input: "10 to 100"
+// Input: "Range(10, 100)"
 ```
 
 **All built-in types**: `float` `double` `int` `uint` `long` `ulong` `short` `ushort` `byte` `sbyte` `bool` `char` `string`
@@ -34,28 +35,28 @@ struct Range { float Min; float Max; }
 ## 2. Optional Blocks
 
 ```csharp
-[Template("<float Base><optional>, <float Bonus></optional>")]
+[Template("Damage(<float Base><optional>, <float Bonus></optional>)")]
 struct Damage
 {
     float Base;
     float Bonus;  // optional field, default = 0
 }
-// Input: "100"          → Base=100, Bonus=0
-// Input: "100, 25"      → Base=100, Bonus=25
+// Input: "Damage(100)"          → Base=100, Bonus=0
+// Input: "Damage(100, 25)"      → Base=100, Bonus=25
 ```
 
 Optional blocks can wrap multiple fields:
 
 ```csharp
-[Template("<string Name><optional>|<int Level><float Exp></optional>")]
+[Template("Player(<string Name><optional>, <int Level>, <float Exp></optional>)")]
 struct Player
 {
     string Name;
     int Level;
     float Exp;
 }
-// Input: "warrior"              → Name=warrior, Level=0, Exp=0
-// Input: "warrior|5|1200.5"     → Name=warrior, Level=5, Exp=1200.5
+// Input: "Player(\"warrior\")"                   → Name=warrior, Level=0, Exp=0
+// Input: "Player(\"warrior\", 5, 1200.5)"        → Name=warrior, Level=5, Exp=1200.5
 ```
 
 ---
@@ -65,10 +66,10 @@ struct Player
 ```csharp
 enum Element : byte { Physical = 0, [Tag("fire")] Fire, [Tag("ice")] Ice }
 
-[Template("<Element Elem><float Dmg>")]
+[Template("Spell(<Element Elem>, <float Dmg>)")]
 struct Spell { Element Elem; float Dmg; }
-// Input: "fire|50"
-// Input: "ice|30"
+// Input: "Spell(fire, 50)"
+// Input: "Spell(ice, 30)"
 ```
 
 `[Tag("...")]` declares the text representation of each enum member. Use the enum type name directly in the template — the SG auto-detects tags.
@@ -78,56 +79,52 @@ struct Spell { Element Elem; float Dmg; }
 ## 4. Nested Types
 
 ```csharp
-[Template("<float X>, <float Y>")]
+[Template("Vec2(<float X>, <float Y>)")]
 struct Vec2 { float X; float Y; }
 
-[Template("<string Name> at <Vec2 Pos>")]
+[Template("Entity(<string Name>, <Vec2 Pos>)")]
 struct Entity { string Name; Vec2 Pos; }
-// Input: "treasure at 10, 20"
+// Input: "Entity(\"treasure\", Vec2(10, 20))"
 ```
 
-Recursive dependencies resolve automatically: the SG processes `Vec2` first, then `Entity` which references it.
+Recursive dependencies resolve automatically: the SG processes `Vec2` first, then `Entity` which references it. Nested `Prefix(...)` wrappers naturally form a tree structure.
 
 ---
 
-## 5. Collections (List / Array / Dictionary)
+## 5. Collections (List / Array / Dictionary / HashSet)
 
 ```csharp
-[Template("<float Base><optional>, <List<float> Multipliers></optional>")]
+[Template("Skill(<float Base><optional>, <List<float> Multipliers></optional>)")]
 struct Skill
 {
     float Base;
     List<float> Multipliers;
 }
-// Input: "100"                        → Multipliers=List()
-// Input: "100, List(1.5)"             → Multipliers=List(1.5)
-// Input: "100, List(1.5, 2.0, 0.75)" → Multipliers=List(1.5, 2.0, 0.75)
+// Input: "Skill(100)"                           → Multipliers=List()
+// Input: "Skill(100, List(1.5))"                → Multipliers=List(1.5)
+// Input: "Skill(100, List(1.5, 2.0, 0.75))"    → Multipliers=List(1.5, 2.0, 0.75)
 ```
 
 **Collection fields work directly in templates — no explicit template declaration needed.** The system provides default templates matched through implemented interfaces:
 
-| Default Interface | Covered Types | Separator |
-|-------------------|--------------|-----------|
-| `IList<T>` | `List<T>`, `T[]`, `IList<T>`, `ICollection<T>`, `IReadOnlyList<T>`, etc. | Comma |
-| `ISet<T>` | `HashSet<T>`, `SortedSet<T>`, `ISet<T>`, `IReadOnlySet<T>`, etc. | Comma |
-| `IReadOnlyList<T>` | `IReadOnlyList<T>`, etc. | Comma |
-| `IDictionary<K,V>` | `Dictionary<K,V>`, `SortedDictionary<K,V>`, `IDictionary<K,V>`, etc. | Colon |
-| `IReadOnlyDictionary<K,V>` | `IReadOnlyDictionary<K,V>`, etc. | Colon |
+| Default Interface | Covered Types | Serialized Format |
+|-------------------|--------------|-------------------|
+| `IList<T>` | `List<T>`, `T[]`, `IList<T>`, `ICollection<T>`, `IReadOnlyList<T>`, etc. | `List(...)` |
+| `ISet<T>` | `HashSet<T>`, `SortedSet<T>`, `ISet<T>`, `IReadOnlySet<T>`, etc. | `HashSet(...)` |
+| `IReadOnlyList<T>` | `IReadOnlyList<T>`, etc. | `List(...)` |
+| `IDictionary<K,V>` | `Dictionary<K,V>`, `SortedDictionary<K,V>`, `IDictionary<K,V>`, etc. | `Dict(k: v, ...)` |
+| `IReadOnlyDictionary<K,V>` | `IReadOnlyDictionary<K,V>`, etc. | `Dict(k: v, ...)` |
 
-**Serialized format**: `List(1.5, 2.0, 3.5)` for lists, `HashSet(100, 200)` for sets, `Dict(hp:100, atk:50)` for dictionaries. Strings are always emitted with quotes.
-
-**Interface-first principle:** for custom collection types, prefer defining an interface with a template rather than annotating each class. All types implementing that interface automatically inherit the template. Class-level `[ExternalTemplate]` takes precedence over interface templates.
-
-Users can override any default template via `[ExternalTemplate]` (see Section 10).
+**Interface-first principle:** prefer defining an interface with a template for custom collections rather than annotating each class. Class-level `[ExternalTemplate]` takes precedence over interface templates.
 
 ```csharp
-[Template("<int Id><float[] Data>")]
+[Template("Payload(<int Id>, <float[] Data>)")]
 struct Payload { int Id; float[] Data; }
-// Input: "42|List(3.5, 7, 1)"    → Data=List(3.5, 7, 1)
+// Input: "Payload(42, List(3.5, 7, 1))"
 
-[Template("<Dictionary<string,int> Stats>")]
-struct Stats { Dictionary<string,int> Stats; }
-// Input: "Dict(hp:100, atk:50)"  → Stats=Dict(hp:100, atk:50)
+[Template("Stats(<Dictionary<string,int> Entries>)")]
+struct Stats { Dictionary<string,int> Entries; }
+// Input: "Stats(Dict(hp:100, atk:50))"
 ```
 
 ---
@@ -137,30 +134,30 @@ struct Stats { Dictionary<string,int> Stats; }
 Single-parameter generics:
 
 ```csharp
-[Template("<T Value>")]
+[Template("Wrapper(<T Value>)")]
 struct Wrapper<T> where T : unmanaged { T Value; }
 
-[Template("<Wrapper<float> W>")]
+[Template("UsesWrapper(<Wrapper<float> W>)")]
 struct UsesWrapper { Wrapper<float> W; }
-// Input: "3.5"
+// Input: "UsesWrapper(Wrapper(3.5))"
 ```
 
 Multi-parameter generics:
 
 ```csharp
-[Template("<T1 First>, <T2 Second>")]
+[Template("Pair(<T1 First>, <T2 Second>)")]
 struct Pair<T1, T2> where T1 : unmanaged where T2 : unmanaged
 {
     T1 First;
     T2 Second;
 }
 
-[Template("<Pair<float,int> P>")]
+[Template("UsesPair(<Pair<float,int> P>)")]
 struct UsesPair { Pair<float, int> P; }
-// Input: "3.5, 42"
+// Input: "UsesPair(Pair(3.5, 42))"
 ```
 
-Type parameter names are arbitrary (`T`, `TKey`, `TValue`, `TData` all work). The SG maps type parameters by **position**, with no limit on parameter count. `Wrapper<float>` triggers automatic synthesis when referenced by `UsesWrapper`.
+Type parameter names are arbitrary (`T`, `TKey`, `TValue`, `TData` all work). The SG maps type parameters by **position**, with no limit on count. `Wrapper<float>` triggers automatic synthesis when referenced by `UsesWrapper`.
 
 ---
 
@@ -169,29 +166,27 @@ Type parameter names are arbitrary (`T`, `TKey`, `TValue`, `TData` all work). Th
 ```csharp
 interface IVector { }
 
-[Template("<float X>, <float Y>")]
+[Template("Vec2(<float X>, <float Y>)")]
 struct Vec2 : IVector { float X; float Y; }
 
-[Template("<float X>, <float Y>, <float Z>")]
+[Template("Vec3(<float X>, <float Y>, <float Z>)")]
 struct Vec3 : IVector { float X; float Y; float Z; }
 
 // Use the interface name directly in the template
-[Template("<IVector V>")]
+[Template("VectorWrapper(<IVector V>)")]
 struct VectorWrapper { IVector V; }
-// Input: "1.5, -2"         → Vec2(1.5, -2)
-// Input: "3, 5, 7"         → Vec3(3, 5, 7)  (longest match wins)
+// Input: "VectorWrapper(Vec2(1.5, -2))"
+// Input: "VectorWrapper(Vec3(3, 5, 7))"
 ```
 
-Any number of interface implementations is supported (struct + class mixed). The SG generates dispatch internally. **Longest match wins**: templates with shared prefixes will not mis-match.
-
-Interfaces registered across multiple assemblies via hot-reload DLLs are merged into a dispatch chain — later registrations append to the chain rather than overwriting, so all concrete types remain reachable.
+Any number of interface implementations is supported (struct + class mixed). Interface blocks registered across assemblies via hot-reload DLLs are automatically chain-merged.
 
 ---
 
 ## 8. `[TemplateIgnore]`
 
 ```csharp
-[Template("<float Value>")]
+[Template("Container(<float Value>)")]
 struct Container
 {
     float Value;
@@ -199,7 +194,7 @@ struct Container
 }
 ```
 
-Fields marked `[TemplateIgnore]` do not appear in generated code and do not trigger dependency errors (SSR004). Use for runtime state, caches, circular references, and other non-serializable fields.
+Fields marked `[TemplateIgnore]` do not appear in generated code and do not trigger SSR004. Use for runtime state, caches, and other non-serializable fields.
 
 ---
 
@@ -209,9 +204,9 @@ Fields marked `[TemplateIgnore]` do not appear in generated code and do not trig
 [assembly: TypeAlias("HP", "float")]
 [assembly: TypeAlias("MP", "float")]
 
-[Template("<HP Health>, <MP Mana>")]
+[Template("Stats(<HP Health>, <MP Mana>)")]
 struct Stats { float Health; float Mana; }
-// Input: "100, 50"
+// Input: "Stats(100, 50)"
 ```
 
 Aliases only change the type name in the template. Parsing behavior is identical to the original type.
@@ -220,32 +215,32 @@ Aliases only change the type name in the template. Parsing behavior is identical
 
 ## 10. External Type Templates
 
-Register templates for types whose source code you don't own (third-party libraries, system types, generic collections):
+Register templates for types whose source code you don't own:
 
 **Concrete types**:
 
 ```csharp
-[assembly: ExternalTemplate(typeof(Vector3), "<float x>, <float y>, <float z>")]
+[assembly: ExternalTemplate(typeof(Vector3), "Vector3(<float x>, <float y>, <float z>)")]
 ```
 
 **Overriding default collection templates**:
 
 ```csharp
-// Use semicolons instead of commas as separators
-[assembly: ExternalTemplate(typeof(List<>), "<first><T item></first><body>; <T item></body>")]
+// Semicolons instead of commas
+[assembly: ExternalTemplate(typeof(List<>), "List(<first><T item></first><body>; <T item></body>)")]
 
-// Use equals instead of colons
-[assembly: ExternalTemplate(typeof(Dictionary<,>), "<first><TKey key>=<TValue value></first><body>, <TKey key>=<TValue value></body>")]
+// Equals instead of colons
+[assembly: ExternalTemplate(typeof(Dictionary<,>), "Dict(<first><TKey key>=<TValue value></first><body>, <TKey key>=<TValue value></body>)")]
 ```
 
-`typeof(List<>)` and `typeof(Dictionary<,>)` reference open generic types. Type parameter placeholders in the template must match real type parameter names (`T`, `TKey`, `TValue`). The SG substitutes by name when synthesizing concrete instances.
+`typeof(List<>)` and `typeof(Dictionary<,>)` reference open generic types. Type parameter placeholders must match real names (`T`, `TKey`, `TValue`). The SG substitutes by name when synthesizing concrete instances.
 
 ---
 
 ## 11. Class Types
 
 ```csharp
-[Template("<string Name>|<float Value>")]
+[Template("NamedValue(<string Name>, <float Value>)")]
 class NamedValue
 {
     public string Name;
@@ -253,16 +248,16 @@ class NamedValue
 }
 
 // Classes can be used as field types in other templates
-[Template("<float Base><optional>, <List<NamedValue> Mods></optional>")]
+[Template("Modifiable(<float Base><optional>, <List<NamedValue> Mods></optional>)")]
 class Modifiable
 {
     public float Base;
     public List<NamedValue> Mods;
 }
-// Input: "100, List(sword|1.5, shield|2.5)"
+// Input: "Modifiable(100, List(NamedValue(\"sword\", 1.5), NamedValue(\"shield\", 2.5)))"
 ```
 
-Class fields are initialized via `new T()` (structs use `default`). The SG determines allocation strategy at compile time via Roslyn's `IsUnmanagedType`.
+Class fields are initialized via `new T()` (structs use `default`). The SG determines strategy at compile time via Roslyn's `IsUnmanagedType`.
 
 ---
 
@@ -273,7 +268,7 @@ Class fields are initialized via `new T()` (structs use `default`). The SG deter
 ```csharp
 enum ItemType { [Tag("weapon")] Weapon, [Tag("potion")] Potion, [Tag("scroll")] Scroll }
 
-[Template("<int Id>|<string Name>|<ItemType Type>|<int Price><optional>|<string Description></optional>")]
+[Template("Item(<int Id>, <string Name>, <ItemType Type>, <int Price><optional>, <string Description></optional>)")]
 struct Item
 {
     int Id;
@@ -282,36 +277,36 @@ struct Item
     int Price;
     string Description;
 }
-// Input: "42|steel_sword|weapon|150"
-// Input: "99|health_vial|potion|25|restores 50 HP"
+// Input: "Item(42, \"steel_sword\", weapon, 150)"
+// Input: "Item(99, \"health_vial\", potion, 25, \"restores 50 HP\")"
 ```
 
 ### Deep Nesting
 
 ```csharp
-[Template("<float X>, <float Y>, <float Z>")]
+[Template("Vec3(<float X>, <float Y>, <float Z>)")]
 struct Vec3 { float X; float Y; float Z; }
 
-[Template("<Vec3 Center>|<float Radius>")]
+[Template("Sphere(<Vec3 Center>, <float Radius>)")]
 struct Sphere { Vec3 Center; float Radius; }
 
-[Template("<string Name>|<Sphere Bounds>")]
+[Template("Zone(<string Name>, <Sphere Bounds>)")]
 struct Zone { string Name; Sphere Bounds; }
-// Input: "safe_zone|10, 0, 5|100"
+// Input: "Zone(\"safe_zone\", Sphere(Vec3(10, 0, 5), 100))"
 ```
 
 ### Config with Optional Generic Collections
 
 ```csharp
-[Template("<string Name>|<float Duration><optional>|<List<string> Tags></optional>")]
+[Template("BuffConfig(<string Name>, <float Duration><optional>, <List<string> Tags></optional>)")]
 struct BuffConfig
 {
     string Name;
     float Duration;
     List<string> Tags;
 }
-// Input: "berserk|30"
-// Input: "shield|10|List(\"fire\", \"reflect\", \"timed\")"
+// Input: "BuffConfig(\"berserk\", 30)"
+// Input: "BuffConfig(\"shield\", 10, List(\"fire\", \"reflect\", \"timed\"))"
 ```
 
 ### Complex Nesting with Interface Generics
@@ -319,29 +314,27 @@ struct BuffConfig
 ```csharp
 interface IEffect { }
 
-[Template("<float Amount>")]
+[Template("DamageEffect(<float Amount>)")]
 struct DamageEffect : IEffect { float Amount; }
 
-[Template("<float Duration>|<float Rate>")]
+[Template("RegenEffect(<float Duration>, <float Rate>)")]
 struct RegenEffect : IEffect { float Duration; float Rate; }
 
-[Template("<int Id>|<IEffect Form>")]
+[Template("ElementDescriptor(<int Id>, <IEffect Form>)")]
 struct ElementDescriptor
 {
     int Id;
     IEffect Form;
 }
 
-[Template("<string Name>|<float Base><optional>|<List<ElementDescriptor> Combo></optional>")]
+[Template("Ability(<string Name>, <float Base><optional>, <List<ElementDescriptor> Combo></optional>)")]
 struct Ability
 {
     string Name;
     float Base;
     List<ElementDescriptor> Combo;
 }
-// Input: "fireball|100, List(1|50, 2|5|0.1)"
-// Descriptor[0] = Id=1, Form=DamageEffect(50)
-// Descriptor[1] = Id=2, Form=RegenEffect(5, 0.1)
+// Input: "Ability(\"fireball\", 100, List(ElementDescriptor(1, DamageEffect(50)), ElementDescriptor(2, RegenEffect(5, 0.1))))"
 ```
 
 ---
@@ -351,12 +344,13 @@ struct Ability
 Both syntaxes are equivalent — use either:
 
 ```csharp
-// Compact syntax
-[Template("<float X>, <float Y><optional>, <float Z></optional>")]
+// Compact syntax (recommended)
+[Template("Point(<float X>, <float Y><optional>, <float Z></optional>)")]
 
 // XML syntax
 [Template(@"
   <literal-template>
+    <text>Point(</text>
     <field type=""float"" name=""X""/>
     <text>, </text>
     <field type=""float"" name=""Y""/>
@@ -364,6 +358,7 @@ Both syntaxes are equivalent — use either:
       <text>, </text>
       <field type=""float"" name=""Z""/>
     </optional>
+    <text>)</text>
   </literal-template>")]
 ```
 
@@ -375,10 +370,12 @@ Use XML syntax when `<` or `>` characters need escaping in compact form.
 
 | Old | Replacement |
 |-----|-------------|
+| Bare fields without type prefix | Wrap in `TypeName(...)` |
+| `\|` or arbitrary separators | Unified comma `, ` separator |
 | `<repetition>A</repetition>` | `<first>A</first><body>A</body>` |
 | `<repetition><first>A</first><body>B</body></repetition>` | `<first>A</first><body>B</body>` |
 
-Use `<first>/<body>` directly without wrapping in `<repetition>`. Collection type templates (`List<T>`, `Dictionary<K,V>`) are built into the SG — no manual repetition logic is needed.
+Use `<first>/<body>` directly without wrapping in `<repetition>`. Collection type templates are built into the SG — no manual repetition logic is needed.
 
 ---
 
@@ -391,4 +388,4 @@ Use `<first>/<body>` directly without wrapping in `<repetition>`. Collection typ
 | SSR003 | Field referenced in template is readonly with no matching constructor — add constructor or remove readonly |
 | SSR004 | Field type missing `[Template]` — add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
 | SSR005 | Scalar field inside repetition block — use a collection type instead |
-| SSR006 | Template ambiguity across interface implementations |
+| SSR006 | Template ambiguity across interface implementations — adjust templates so each implementation is distinguishable |

@@ -9,7 +9,7 @@ SourceSerializer 在编译期根据 `typeof(T)` 判别策略。
 source generator 生成一个 `Scan_TypeName` 方法，接收 `ReadOnlySpan<char>`，逐字段填充 struct 实例。全程零堆分配，Burst 兼容。
 
 ```csharp
-[Template("<float X> <float Y>")]
+[Template("Point2D(<float X>, <float Y>)")]
 public struct Point2D
 {
     public float X;

@@ -26,7 +26,7 @@ Unity 项目在 `manifest.json` 中添加：
 ```csharp
 using SourceSerializer;
 
-[Template("<float X> <float Y>")]
+[Template("Point2D(<float X>, <float Y>)")]
 public struct Point2D
 {
     public float X;

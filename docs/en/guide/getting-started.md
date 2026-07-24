@@ -26,7 +26,7 @@ Use `[Template("...")]` on a struct to declare its text format:
 ```csharp
 using SourceSerializer;
 
-[Template("<float X> <float Y>")]
+[Template("Point2D(<float X>, <float Y>)")]
 public struct Point2D
 {
     public float X;

@@ -1,43 +1,44 @@
 # Collection Examples
 
-Collection types work directly in templates without explicit template declarations.
+Collection types work directly in templates — no explicit template declaration needed.
 
 ## List
 
 ```csharp
-[Template("<float Base><optional>, <List<float> Multipliers></optional>")]
+[Template("Skill(<float Base><optional>, <List<float> Multipliers></optional>)")]
 struct Skill { float Base; List<float> Multipliers; }
 
-// Input: "100" → Multipliers=[]
-// Input: "100, 1.5, 2.0" → Multipliers=[1.5, 2.0]
+// Input: "Skill(100)" → Multipliers=List()
+// Input: "Skill(100, List(1.5, 2.0))" → Multipliers=List(1.5, 2.0)
 
 // Serialization
 SerializerBlocks.TryGet<Skill>(out var block);
 block.Emit(sb, new Skill { Base = 100, Multipliers = new() { 1.5f, 2.0f } });
-// → "100, 1.5, 2.0"
+// → "Skill(100, List(1.5, 2.0))"
 ```
 
 ## HashSet
 
 ```csharp
-[Template("<HashSet<float> Items>")]
+[Template("UsesHashSet(<HashSet<float> Items>)")]
 struct UsesHashSet { HashSet<float> Items; }
 
-// Automatically resolved via ISet<T> default interface template
+// Serialized format: "UsesHashSet(HashSet(1.5, 2.0))"
 ```
 
 ## Dictionary
 
 ```csharp
-// Automatically resolved via IDictionary<K,V> default interface template
-// Format: "key: value, key2: value2"
+// Resolved via IDictionary<K,V> default interface template
+// Serialized format: "Dict(k: v, k2: v2)"
 ```
 
 ## Nested Generic Collections
 
 ```csharp
-[Template("<List<HashSet<float>> Nested>")]
+[Template("HasNestedHashSet(<List<HashSet<float>> Nested>)")]
 struct HasNestedHashSet { List<HashSet<float>> Nested; }
+// Serialized: "HasNestedHashSet(List(HashSet(1.5, 2.0), HashSet(3.0)))"
 ```
 
 See `CollectionRepetitionTests.cs` and `GenericTemplateTests.cs` for complete runnable test cases.
