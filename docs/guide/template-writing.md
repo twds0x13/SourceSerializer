@@ -27,7 +27,7 @@ struct Range { float Min; float Max; }
 // 输入: "10 to 100"
 ```
 
-**全部内置类型**：`float` `double` `int` `uint` `long` `ulong` `short` `ushort` `byte` `sbyte` `bool` `char` `string` `decimal` `nint` `nuint` `Half`
+**全部内置类型**：`float` `double` `int` `uint` `long` `ulong` `short` `ushort` `byte` `sbyte` `bool` `char` `string`
 
 ---
 
@@ -99,9 +99,9 @@ struct Skill
     float Base;
     List<float> Multipliers;
 }
-// 输入: "100"                    → Multipliers=[]
-// 输入: "100, 1.5"              → Multipliers=[1.5]
-// 输入: "100, 1.5, 2.0, 0.75"  → Multipliers=[1.5, 2.0, 0.75]
+// 输入: "100"                        → Multipliers=List()
+// 输入: "100, List(1.5)"             → Multipliers=List(1.5)
+// 输入: "100, List(1.5, 2.0, 0.75)" → Multipliers=List(1.5, 2.0, 0.75)
 ```
 
 **集合字段在模板中直接使用，无需显式声明模板。** 系统为以下接口提供了默认模板，具体类型通过其实现的接口自动匹配：
@@ -121,11 +121,11 @@ struct Skill
 ```csharp
 [Template("<int Id><float[] Data>")]
 struct Payload { int Id; float[] Data; }
-// 输入: "42|3.5, 7, 1"    → Data=[3.5, 7, 1]
+// 输入: "42|List(3.5, 7, 1)"    → Data=List(3.5, 7, 1)
 
 [Template("<Dictionary<string,int> Stats>")]
 struct Stats { Dictionary<string,int> Stats; }
-// 输入: "hp:100, atk:50"   → Stats={"hp":100, "atk":50}
+// 输入: "Dict(hp:100, atk:50)"  → Stats=Dict(hp:100, atk:50)
 ```
 
 ---
@@ -255,7 +255,7 @@ class Modifiable
     public float Base;
     public List<NamedValue> Mods;
 }
-// 输入: "100, sword|1.5, shield|2.5"
+// 输入: "100, List(sword|1.5, shield|2.5)"
 ```
 
 class 字段自动 `new T()` 初始化（struct 用 `default`）。SG 在编译期通过 Roslyn 的 `IsUnmanagedType` 判定。
@@ -307,7 +307,7 @@ struct BuffConfig
     List<string> Tags;
 }
 // 输入: "berserk|30"
-// 输入: "shield|10|fire, reflect, timed"
+// 输入: "shield|10|List(\"fire\", \"reflect\", \"timed\")"
 ```
 
 ### 含接口泛型的复杂嵌套
@@ -335,7 +335,7 @@ struct Ability
     float Base;
     List<ElementDescriptor> Combo;
 }
-// 输入: "fireball|100, 1|50, 2|5|0.1"
+// 输入: "fireball|100, List(1|50, 2|5|0.1)"
 // Descriptor[0] = Id=1, Form=DamageEffect(50)
 // Descriptor[1] = Id=2, Form=RegenEffect(5, 0.1)
 ```

@@ -99,9 +99,9 @@ struct Skill
     float Base;
     List<float> Multipliers;
 }
-// Input: "100"                    → Multipliers=[]
-// Input: "100, 1.5"              → Multipliers=[1.5]
-// Input: "100, 1.5, 2.0, 0.75"  → Multipliers=[1.5, 2.0, 0.75]
+// Input: "100"                        → Multipliers=List()
+// Input: "100, List(1.5)"             → Multipliers=List(1.5)
+// Input: "100, List(1.5, 2.0, 0.75)" → Multipliers=List(1.5, 2.0, 0.75)
 ```
 
 **Collection fields work directly in templates — no explicit template declaration needed.** The system provides default templates matched through implemented interfaces:
@@ -123,11 +123,11 @@ Users can override any default template via `[ExternalTemplate]` (see Section 10
 ```csharp
 [Template("<int Id><float[] Data>")]
 struct Payload { int Id; float[] Data; }
-// Input: "42|3.5, 7, 1"    → Data=[3.5, 7, 1]
+// Input: "42|List(3.5, 7, 1)"    → Data=List(3.5, 7, 1)
 
 [Template("<Dictionary<string,int> Stats>")]
 struct Stats { Dictionary<string,int> Stats; }
-// Input: "hp:100, atk:50"   → Stats={"hp":100, "atk":50}
+// Input: "Dict(hp:100, atk:50)"  → Stats=Dict(hp:100, atk:50)
 ```
 
 ---
@@ -259,7 +259,7 @@ class Modifiable
     public float Base;
     public List<NamedValue> Mods;
 }
-// Input: "100, sword|1.5, shield|2.5"
+// Input: "100, List(sword|1.5, shield|2.5)"
 ```
 
 Class fields are initialized via `new T()` (structs use `default`). The SG determines allocation strategy at compile time via Roslyn's `IsUnmanagedType`.
@@ -311,7 +311,7 @@ struct BuffConfig
     List<string> Tags;
 }
 // Input: "berserk|30"
-// Input: "shield|10|fire, reflect, timed"
+// Input: "shield|10|List(\"fire\", \"reflect\", \"timed\")"
 ```
 
 ### Complex Nesting with Interface Generics
@@ -339,7 +339,7 @@ struct Ability
     float Base;
     List<ElementDescriptor> Combo;
 }
-// Input: "fireball|100, 1|50, 2|5|0.1"
+// Input: "fireball|100, List(1|50, 2|5|0.1)"
 // Descriptor[0] = Id=1, Form=DamageEffect(50)
 // Descriptor[1] = Id=2, Form=RegenEffect(5, 0.1)
 ```
