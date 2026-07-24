@@ -36,6 +36,7 @@
     <Compile Include="InterfaceDispatchTests.cs" /> <!-- 接口自动分发 -->
     <Compile Include="CrossFeatureTests.cs" />      <!-- 跨功能组合 -->
     <Compile Include="HotReloadTests.cs" />        <!-- 热更新模拟：非泛型注册 -->
+    <Compile Include="ChainBlockTests.cs" />      <!-- 接口链式合并 + standalone 模式 -->
   </ItemGroup>
 
   <!-- Source Generator as Analyzer -->
