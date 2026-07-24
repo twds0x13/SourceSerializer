@@ -83,11 +83,25 @@ flowchart TD
 
 ## 内置类型
 
-12 种 C# 内置类型直接可用，无需额外配置：
+13 种 C# 内置类型直接可用，无需额外配置：
 
-float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char。
+float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string。
 
 每个内置类型有对应的零分配 span 扫描器（如 `Scan_Float`、`Scan_Int`），由 `SerializerRegistry` 提供。
+
+## 集合序列化格式
+
+内置集合模板使用函数式包裹格式，支持任意深度嵌套：
+
+| 集合类型 | 序列化格式 | 示例 |
+|---------|-----------|------|
+| `List<T>` / `T[]` | `List(...)` | `List(1.5, 2.0, 3.5)` |
+| `HashSet<T>` | `HashSet(...)` | `HashSet(100, 200)` |
+| `Dictionary<K,V>` | `Dict(...)` | `Dict(Fire: 10, Ice: 5)` |
+| 嵌套集合 | 递归包裹 | `List(List(1,2), List(3,4))` |
+| 空集合 | `List()` | `List()` |
+
+字符串值在序列化时始终加引号（`"hello world"`），反序列化时兼容有/无引号两种输入。
 
 ## 自定义类型别名
 

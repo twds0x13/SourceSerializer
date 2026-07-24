@@ -83,11 +83,25 @@ flowchart TD
 
 ## Built-in Types
 
-17 C# built-in types are available without extra configuration:
+13 C# built-in types are available without extra configuration:
 
-float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char.
+float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string.
 
 Each built-in type has a corresponding zero-allocation span scanner (e.g., `Scan_Float`, `Scan_Int`) provided by `SerializerRegistry`.
+
+## Collection Serialization Format
+
+Built-in collection templates use a function-call wrapping format with support for arbitrary nesting depth:
+
+| Collection Type | Serialized Format | Example |
+|-----------------|-------------------|---------|
+| `List<T>` / `T[]` | `List(...)` | `List(1.5, 2.0, 3.5)` |
+| `HashSet<T>` | `HashSet(...)` | `HashSet(100, 200)` |
+| `Dictionary<K,V>` | `Dict(...)` | `Dict(Fire: 10, Ice: 5)` |
+| Nested | Recursive wrapping | `List(List(1,2), List(3,4))` |
+| Empty | `List()` | `List()` |
+
+String values are always emitted with quotes (`"hello world"`). The scanner accepts both quoted and unquoted input for forward compatibility.
 
 ## Custom Type Aliases
 
@@ -119,8 +133,6 @@ public struct Spell
 ```
 
 Input `"fire"` parses to `Element.Fire`. Input `"water"` fails because no tag matches.
-
-## Third-Party Type Templates
 
 ## Fields Excluded from Serialization
 

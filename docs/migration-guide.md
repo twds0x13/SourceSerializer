@@ -30,4 +30,4 @@ block.Emit(sb, value);
 
 ### 内置类型计数
 
-内置类型从 12 种增加到 17 种：新增 `decimal`、`nint`、`nuint`、`Half`、`string`。
+内置类型共 13 种：`float`、`double`、`int`、`uint`、`long`、`ulong`、`short`、`ushort`、`byte`、`sbyte`、`bool`、`char`、`string`。

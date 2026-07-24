@@ -23,8 +23,8 @@ features:
     details: unmanaged 类型走单次 span 扫描，零堆分配；managed 类型的扫描已实现，通过 Roslyn IsUnmanagedType 编译期判定。
   - title: 四种 XML 原语
     details: 裸文字（text）、字段（field）、可选块（optional）、重复块（repetition）。compact 语法与 XML 语法等价互换。
-  - title: 17 种内置类型扫描器
-    details: float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char。零分配手写 span 扫描器。
+  - title: 13 种内置类型扫描器
+    details: float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string。零分配手写 span 扫描器。
   - title: 编译期错误诊断
     details: 循环依赖检测、只读字段拒绝、缺失类型警告、重复块标量字段错误。所有错误在编译期报告，不等到运行时 NRE。
   - title: 编译期发射器

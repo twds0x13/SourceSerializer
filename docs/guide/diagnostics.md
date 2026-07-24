@@ -72,7 +72,7 @@ public readonly struct Damage
 
 ## SSR004：缺失模板依赖
 
-字段类型既不是 17 种内置类型，也没有 `[Template]` 标注，且字段未标记 `[TemplateIgnore]`。编译将停止。
+字段类型既不是 13 种内置类型，也没有 `[Template]` 标注，且字段未标记 `[TemplateIgnore]`。编译将停止。
 
 触发示例：
 

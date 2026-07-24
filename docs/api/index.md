@@ -16,7 +16,7 @@
 
 | 类型 | 说明 |
 |------|------|
-| [`SerializerRegistry`](./serializer-registry) | 17 种内置类型的零分配 span 扫描器与发射器 |
+| [`SerializerRegistry`](./serializer-registry) | 13 种内置类型的零分配 span 扫描器与发射器 |
 | [`SerializerBlocks`](./serializer-blocks) | 双向序列化器块注册表，`TryGet<T>` 获取 Scan + Emit 能力 |
 
 ## 类型关系

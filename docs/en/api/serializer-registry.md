@@ -1,6 +1,6 @@
 # `SerializerRegistry`
 
-Built-in type registry. Provides zero-allocation span scanner methods for 16 C# built-in unmanaged types.
+Built-in type registry. Provides zero-allocation span scanner methods for 13 C# built-in unmanaged types.
 
 ## Signature
 

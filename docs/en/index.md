@@ -23,8 +23,8 @@ features:
     details: unmanaged types use single-pass span scanning, zero heap allocation; managed type deserialization is implemented, determined at compile time via Roslyn IsUnmanagedType.
   - title: Four XML Primitives
     details: Literal text, field, optional block, repetition block. Compact syntax and XML syntax are equivalent and interchangeable.
-  - title: 12 Built-in Type Scanners
-    details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char. Hand-written zero-allocation span scanners.
+  - title: 13 Built-in Type Scanners
+    details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string. Hand-written zero-allocation span scanners.
   - title: Compile-time Error Diagnostics
     details: Circular dependency detection, readonly field rejection, missing type warnings, scalar-in-repetition errors. Errors surface at compile time, not at runtime.
   - title: Compile-time Emitter
