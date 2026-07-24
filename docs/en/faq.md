@@ -41,3 +41,11 @@ A: Use type parameter names as placeholders: `[Template("<T Value>")]`. Concrete
 **Q: Why isn't my custom collection type working?**
 
 A: Define an interface for the collection and annotate it with a template rather than each concrete class. All implementing types automatically inherit the template.
+
+**Q: How do I use enum names instead of integers?**
+
+A: Add `[Tag("fire")]` on enum members, then use the enum type name directly in the template (e.g., `<Element Elem>`). The SG auto-generates bidirectional tag-to-value mapping. Enum values without `[Tag]` fall back to `value.ToString()` on emit.
+
+**Q: How do I alias field type names?**
+
+A: Use `[assembly: TypeAlias("HP", "float")]` at assembly level. Write `<HP Health>` in templates. Parsing behavior is identical to the original type. Aliases can map to any registered type.

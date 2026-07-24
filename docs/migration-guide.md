@@ -26,7 +26,7 @@ block.Emit(sb, value);
 
 ### 静态构造器注册已移除
 
-生成的 `SerializerScanners.g.cs` 和 `SerializerEmitters.g.cs` 不再包含注册代码。所有注册统一到 `SerializerBlocks.g.cs`。
+注册逻辑从 `SerializerScanners.g.cs` 和 `SerializerEmitters.g.cs` 集中到 `SerializerBlocks.g.cs` 的 `Init()` 方法。三个 `.g.cs` 文件均仍在生成，分别贡献 `Scan_Xxx`、`Emit_Xxx`、`Init + Block_Xxx` 到 `GeneratedSerializers` 类。
 
 ### 内置类型计数
 
