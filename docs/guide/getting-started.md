@@ -36,11 +36,11 @@ public struct Point2D
 
 ## 使用生成的解析器
 
-编译后，source generator 生成 `Scan_Point2D` 方法并注册到 `SerializerBlocks`：
+编译后，source generator 生成 `GeneratedSerializers.Scan_Point2D` 并注册到 `SerializerBlocks`：
 
 ```csharp
 SerializerBlocks.TryGet<Point2D>(out var scan);
-int pos = block.Scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+int pos = scan.Scan("Point2D(3.5, -2.1)".AsSpan(), 0, out Point2D v);
 // pos > 0, v.X == 3.5f, v.Y == -2.1f
 ```
 
@@ -51,8 +51,8 @@ int pos = block.Scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
 ```csharp
 SerializerBlocks.TryGet<Point2D>(out var emit);
 var sb = new StringBuilder();
-block.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
-Console.WriteLine(sb.ToString()); // "3.5 -2.1"
+emit.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+Console.WriteLine(sb.ToString()); // "Point2D(3.5, -2.1)"
 ```
 
 ## 下一步

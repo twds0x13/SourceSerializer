@@ -12,7 +12,7 @@ public class TemplateIgnoreAttribute : Attribute { }
 ## 用法
 
 ```csharp
-[Template("<float Value>")]
+[Template("Container(<float Value>)")]
 struct Container
 {
     public float Value;

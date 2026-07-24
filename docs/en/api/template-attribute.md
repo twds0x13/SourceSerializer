@@ -26,20 +26,20 @@ public sealed class TemplateAttribute : Attribute
 Compact examples:
 
 ```csharp
-[Template("<float X> <float Y>")]
+[Template("Point2D(<float X>, <float Y>)")]
 public struct Point2D { public float X; public float Y; }
 
-[Template("<float Damage>|<optional>draw <int Cards></optional>")]
+[Template("SpellCard(<float Damage><optional>, draw <int Cards></optional>)")]
 public struct SpellCard { public float Damage; public int Cards; }
 
-[Template("<float Damage><repetition>, <float Multipliers></repetition>")]
+[Template("DamageData(<float Damage><repetition>, <float Multipliers></repetition>)")]
 public struct DamageData { public float Damage; public float Multipliers; }
 ```
 
 Also works on classes:
 
 ```csharp
-[Template("<string Name>")]
+[Template("NamedItem(<string Name>)")]
 public class NamedItem { public string Name; }
 ```
 

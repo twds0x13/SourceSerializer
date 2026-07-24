@@ -11,6 +11,7 @@ All SourceSerializer errors and warnings are reported at compile time via Roslyn
 | SSR003 | Error | Readonly field cannot be assigned | A field referenced in the template is `readonly` and no matching constructor exists |
 | SSR004 | Error | Missing template dependency | Template references a type without `[Template]` and the field is not marked `[TemplateIgnore]` |
 | SSR005 | Error | Scalar field inside `<repetition>` | A non-collection field appears inside a `<repetition>` block |
+| SSR006 | Error | Template ambiguity | Two concrete types sharing an interface have templates that are prefixes of each other |
 
 ## SSR001: Template Parse Error
 

@@ -36,23 +36,23 @@ public struct Point2D
 
 ## Use the Generated Parser
 
-After compilation, the source generator emits a `Scan_Point2D` method and registers it in `SerializerBlocks`:
+After compilation, the source generator emits `GeneratedSerializers.Scan_Point2D` and registers it in `SerializerBlocks`:
 
 ```csharp
 SerializerBlocks.TryGet<Point2D>(out var scan);
-int pos = block.Scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+int pos = scan.Scan("Point2D(3.5, -2.1)".AsSpan(), 0, out Point2D v);
 // pos > 0, v.X == 3.5f, v.Y == -2.1f
 ```
 
 ## Using the Generated Serializer
 
-After compilation, the source generator also emits an `Emit_Point2D` method and registers it in `SerializerBlocks`:
+After compilation, the source generator also emits `Emit_Point2D` and registers it in `SerializerBlocks`:
 
 ```csharp
 SerializerBlocks.TryGet<Point2D>(out var emit);
 var sb = new StringBuilder();
-block.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
-Console.WriteLine(sb.ToString()); // "3.5 -2.1"
+emit.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
+Console.WriteLine(sb.ToString()); // "Point2D(3.5, -2.1)"
 ```
 
 ## Next Steps

@@ -7,7 +7,7 @@ SourceSerializer supports two equivalent template formats: compact and XML. The 
 Fields are declared with `<type fieldname>`. Literal text is written directly. Best for short templates:
 
 ```csharp
-[Template("<float Damage>|<optional>draw <int Cards></optional>")]
+[Template("SpellCard(<float Damage><optional>, draw <int Cards></optional>)")]
 public struct SpellCard
 {
     public float Damage;
@@ -18,7 +18,7 @@ public struct SpellCard
 Optional and repetition blocks are wrapped with `<optional>...</optional>` and `<repetition>...</repetition>`:
 
 ```csharp
-[Template("<float Damage><repetition>, <float Multipliers></repetition>")]
+[Template("DamageData(<float Damage><repetition>, <float Multipliers></repetition>)")]
 public struct DamageData
 {
     public float Damage;
@@ -125,7 +125,7 @@ enum Element
     [Tag("magic")] Magic,
 }
 
-[Template("<Element Type>")]
+[Template("Spell(<Element Type>)")]
 public struct Spell
 {
     public Element Type;
@@ -139,7 +139,7 @@ Input `"fire"` parses to `Element.Fire`. Input `"water"` fails because no tag ma
 If a struct contains fields that should not participate in serialization (caches, internal state), mark them with `[TemplateIgnore]`. Marked fields do not appear in the template string and will not trigger SSR004. See [Diagnostics](./diagnostics#using-templateignore-to-skip-fields).
 
 ```csharp
-[Template("<float Value>")]
+[Template("Stats(<float Value>)")]
 public struct Stats
 {
     public float Value;
@@ -152,7 +152,7 @@ public struct Stats
 Use `[ExternalTemplate]` to declare templates for types without `[Template]`, such as structs from third-party libraries:
 
 ```csharp
-[ExternalTemplate(typeof(Vector3), "<float x> <float y> <float z>")]
+[ExternalTemplate(typeof(Vector3), "Vector3(<float x>, <float y>, <float z>)")]
 ```
 
 ## Generic Collection Auto-Resolution
@@ -163,14 +163,14 @@ The synthesized template for `List<T>` parses comma-separated element sequences,
 
 ```csharp
 // Element type
-[Template("<float Value>")]
+[Template("NamedValue(<float Value>)")]
 public struct NamedValue
 {
     public float Value;
 }
 
 // Collection field is auto-resolved
-[Template("<repetition>, <List<NamedValue> Items></repetition>")]
+[Template("Container(<repetition>, <List<NamedValue> Items></repetition>)")]
 public struct Container
 {
     public List<NamedValue> Items;

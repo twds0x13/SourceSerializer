@@ -7,7 +7,7 @@ SourceSerializer 支持两种等价的模板书写格式：compact 格式和 XML
 字段用 `<类型 字段名>` 声明，文字直接书写。适合短模板：
 
 ```csharp
-[Template("<float Damage>|<optional>draw <int Cards></optional>")]
+[Template("SpellCard(<float Damage><optional>, draw <int Cards></optional>)")]
 public struct SpellCard
 {
     public float Damage;
@@ -18,7 +18,7 @@ public struct SpellCard
 可选块与重复块使用 `<optional>...</optional>` 和 `<repetition>...</repetition>` 包裹：
 
 ```csharp
-[Template("<float Damage><repetition>, <float Multipliers></repetition>")]
+[Template("DamageData(<float Damage><repetition>, <float Multipliers></repetition>)")]
 public struct DamageData
 {
     public float Damage;
@@ -125,7 +125,7 @@ enum Element
     [Tag("magic")] Magic,
 }
 
-[Template("<Element Type>")]
+[Template("Spell(<Element Type>)")]
 public struct Spell
 {
     public Element Type;
@@ -143,7 +143,7 @@ public struct Spell
 如果 struct 包含不应参与序列化的字段（缓存、内部状态），用 `[TemplateIgnore]` 标记。被标记的字段不出现在模板字符串中，也不会触发 SSR004 错误。详见[编译期诊断](./diagnostics#使用-templateignore-忽略字段)。
 
 ```csharp
-[Template("<float Value>")]
+[Template("Stats(<float Value>)")]
 public struct Stats
 {
     public float Value;
@@ -156,7 +156,7 @@ public struct Stats
 用 `[ExternalTemplate]` 为未标记 `[Template]` 的类型（如第三方库中的 struct）声明模板：
 
 ```csharp
-[ExternalTemplate(typeof(Vector3), "<float x> <float y> <float z>")]
+[ExternalTemplate(typeof(Vector3), "Vector3(<float x>, <float y>, <float z>)")]
 ```
 
 ## 泛型集合自动解析
@@ -167,14 +167,14 @@ public struct Stats
 
 ```csharp
 // 元素类型
-[Template("<float Value>")]
+[Template("NamedValue(<float Value>)")]
 public struct NamedValue
 {
     public float Value;
 }
 
 // 集合字段自动解析
-[Template("<repetition>, <List<NamedValue> Items></repetition>")]
+[Template("Container(<repetition>, <List<NamedValue> Items></repetition>)")]
 public struct Container
 {
     public List<NamedValue> Items;
