@@ -28,68 +28,87 @@ public struct HotShield
 // 手动实现的 ISerializerBlock<T>：模拟热更 DLL 中的序列化器
 public readonly struct Block_HotSword : ISerializerBlock<HotSword>
 {
-    // 格式: "Atk Crit" (空格分隔两个 float)
+    // 格式: Sword(100, 0.15)
     public int Scan(ReadOnlySpan<char> text, int pos, out HotSword value)
     {
         value = default;
-        if (pos >= text.Length) return pos;
+        if (pos + 6 > text.Length) return pos;
         int start = pos;
 
-        // 扫描 Atk (float)
+        // "Sword("
+        if (!text.Slice(pos, 6).SequenceEqual("Sword(".AsSpan())) return pos;
+        pos += 6;
+
         int pre = pos;
         pos = SerializerRegistry.Scan_Float(text, pos, out float atk);
         if (pos == pre) return start;
         value.Atk = atk;
 
-        // 空格
-        if (pos >= text.Length || text[pos] != ' ') return start;
-        pos++;
+        // ", "
+        if (pos + 1 >= text.Length || text[pos] != ',' || text[pos + 1] != ' ') return start;
+        pos += 2;
 
-        // 扫描 Crit (float)
         pos = SerializerRegistry.Scan_Float(text, pos, out float crit);
         if (pos == pre) return start;
         value.Crit = crit;
+
+        // ")"
+        if (pos >= text.Length || text[pos] != ')') return start;
+        pos++;
 
         return pos;
     }
 
     public void Emit(StringBuilder sb, HotSword value)
     {
+        sb.Append("Sword(");
         SerializerRegistry.Emit_Float(sb, value.Atk);
-        sb.Append(' ');
+        sb.Append(", ");
         SerializerRegistry.Emit_Float(sb, value.Crit);
+        sb.Append(')');
     }
 }
 
 public readonly struct Block_HotShield : ISerializerBlock<HotShield>
 {
-    // 格式: "Def|Weight"
+    // 格式: Shield(50, 8)
     public int Scan(ReadOnlySpan<char> text, int pos, out HotShield value)
     {
         value = default;
-        if (pos >= text.Length) return pos;
+        if (pos + 7 > text.Length) return pos;
         int start = pos;
+
+        // "Shield("
+        if (!text.Slice(pos, 7).SequenceEqual("Shield(".AsSpan())) return pos;
+        pos += 7;
 
         int pre = pos;
         pos = SerializerRegistry.Scan_Float(text, pos, out float def);
         if (pos == pre) return start;
         value.Def = def;
 
-        if (pos >= text.Length || text[pos] != '|') return start;
-        pos++;
+        // ", "
+        if (pos + 1 >= text.Length || text[pos] != ',' || text[pos + 1] != ' ') return start;
+        pos += 2;
 
         pos = SerializerRegistry.Scan_Float(text, pos, out float weight);
         if (pos == pre) return start;
         value.Weight = weight;
+
+        // ")"
+        if (pos >= text.Length || text[pos] != ')') return start;
+        pos++;
 
         return pos;
     }
 
     public void Emit(StringBuilder sb, HotShield value)
     {
+        sb.Append("Shield(");
         SerializerRegistry.Emit_Float(sb, value.Def);
-        sb.Append('|');
+        sb.Append(", ");
         SerializerRegistry.Emit_Float(sb, value.Weight);
+        sb.Append(')');
     }
 }
 
@@ -143,7 +162,7 @@ public class HotReloadTests
 
         var shield = new HotShield { Def = 50f, Weight = 8f };
         var serialized = SerializerBlocks.Serialize(shield);
-        Assert.That(serialized, Is.EqualTo("50|8"));
+        Assert.That(serialized, Is.EqualTo("Shield(50, 8)"));
 
         var deserialized = SerializerBlocks.Deserialize<HotShield>(serialized);
         Assert.That(deserialized.Def, Is.EqualTo(50f).Within(1e-5f));

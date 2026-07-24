@@ -14,6 +14,30 @@
 
 不同程序集通过热更 DLL 注册的接口块自动链合并（`ChainBlock<T>`）——后注册追加到分发链，保持所有具现类型可达。
 
+## 接口链合并 (ChainBlock\<T\>)
+
+`RegisterBlock<T>` 是 `AddBlock` 的核心分发逻辑，对接口类型做合并而非覆盖：
+
+```
+if (typeof(T).IsInterface && _blocks 已有注册):
+    if (已有是 ChainBlock<T>):
+        chain.AddLink(newBlock)           // 追加到已有链表尾
+    else:
+        newChain = new ChainBlock<T>()
+        newChain.AddLink(旧block)         // 旧注册前置
+        newChain.AddLink(newBlock)        // 新注册后置
+else:
+    _blocks[key] = newBlock              // 非接口类型，直接覆盖
+```
+
+**ChainBlock.Scan**：按 `_links` 顺序遍历，首个推进 `pos` 的 link 胜出并立即返回。如果所有 link 都无法识别输入（返回 `pos`），整体返回 `pos` 表示失败。
+
+**ChainBlock.Emit**：按 `_links` 顺序逐一切换匹配。记录 `sb.Length` 调用前值，link 调用后 `sb.Length > before` 表示该 link 的 switch 命中并输出了内容，立即返回。依赖 SG 生成的 switch dispatch——未匹配类型的 case 不写入 sb。
+
+**非泛型 AddBlock(Type, ISerializerBlock)**：从 block 的运行时类型反射提取 `ISerializerBlock<T>` 接口的泛型参数 T，通过 `MakeGenericMethod` 委托到 `RegisterBlock<T>`，复用同一合并逻辑。
+
+线程安全：`_links` 的写入在 `lock(_syncRoot)` 内，读取在锁外。调用方约定所有 `AddBlock` 在首次 `Serialize`/`Deserialize` 前完成。
+
 ## 泛型解析 Roslyn 回退
 
 当 `ParseGenericType` 在 `openGenerics` 中找不到类型时，`TryResolveViaInterfaces` 通过 Roslyn `Compilation.GetTypeByMetadataName` 解析 BCL 类型，检查其 `AllInterfaces`，找到匹配的默认接口模板。
