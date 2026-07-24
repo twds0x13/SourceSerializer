@@ -1,3 +1,9 @@
+## [3.2.0](https://github.com/twds0x13/SourceSerializer/compare/v3.1.0...v3.2.0) (2026-07-24)
+
+### Features
+
+* public Runtime API + non-generic AddBlock/RemoveBlock for hot-reload type registration ([431a340](https://github.com/twds0x13/SourceSerializer/commit/431a340be218a2a98bb5d23b2a352a55109017a5))
+
 ## [3.1.0](https://github.com/twds0x13/SourceSerializer/compare/v3.0.3...v3.1.0) (2026-07-24)
 
 ### Features

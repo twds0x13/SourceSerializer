@@ -1,7 +1,7 @@
 {
   "name": "com.twds0x13.sourceserializer",
   "displayName": "Source Serializer",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "unity": "2021.3",
   "description": "Compile-time serializer generator. Attribute-declared schema → source-generated parser. Zero reflection, zero boxing.",
   "keywords": [
