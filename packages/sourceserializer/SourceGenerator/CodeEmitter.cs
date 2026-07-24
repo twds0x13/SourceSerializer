@@ -85,7 +85,7 @@ namespace SourceSerializer.Generator
             sb.AppendLine();
             sb.AppendLine("namespace SourceSerializer");
             sb.AppendLine("{");
-            sb.AppendLine("    partial class SerializerRegistry");
+            sb.AppendLine("    public static partial class GeneratedSerializers");
             sb.AppendLine("    {");
 
             foreach (var e in structs)
@@ -125,7 +125,7 @@ namespace SourceSerializer.Generator
 
             sb.AppendLine($"        /// <summary>接口分发扫描器：{ifaceName}</summary>");
             sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
-            sb.AppendLine($"        internal static int {methodName}(ReadOnlySpan<char> src, int pos, out {ifaceName} value)");
+            sb.AppendLine($"        public static int {methodName}(ReadOnlySpan<char> src, int pos, out {ifaceName} value)");
             sb.AppendLine("        {");
             sb.AppendLine("            value = default;");
             sb.AppendLine("            if (pos >= src.Length) return pos;");
@@ -168,7 +168,7 @@ namespace SourceSerializer.Generator
 
             sb.AppendLine($"        /// <summary>字面量扫描器：{structTypeName}</summary>");
             sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
-            sb.AppendLine($"        internal static int {methodName}(ReadOnlySpan<char> src, int pos, out {structTypeName} value)");
+            sb.AppendLine($"        public static int {methodName}(ReadOnlySpan<char> src, int pos, out {structTypeName} value)");
             sb.AppendLine("        {");
 
             if (strategy.UseConstructor)
@@ -418,7 +418,7 @@ namespace SourceSerializer.Generator
             var sb = new StringBuilder();
             sb.AppendLine($"        /// <summary>枚举标签扫描器：{enumName}</summary>");
             sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
-            sb.AppendLine($"        internal static int Scan_Enum_{enumName}(ReadOnlySpan<char> src, int pos, out {enumName} value)");
+            sb.AppendLine($"        public static int Scan_Enum_{enumName}(ReadOnlySpan<char> src, int pos, out {enumName} value)");
             sb.AppendLine("        {");
             sb.AppendLine("            value = default;");
             sb.AppendLine("            if (pos >= src.Length) return pos;");

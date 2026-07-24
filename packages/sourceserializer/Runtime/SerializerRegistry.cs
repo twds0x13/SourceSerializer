@@ -16,7 +16,7 @@ namespace SourceSerializer
     /// <see cref="ExternalTemplateAttribute"/> 声明模板后，由 source generator
     /// 编译期生成对应的 <c>Scan_Xxx</c> 方法，递归进入嵌套类型的扫描器。</para>
     /// </remarks>
-    public static partial class SerializerRegistry
+    public static class SerializerRegistry
     {
         // ═══════════════════════════════════════════════════════
         // 内置类型注册表
