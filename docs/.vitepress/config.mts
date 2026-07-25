@@ -32,6 +32,7 @@ export default withMermaid(
               items: [
                 { text: "指南目录", link: "/guide/" },
                 { text: "快速入门", link: "/guide/getting-started" },
+                { text: "核心概念", link: "/guide/core-concepts" },
                 { text: "模板语法", link: "/guide/template-syntax" },
                 { text: "模板写作", link: "/guide/template-writing" },
                 { text: "Managed vs Unmanaged", link: "/guide/managed-vs-unmanaged" },
@@ -74,6 +75,10 @@ export default withMermaid(
               items: [
                 { text: "基础示例", link: "/examples/basic" },
                 { text: "集合示例", link: "/examples/collections" },
+                { text: "枚举标签与别名", link: "/examples/enum-and-alias" },
+                { text: "接口自动分派", link: "/examples/interface-dispatch" },
+                { text: "自定义泛型", link: "/examples/custom-generics" },
+                { text: "手写序列化器", link: "/examples/hot-reload" },
               ],
             },
             {
@@ -82,6 +87,7 @@ export default withMermaid(
                 { text: "SG 管线全景", link: "/technical/pipeline/overview" },
                 { text: "内部机制", link: "/technical/internals" },
                 { text: "架构决策", link: "/technical/architecture-decisions" },
+                { text: "已知限制", link: "/technical/known-issues" },
               ],
             },
             {
@@ -115,6 +121,7 @@ export default withMermaid(
               items: [
                 { text: "Guide Index", link: "/en/guide/" },
                 { text: "Getting Started", link: "/en/guide/getting-started" },
+                { text: "Core Concepts", link: "/en/guide/core-concepts" },
                 { text: "Template Syntax", link: "/en/guide/template-syntax" },
                 { text: "Template Writing", link: "/en/guide/template-writing" },
                 { text: "Managed vs Unmanaged", link: "/en/guide/managed-vs-unmanaged" },
@@ -157,6 +164,10 @@ export default withMermaid(
               items: [
                 { text: "Basic Examples", link: "/en/examples/basic" },
                 { text: "Collection Examples", link: "/en/examples/collections" },
+                { text: "Enum Tags & Aliases", link: "/en/examples/enum-and-alias" },
+                { text: "Interface Dispatch", link: "/en/examples/interface-dispatch" },
+                { text: "Custom Generics", link: "/en/examples/custom-generics" },
+                { text: "Hand-Written Serializers", link: "/en/examples/hot-reload" },
               ],
             },
             {
@@ -165,6 +176,7 @@ export default withMermaid(
                 { text: "SG Pipeline Overview", link: "/en/technical/pipeline/overview" },
                 { text: "Internals", link: "/en/technical/internals" },
                 { text: "Architecture Decisions", link: "/en/technical/architecture-decisions" },
+                { text: "Known Issues", link: "/en/technical/known-issues" },
               ],
             },
             {

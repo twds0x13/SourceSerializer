@@ -23,7 +23,7 @@ Compile-time serialization: declare schema with attributes, source generator emi
 - `[Template("...")]` declares struct layout: fields, separators, optional blocks, repeatable sequences
 - Unmanaged path: span scanner, zero heap allocation, Burst-compatible
 - Serialization direction: compile-time generated `SerializerBlocks`, struct to StringBuilder with zero allocation
-- Built-in scanners and emitters for 17 C# primitive types (float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string, decimal, nint, nuint, Half)
+- Built-in scanners and emitters for 13 C# primitive types (float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string)
 
 ## Installation
 
@@ -36,20 +36,20 @@ Compile-time serialization: declare schema with attributes, source generator emi
 ```csharp
 using SourceSerializer;
 
-[Template("<float damage><repetition>, <float multipliers></repetition>")]
+[Template("Damage(<float damage>, <List<float> multipliers>)")]
 public struct DamageData
 {
     public float damage;
-    public float multipliers;
+    public List<float> multipliers;
 }
 
 SerializerBlocks.TryGet<DamageData>(out var block);
-block.Scan("42, 1.5, 2.0".AsSpan(), 0, out DamageData v);
-// v.damage == 42, v.multipliers == 2.0
+block.Scan("Damage(42, List(1.5, 2.0))".AsSpan(), 0, out DamageData v);
+// v.damage == 42, v.multipliers[0] == 1.5, v.multipliers[1] == 2.0
 
 // Serialization
 var sb = new StringBuilder();
-block.Emit(sb, v);  // sb.ToString() == "42, 1.5, 2.0"
+block.Emit(sb, v);  // sb.ToString() == "Damage(42, List(1.5, 2.0))"
 ```
 
 ## Documentation

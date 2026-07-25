@@ -23,7 +23,7 @@
 - `[Template("...")]` 声明结构体布局：字段、分隔符、可选块、可重复序列
 - Unmanaged 路径：span 扫描器，零堆分配，Burst 兼容
 - 序列化方向：编译期生成 `SerializerBlocks`，struct 到 StringBuilder 零分配
-- 17 种 C# 内置类型的内置扫描器与发射器（float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string、decimal、nint、nuint、Half）
+- 13 种 C# 内置类型的内置扫描器与发射器（float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string）
 
 ## 安装
 
@@ -36,20 +36,20 @@
 ```csharp
 using SourceSerializer;
 
-[Template("<float damage><repetition>, <float multipliers></repetition>")]
+[Template("Damage(<float damage>, <List<float> multipliers>)")]
 public struct DamageData
 {
     public float damage;
-    public float multipliers;
+    public List<float> multipliers;
 }
 
 SerializerBlocks.TryGet<DamageData>(out var block);
-block.Scan("42, 1.5, 2.0".AsSpan(), 0, out DamageData v);
-// v.damage == 42, v.multipliers == 2.0
+block.Scan("Damage(42, List(1.5, 2.0))".AsSpan(), 0, out DamageData v);
+// v.damage == 42, v.multipliers[0] == 1.5, v.multipliers[1] == 2.0
 
 // 序列化
 var sb = new StringBuilder();
-block.Emit(sb, v);  // sb.ToString() == "42, 1.5, 2.0"
+block.Emit(sb, v);  // sb.ToString() == "Damage(42, List(1.5, 2.0))"
 ```
 
 ## 文档
