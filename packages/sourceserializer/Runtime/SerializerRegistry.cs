@@ -543,7 +543,7 @@ namespace SourceSerializer
         // 通过 SerializerBlocks.AddBlock<T>() 统一注册。
         // ═══════════════════════════════════════════════════════
 
-        public readonly struct BuiltinBlock_Float : ISerializerBlock<float>
+        internal readonly struct BuiltinBlock_Float : ISerializerBlock<float>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out float value) =>
                 Scan_Float(text, pos, out value);
@@ -551,7 +551,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, float value) => Emit_Float(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Double : ISerializerBlock<double>
+        internal readonly struct BuiltinBlock_Double : ISerializerBlock<double>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out double value) =>
                 Scan_Double(text, pos, out value);
@@ -559,7 +559,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, double value) => Emit_Double(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Int : ISerializerBlock<int>
+        internal readonly struct BuiltinBlock_Int : ISerializerBlock<int>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out int value) =>
                 Scan_Int(text, pos, out value);
@@ -567,7 +567,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, int value) => Emit_Int(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Uint : ISerializerBlock<uint>
+        internal readonly struct BuiltinBlock_Uint : ISerializerBlock<uint>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out uint value) =>
                 Scan_Uint(text, pos, out value);
@@ -575,7 +575,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, uint value) => Emit_Uint(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Long : ISerializerBlock<long>
+        internal readonly struct BuiltinBlock_Long : ISerializerBlock<long>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out long value) =>
                 Scan_Long(text, pos, out value);
@@ -583,7 +583,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, long value) => Emit_Long(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Ulong : ISerializerBlock<ulong>
+        internal readonly struct BuiltinBlock_Ulong : ISerializerBlock<ulong>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out ulong value) =>
                 Scan_Ulong(text, pos, out value);
@@ -591,7 +591,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, ulong value) => Emit_Ulong(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Short : ISerializerBlock<short>
+        internal readonly struct BuiltinBlock_Short : ISerializerBlock<short>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out short value) =>
                 Scan_Short(text, pos, out value);
@@ -599,7 +599,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, short value) => Emit_Short(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Ushort : ISerializerBlock<ushort>
+        internal readonly struct BuiltinBlock_Ushort : ISerializerBlock<ushort>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out ushort value) =>
                 Scan_Ushort(text, pos, out value);
@@ -607,7 +607,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, ushort value) => Emit_Ushort(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Byte : ISerializerBlock<byte>
+        internal readonly struct BuiltinBlock_Byte : ISerializerBlock<byte>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out byte value) =>
                 Scan_Byte(text, pos, out value);
@@ -615,7 +615,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, byte value) => Emit_Byte(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Sbyte : ISerializerBlock<sbyte>
+        internal readonly struct BuiltinBlock_Sbyte : ISerializerBlock<sbyte>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out sbyte value) =>
                 Scan_Sbyte(text, pos, out value);
@@ -623,7 +623,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, sbyte value) => Emit_Sbyte(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Bool : ISerializerBlock<bool>
+        internal readonly struct BuiltinBlock_Bool : ISerializerBlock<bool>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out bool value) =>
                 Scan_Bool(text, pos, out value);
@@ -631,7 +631,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, bool value) => Emit_Bool(sb, value);
         }
 
-        public readonly struct BuiltinBlock_Char : ISerializerBlock<char>
+        internal readonly struct BuiltinBlock_Char : ISerializerBlock<char>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out char value) =>
                 Scan_Char(text, pos, out value);
@@ -639,7 +639,7 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, char value) => Emit_Char(sb, value);
         }
 
-        public readonly struct BuiltinBlock_String : ISerializerBlock<string>
+        internal readonly struct BuiltinBlock_String : ISerializerBlock<string>
         {
             public int Scan(ReadOnlySpan<char> text, int pos, out string value) =>
                 Scan_String(text, pos, out value);
