@@ -26,21 +26,24 @@ namespace SourceSerializer
         /// 内置类型别名字典：alias → (regex_pattern, display_name)。
         /// 用于 source generator 在编译期查找对应类型的扫描方法名。
         /// </summary>
-        public static readonly Dictionary<string, (string Pattern, string DisplayName)> BuiltinTypes = new()
+        public static readonly Dictionary<
+            string,
+            (string Pattern, string DisplayName)
+        > BuiltinTypes = new()
         {
-            ["float"]  = (@"-?\d+(?:\.\d+)?[fFdD]?", "float"),
-            ["double"] = (@"-?\d+(?:\.\d+)?[dD]?",     "double"),
-            ["int"]    = (@"-?\d+",                     "int"),
-            ["uint"]   = (@"\d+",                       "uint"),
-            ["long"]   = (@"-?\d+[lL]?",                "long"),
-            ["ulong"]  = (@"\d+[uU]?[lL]?",             "ulong"),
-            ["short"]  = (@"-?\d+",                     "short"),
-            ["ushort"] = (@"\d+",                       "ushort"),
-            ["byte"]   = (@"\d+",                       "byte"),
-            ["sbyte"]  = (@"-?\d+",                     "sbyte"),
-            ["bool"]   = (@"true|false",                "bool"),
-            ["char"]   = (@".",                         "char"),
-            ["string"] = (@"[^\s|>,)}\]]+",             "string"),
+            ["float"] = (@"-?\d+(?:\.\d+)?[fFdD]?", "float"),
+            ["double"] = (@"-?\d+(?:\.\d+)?[dD]?", "double"),
+            ["int"] = (@"-?\d+", "int"),
+            ["uint"] = (@"\d+", "uint"),
+            ["long"] = (@"-?\d+[lL]?", "long"),
+            ["ulong"] = (@"\d+[uU]?[lL]?", "ulong"),
+            ["short"] = (@"-?\d+", "short"),
+            ["ushort"] = (@"\d+", "ushort"),
+            ["byte"] = (@"\d+", "byte"),
+            ["sbyte"] = (@"-?\d+", "sbyte"),
+            ["bool"] = (@"true|false", "bool"),
+            ["char"] = (@".", "char"),
+            ["string"] = (@"[^\s|>,)}\]]+", "string"),
         };
 
         /// <summary>
@@ -71,7 +74,8 @@ namespace SourceSerializer
         public static int Scan_Float(ReadOnlySpan<char> src, int pos, out float value)
         {
             value = default;
-            if (pos >= src.Length) return pos;
+            if (pos >= src.Length)
+                return pos;
             int start = pos;
 
             // 可选符号
@@ -96,14 +100,31 @@ namespace SourceSerializer
 
             // 可选类型后缀（C# 语法：f/F/d/D）
             int parseEnd = pos;
-            if (pos < src.Length && (src[pos] == 'f' || src[pos] == 'F' || src[pos] == 'd' || src[pos] == 'D'))
+            if (
+                pos < src.Length
+                && (src[pos] == 'f' || src[pos] == 'F' || src[pos] == 'd' || src[pos] == 'D')
+            )
                 pos++;
 
 #if NET6_0_OR_GREATER
-            if (!float.TryParse(src.Slice(start, parseEnd - start), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            if (
+                !float.TryParse(
+                    src.Slice(start, parseEnd - start),
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #else
-            if (!float.TryParse(src.Slice(start, parseEnd - start).ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            if (
+                !float.TryParse(
+                    src.Slice(start, parseEnd - start).ToString(),
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #endif
             return pos;
@@ -113,7 +134,8 @@ namespace SourceSerializer
         public static int Scan_Double(ReadOnlySpan<char> src, int pos, out double value)
         {
             value = default;
-            if (pos >= src.Length) return pos;
+            if (pos >= src.Length)
+                return pos;
             int start = pos;
 
             if (src[pos] == '+' || src[pos] == '-')
@@ -145,10 +167,24 @@ namespace SourceSerializer
                 pos++;
 
 #if NET6_0_OR_GREATER
-            if (!double.TryParse(src.Slice(start, parseEnd - start), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            if (
+                !double.TryParse(
+                    src.Slice(start, parseEnd - start),
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #else
-            if (!double.TryParse(src.Slice(start, parseEnd - start).ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            if (
+                !double.TryParse(
+                    src.Slice(start, parseEnd - start).ToString(),
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #endif
             return pos;
@@ -158,7 +194,8 @@ namespace SourceSerializer
         public static int Scan_Int(ReadOnlySpan<char> src, int pos, out int value)
         {
             value = default;
-            if (pos >= src.Length) return pos;
+            if (pos >= src.Length)
+                return pos;
             int start = pos;
 
             if (src[pos] == '+' || src[pos] == '-')
@@ -169,10 +206,24 @@ namespace SourceSerializer
                 pos++;
 
 #if NET6_0_OR_GREATER
-            if (!int.TryParse(src.Slice(start, pos - start), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !int.TryParse(
+                    src.Slice(start, pos - start),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #else
-            if (!int.TryParse(src.Slice(start, pos - start).ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !int.TryParse(
+                    src.Slice(start, pos - start).ToString(),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #endif
             return pos;
@@ -182,7 +233,8 @@ namespace SourceSerializer
         public static int Scan_Uint(ReadOnlySpan<char> src, int pos, out uint value)
         {
             value = default;
-            if (pos >= src.Length) return pos;
+            if (pos >= src.Length)
+                return pos;
             int start = pos;
 
             if (!char.IsDigit(src[pos]))
@@ -191,10 +243,24 @@ namespace SourceSerializer
                 pos++;
 
 #if NET6_0_OR_GREATER
-            if (!uint.TryParse(src.Slice(start, pos - start), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !uint.TryParse(
+                    src.Slice(start, pos - start),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #else
-            if (!uint.TryParse(src.Slice(start, pos - start).ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !uint.TryParse(
+                    src.Slice(start, pos - start).ToString(),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #endif
             return pos;
@@ -204,7 +270,8 @@ namespace SourceSerializer
         public static int Scan_Long(ReadOnlySpan<char> src, int pos, out long value)
         {
             value = default;
-            if (pos >= src.Length) return pos;
+            if (pos >= src.Length)
+                return pos;
             int start = pos;
 
             if (src[pos] == '+' || src[pos] == '-')
@@ -218,10 +285,24 @@ namespace SourceSerializer
                 pos++;
 
 #if NET6_0_OR_GREATER
-            if (!long.TryParse(src.Slice(start, parseEnd - start), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !long.TryParse(
+                    src.Slice(start, parseEnd - start),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #else
-            if (!long.TryParse(src.Slice(start, pos - start).ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !long.TryParse(
+                    src.Slice(start, pos - start).ToString(),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #endif
             return pos;
@@ -231,7 +312,8 @@ namespace SourceSerializer
         public static int Scan_Ulong(ReadOnlySpan<char> src, int pos, out ulong value)
         {
             value = default;
-            if (pos >= src.Length) return pos;
+            if (pos >= src.Length)
+                return pos;
             int start = pos;
 
             if (!char.IsDigit(src[pos]))
@@ -245,10 +327,24 @@ namespace SourceSerializer
                 pos++;
 
 #if NET6_0_OR_GREATER
-            if (!ulong.TryParse(src.Slice(start, parseEnd - start), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !ulong.TryParse(
+                    src.Slice(start, parseEnd - start),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #else
-            if (!ulong.TryParse(src.Slice(start, pos - start).ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            if (
+                !ulong.TryParse(
+                    src.Slice(start, pos - start).ToString(),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value
+                )
+            )
                 return start;
 #endif
             return pos;
@@ -291,18 +387,26 @@ namespace SourceSerializer
         {
             value = default;
             // 'true'
-            if (pos + 4 <= src.Length
-                && src[pos] == 't' && src[pos + 1] == 'r'
-                && src[pos + 2] == 'u' && src[pos + 3] == 'e')
+            if (
+                pos + 4 <= src.Length
+                && src[pos] == 't'
+                && src[pos + 1] == 'r'
+                && src[pos + 2] == 'u'
+                && src[pos + 3] == 'e'
+            )
             {
                 value = true;
                 return pos + 4;
             }
             // 'false'
-            if (pos + 5 <= src.Length
-                && src[pos] == 'f' && src[pos + 1] == 'a'
-                && src[pos + 2] == 'l' && src[pos + 3] == 's'
-                && src[pos + 4] == 'e')
+            if (
+                pos + 5 <= src.Length
+                && src[pos] == 'f'
+                && src[pos + 1] == 'a'
+                && src[pos + 2] == 'l'
+                && src[pos + 3] == 's'
+                && src[pos + 4] == 'e'
+            )
             {
                 value = false;
                 return pos + 5;
@@ -324,7 +428,8 @@ namespace SourceSerializer
         public static int Scan_String(ReadOnlySpan<char> src, int pos, out string value)
         {
             value = default!;
-            if (pos >= src.Length) return pos;
+            if (pos >= src.Length)
+                return pos;
             int start = pos;
 
             // Quoted: "hello world"
@@ -349,7 +454,8 @@ namespace SourceSerializer
             while (pos < src.Length && !IsStringTerminator(src[pos]))
                 pos++;
 
-            if (pos == start) return start;
+            if (pos == start)
+                return start;
 #if NET6_0_OR_GREATER
             value = src.Slice(start, pos - start).ToString();
 #else
@@ -362,9 +468,13 @@ namespace SourceSerializer
         private static bool IsStringTerminator(char c)
         {
             return char.IsWhiteSpace(c)
-                || c == '|' || c == '>' || c == ','
-                || c == ')' || c == '}' || c == ']'
-                || c == '(';  // 集合格式 List(...)、HashSet(...) 等的前缀边界
+                || c == '|'
+                || c == '>'
+                || c == ','
+                || c == ')'
+                || c == '}'
+                || c == ']'
+                || c == '('; // 集合格式 List(...)、HashSet(...) 等的前缀边界
         }
 
         /// <summary>
@@ -372,7 +482,8 @@ namespace SourceSerializer
         /// </summary>
         public static void Emit_String(System.Text.StringBuilder sb, string value)
         {
-            if (value == null) return;
+            if (value == null)
+                return;
             sb.Append('"');
             sb.Append(value);
             sb.Append('"');
@@ -420,7 +531,8 @@ namespace SourceSerializer
         public static void Emit_Sbyte(StringBuilder sb, sbyte value) => sb.Append(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Emit_Bool(StringBuilder sb, bool value) => sb.Append(value ? "true" : "false");
+        public static void Emit_Bool(StringBuilder sb, bool value) =>
+            sb.Append(value ? "true" : "false");
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Emit_Char(StringBuilder sb, char value) => sb.Append(value);
@@ -433,67 +545,105 @@ namespace SourceSerializer
 
         public readonly struct BuiltinBlock_Float : ISerializerBlock<float>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out float value) => Scan_Float(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out float value) =>
+                Scan_Float(text, pos, out value);
+
             public void Emit(StringBuilder sb, float value) => Emit_Float(sb, value);
         }
+
         public readonly struct BuiltinBlock_Double : ISerializerBlock<double>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out double value) => Scan_Double(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out double value) =>
+                Scan_Double(text, pos, out value);
+
             public void Emit(StringBuilder sb, double value) => Emit_Double(sb, value);
         }
+
         public readonly struct BuiltinBlock_Int : ISerializerBlock<int>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out int value) => Scan_Int(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out int value) =>
+                Scan_Int(text, pos, out value);
+
             public void Emit(StringBuilder sb, int value) => Emit_Int(sb, value);
         }
+
         public readonly struct BuiltinBlock_Uint : ISerializerBlock<uint>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out uint value) => Scan_Uint(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out uint value) =>
+                Scan_Uint(text, pos, out value);
+
             public void Emit(StringBuilder sb, uint value) => Emit_Uint(sb, value);
         }
+
         public readonly struct BuiltinBlock_Long : ISerializerBlock<long>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out long value) => Scan_Long(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out long value) =>
+                Scan_Long(text, pos, out value);
+
             public void Emit(StringBuilder sb, long value) => Emit_Long(sb, value);
         }
+
         public readonly struct BuiltinBlock_Ulong : ISerializerBlock<ulong>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out ulong value) => Scan_Ulong(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out ulong value) =>
+                Scan_Ulong(text, pos, out value);
+
             public void Emit(StringBuilder sb, ulong value) => Emit_Ulong(sb, value);
         }
+
         public readonly struct BuiltinBlock_Short : ISerializerBlock<short>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out short value) => Scan_Short(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out short value) =>
+                Scan_Short(text, pos, out value);
+
             public void Emit(StringBuilder sb, short value) => Emit_Short(sb, value);
         }
+
         public readonly struct BuiltinBlock_Ushort : ISerializerBlock<ushort>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out ushort value) => Scan_Ushort(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out ushort value) =>
+                Scan_Ushort(text, pos, out value);
+
             public void Emit(StringBuilder sb, ushort value) => Emit_Ushort(sb, value);
         }
+
         public readonly struct BuiltinBlock_Byte : ISerializerBlock<byte>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out byte value) => Scan_Byte(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out byte value) =>
+                Scan_Byte(text, pos, out value);
+
             public void Emit(StringBuilder sb, byte value) => Emit_Byte(sb, value);
         }
+
         public readonly struct BuiltinBlock_Sbyte : ISerializerBlock<sbyte>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out sbyte value) => Scan_Sbyte(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out sbyte value) =>
+                Scan_Sbyte(text, pos, out value);
+
             public void Emit(StringBuilder sb, sbyte value) => Emit_Sbyte(sb, value);
         }
+
         public readonly struct BuiltinBlock_Bool : ISerializerBlock<bool>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out bool value) => Scan_Bool(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out bool value) =>
+                Scan_Bool(text, pos, out value);
+
             public void Emit(StringBuilder sb, bool value) => Emit_Bool(sb, value);
         }
+
         public readonly struct BuiltinBlock_Char : ISerializerBlock<char>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out char value) => Scan_Char(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out char value) =>
+                Scan_Char(text, pos, out value);
+
             public void Emit(StringBuilder sb, char value) => Emit_Char(sb, value);
         }
+
         public readonly struct BuiltinBlock_String : ISerializerBlock<string>
         {
-            public int Scan(ReadOnlySpan<char> text, int pos, out string value) => Scan_String(text, pos, out value);
+            public int Scan(ReadOnlySpan<char> text, int pos, out string value) =>
+                Scan_String(text, pos, out value);
+
             public void Emit(StringBuilder sb, string value) => Emit_String(sb, value);
         }
     }
