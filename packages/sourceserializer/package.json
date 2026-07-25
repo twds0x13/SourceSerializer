@@ -3,7 +3,7 @@
   "displayName": "Source Serializer",
   "version": "3.3.1",
   "unity": "2021.3",
-  "description": "Compile-time serializer generator. Attribute-declared schema → source-generated parser. Zero reflection, zero boxing.",
+  "description": "A C# source-generator-powered serialization framework. XML-based attribute templates drive recursive-descent parsers emitted at compile time, with zero reflection, zero boxing, and zero GC pressure on hot paths. Supports generics, nested types, and cross-assembly plug-and-play.",
   "keywords": [
     "serializer",
     "source-generator",

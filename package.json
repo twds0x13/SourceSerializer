@@ -2,7 +2,7 @@
   "name": "sourceserializer",
   "version": "1.0.0",
   "private": true,
-  "description": "SourceSerializer monorepo root — VitePress docs + semantic-release",
+  "description": "SourceSerializer monorepo. Documentation built with VitePress, releases automated by semantic-release.",
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
