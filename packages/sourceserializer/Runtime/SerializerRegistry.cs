@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -18,52 +17,6 @@ namespace SourceSerializer
     /// </remarks>
     public static class SerializerRegistry
     {
-        // ═══════════════════════════════════════════════════════
-        // 内置类型注册表
-        // ═══════════════════════════════════════════════════════
-
-        /// <summary>
-        /// 内置类型别名字典：alias → (regex_pattern, display_name)。
-        /// 用于 source generator 在编译期查找对应类型的扫描方法名。
-        /// </summary>
-        public static readonly Dictionary<
-            string,
-            (string Pattern, string DisplayName)
-        > BuiltinTypes = new()
-        {
-            ["float"] = (@"-?\d+(?:\.\d+)?[fFdD]?", "float"),
-            ["double"] = (@"-?\d+(?:\.\d+)?[dD]?", "double"),
-            ["int"] = (@"-?\d+", "int"),
-            ["uint"] = (@"\d+", "uint"),
-            ["long"] = (@"-?\d+[lL]?", "long"),
-            ["ulong"] = (@"\d+[uU]?[lL]?", "ulong"),
-            ["short"] = (@"-?\d+", "short"),
-            ["ushort"] = (@"\d+", "ushort"),
-            ["byte"] = (@"\d+", "byte"),
-            ["sbyte"] = (@"-?\d+", "sbyte"),
-            ["bool"] = (@"true|false", "bool"),
-            ["char"] = (@".", "char"),
-            ["string"] = (@"[^\s|>,)}\]]+", "string"),
-        };
-
-        /// <summary>
-        /// 返回给定别名是否为内置类型。
-        /// </summary>
-        // 仅供 source generator 编译期使用，运行时从不调用
-        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-        public static bool IsBuiltinType(string alias) => BuiltinTypes.ContainsKey(alias);
-
-        /// <summary>
-        /// 获取内置类型对应的 span 扫描方法名，如 "Scan_Float"、"Scan_Int"。
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-        public static string GetScannerMethodName(string alias)
-        {
-            if (BuiltinTypes.TryGetValue(alias, out var info))
-                return $"Scan_{info.DisplayName[0].ToString().ToUpperInvariant()}{info.DisplayName.Substring(1)}";
-            return null;
-        }
-
         // ═══════════════════════════════════════════════════════
         // 零分配 Span 扫描方法 —— 每个内置类型一个
         // 签名: static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
@@ -441,11 +394,7 @@ namespace SourceSerializer
                     pos++;
                 if (pos >= src.Length)
                     return start;
-#if NET6_0_OR_GREATER
                 value = src.Slice(contentStart, pos - contentStart).ToString();
-#else
-                value = src.Slice(contentStart, pos - contentStart).ToString();
-#endif
                 pos++;
                 return pos;
             }
@@ -456,11 +405,7 @@ namespace SourceSerializer
 
             if (pos == start)
                 return start;
-#if NET6_0_OR_GREATER
             value = src.Slice(start, pos - start).ToString();
-#else
-            value = src.Slice(start, pos - start).ToString();
-#endif
             return pos;
         }
 
