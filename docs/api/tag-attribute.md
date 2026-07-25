@@ -44,3 +44,9 @@ public struct Spell
 ## 注意
 
 如果枚举成员未标注 `[Tag]`，source generator 不会为其生成匹配 case。上例中 `Physical = 0` 没有标签，无法通过字符串匹配解析。
+
+## 参见
+
+- [示例: 枚举标签与别名](/examples/enum-and-alias)：Tag + TypeAlias 组合示例
+- [TypeAlias 属性](./type-alias-attribute)：类型别名声明的完整签名
+- [模板语法](/guide/template-syntax)：枚举类型在模板中的使用

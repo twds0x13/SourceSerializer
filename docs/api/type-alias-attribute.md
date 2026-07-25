@@ -36,3 +36,9 @@ assembly 级 attribute，注册后模板中可使用别名替代内置类型名�
 [Template("<Distance X> <Distance Y>")]
 public struct Point2D { public float X; public float Y; }
 ```
+
+## 参见
+
+- [示例: 枚举标签与别名](/examples/enum-and-alias)：Tag + TypeAlias 组合示例
+- [Tag 属性](./tag-attribute)：枚举成员标签的完整签名
+- [模板语法](/guide/template-syntax)：类型别名在模板中的使用

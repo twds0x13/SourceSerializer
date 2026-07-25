@@ -182,3 +182,10 @@ public struct Container
 ```
 
 集合类型的字段赋值使用 `.Add()` 而非 `=`，因此解析多个元素时所有值都被保留到列表中。标量字段在 `<repetition>` 块中每次迭代被覆盖，会触发 [SSR005 诊断](./diagnostics#ssr005重复块内的标量字段)。
+
+## 参见
+
+- [模板写作指南](./template-writing)：12 个场景的完整模板示例
+- [编译期诊断](./diagnostics)：SSR001-SSR006 错误代码
+- [核心概念](./core-concepts)：端到端架构全景
+- [Template API](../api/template-attribute)：`[Template]` 的完整签名

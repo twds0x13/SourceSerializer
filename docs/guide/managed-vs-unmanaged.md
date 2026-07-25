@@ -76,3 +76,10 @@ SG 自动发现构造器参数与字段的按名匹配，生成构造器调用�
 | 纯数值 struct（Vector3、Point2D） | Unmanaged：栈分配，最高性能 |
 | 含 string、List、对象引用的类型 | Managed：完整支持，堆分配仅在字段初始化时 |
 | 只读 struct | 构造器路径：自动匹配 |
+
+## 参见
+
+- [快速入门](./getting-started)：安装与首次使用
+- [模板语法](./template-syntax)：四种原语与类型声明
+- [编译期诊断](./diagnostics)：SSR003（只读字段）
+- [内部机制](../technical/internals)：NeedsHeapAlloc 判定源码细节

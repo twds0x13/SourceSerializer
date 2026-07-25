@@ -1,4 +1,4 @@
-# Basic Examples
+# Example: Basic Usage
 
 Core usage: declare types, parse text, serialize back.
 

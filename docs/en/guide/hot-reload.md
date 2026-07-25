@@ -20,7 +20,7 @@ A typical business scenario:
 
 New types in a hot-reload DLL **rely on SG generation** — the DLL's own compilation triggers the SG to produce its own `GeneratedSerializers`. But if the DLL's types lack `[Template]` (e.g. third-party types or custom formats), you hand-write the implementation.
 
-The recommended format mirrors the docs' template style — `TypeName(arg1, arg2)`:
+The format mirrors the docs' template style — `TypeName(arg1, arg2)`:
 
 ```csharp
 // Type definition

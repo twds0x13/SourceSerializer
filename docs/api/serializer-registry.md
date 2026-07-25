@@ -35,3 +35,9 @@ public static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
 ```
 
 返回值约定：`> pos` 表示匹配成功并返回结束位置；`== pos` 表示未匹配（解析失败），value 为 `default`。
+
+## 参见
+
+- [SerializerBlocks API](./serializer-blocks)：用户类型注册表
+- [核心概念](/guide/core-concepts)：两个注册表的分工
+- [模板语法](/guide/template-syntax)：内置类型在模板中的使用

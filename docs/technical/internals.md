@@ -12,7 +12,7 @@
 
 发射器对接口用 C# `switch` 模式匹配进行运行时类型分派。
 
-不同程序集通过热更 DLL 注册的接口块自动链合并（`ChainBlock<T>`）——后注册追加到分发链，保持所有具现类型可达。
+不同程序集通过热更 DLL 注册的接口块自动链合并（`ChainBlock<T>`）：后注册追加到分发链，保持所有具现类型可达。
 
 ## 接口链合并 (ChainBlock\<T\>)
 
@@ -32,7 +32,7 @@ else:
 
 **ChainBlock.Scan**：按 `_links` 顺序遍历，首个推进 `pos` 的 link 胜出并立即返回。如果所有 link 都无法识别输入（返回 `pos`），整体返回 `pos` 表示失败。
 
-**ChainBlock.Emit**：按 `_links` 顺序逐一切换匹配。记录 `sb.Length` 调用前值，link 调用后 `sb.Length > before` 表示该 link 的 switch 命中并输出了内容，立即返回。依赖 SG 生成的 switch dispatch——未匹配类型的 case 不写入 sb。
+**ChainBlock.Emit**：按 `_links` 顺序逐一切换匹配。记录 `sb.Length` 调用前值，link 调用后 `sb.Length > before` 表示该 link 的 switch 命中并输出了内容，立即返回。依赖 SG 生成的 switch dispatch：未匹配类型的 case 不写入 sb。
 
 **非泛型 AddBlock(Type, ISerializerBlock)**：从 block 的运行时类型反射提取 `ISerializerBlock<T>` 接口的泛型参数 T，通过 `MakeGenericMethod` 委托到 `RegisterBlock<T>`，复用同一合并逻辑。
 
@@ -70,7 +70,7 @@ foreach (var __item in value)
 }
 ```
 
-数组类型内部走 `CollectionKind.Array` 路径——使用 buffer + `Array.Copy` 替代 `.Add()`，文本格式与 List 相同（`List(...)` 包裹）。
+数组类型内部走 `CollectionKind.Array` 路径：使用 buffer + `Array.Copy` 替代 `.Add()`，文本格式与 List 相同（`List(...)` 包裹）。
 
 ## GeneratedSerializers 独立类
 
@@ -80,8 +80,16 @@ SG 生成的全部 Scan/Emit 方法和 Block 结构体位于 `public static part
 - `SerializerEmitters.g.cs` → `Emit_Xxx` 方法
 - `SerializerBlocks.g.cs` → `Init()` 注册入口 + `Block_Xxx` 包装结构体
 
-`Init()` 由 `SerializerBlocks.EnsureInitialized()` 通过 AppDomain 反射扫描自动发现和调用。幂等——二次调用直接返回。
+`Init()` 由 `SerializerBlocks.EnsureInitialized()` 通过 AppDomain 反射扫描自动发现和调用。幂等：二次调用直接返回。
 
 ## EmitHelpers 共享工具
 
 `EmitHelpers` 统一了 CodeEmitter 和 EmitCodeEmitter 的方法名生成（`GetMethodName`）、唯一变量名生成（`GetUniqueVar`）、名称消毒（sanitize `[]`）和计数器管理。
+
+## 参见
+
+- [SG 管线全景](./pipeline/overview)：编译期管线各阶段
+- [架构决策](./architecture-decisions)：关键设计的方案对比
+- [已知限制](./known-issues)：class 类型变量作用域问题
+- [SerializerBlocks API](../api/serializer-blocks)：运行时注册表
+- [热更新与跨程序集注册](../guide/hot-reload)：ChainBlock 使用场景

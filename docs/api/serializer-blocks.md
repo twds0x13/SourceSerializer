@@ -1,6 +1,6 @@
 # `SerializerBlocks`
 
-序列化器块注册表。跨程序集的中心注册点——SG 和热更 DLL 均可通过 `AddBlock<T>` / `AddBlocks` / `RemoveBlock<T>` 注册或移除 `ISerializerBlock<TData>` 实现。
+序列化器块注册表。跨程序集的中心注册点：SG 和热更 DLL 均可通过 `AddBlock<T>` / `AddBlocks` / `RemoveBlock<T>` 注册或移除 `ISerializerBlock<TData>` 实现。
 
 ## 核心接口
 
@@ -35,7 +35,7 @@ public static Builder AddBlock<T>(ISerializerBlock<T> block);
 public static Builder AddBlock(Type dataType, ISerializerBlock block);
 ```
 
-注册一个序列化器块。泛型版本直接调用；非泛型版本用于热更 DLL——调用方在编译期不持有类型。
+注册一个序列化器块。泛型版本直接调用；非泛型版本用于热更 DLL：调用方在编译期不持有类型。
 
 **接口类型的链合并**：对于 `typeof(T).IsInterface`，多次注册做链式追加而非覆盖。这使得不同程序集可以各自生成接口分发块，运行时自动合并为 `ChainBlock<T>`。非接口类型的后注册覆盖先注册（标准行为）。
 

@@ -1,4 +1,4 @@
-# Collection Examples
+# Example: Collection Types
 
 Collection types work directly in templates — no explicit template declaration needed.
 

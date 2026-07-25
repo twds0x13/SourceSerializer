@@ -34,3 +34,9 @@ public sealed class ExternalTemplateAttribute : Attribute
 [ExternalTemplate(typeof(ExternalPoint), "<float A> <float B>")]
 public struct ExternalPoint { public float A; public float B; }
 ```
+
+## 参见
+
+- [Template 属性](./template-attribute)：自有类型的模板声明
+- [模板写作指南](/guide/template-writing)：外部类型的完整示例
+- [SerializerBlocks API](./serializer-blocks)：运行时获取生成的 block

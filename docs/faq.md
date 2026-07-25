@@ -26,7 +26,7 @@ A: 输入与模板格式不匹配。检查分隔符、字段类型、可选块�
 
 **Q: 必须缓存 ISerializerBlock 吗？**
 
-A: 非必须。`TryGet<T>` 是静态字段读取，开销极低（~2ns）。但缓存到 `static readonly` 字段更友好。
+A: 非必须。`TryGet<T>` 是静态字段读取，开销极低（约 2ns）。但缓存到 `static readonly` 字段更友好。
 
 **Q: 如何序列化 List 等集合？**
 
@@ -49,3 +49,9 @@ A: 在枚举成员上加 `[Tag("fire")]` 标签，模板中直接使用枚举类
 **Q: 如何为字段类型起别名？**
 
 A: 使用 `[assembly: TypeAlias("HP", "float")]` 程序集级声明。模板中写 `<HP Health>` 即可，解析行为与原类型一致。别名可映射到任何已注册类型（内置和自定义均可）。
+
+## 参见
+
+- [快速入门](/guide/getting-started)：安装与首次使用
+- [编译期诊断](/guide/diagnostics)：SSR001-SSR006 错误代码
+- [迁移指南](/migration-guide)：版本间 API 变更

@@ -2,7 +2,7 @@
 
 This guide demonstrates complete template syntax through concrete data structures. Each example includes the C# type definition, template string, and sample inputs.
 
-The recommended unified style: **`TypeName(<type field>, <type field>, ...)`** — function-call wrapping with comma+space separators. This mirrors the `List(...)`, `Dict(...)`, and `HashSet(...)` collection format for visual consistency.
+The unified style: **`TypeName(<type field>, <type field>, ...)`** — function-call wrapping with comma+space separators. This mirrors the `List(...)`, `Dict(...)`, and `HashSet(...)` collection format for visual consistency.
 
 ---
 
@@ -388,4 +388,13 @@ Use `<first>/<body>` directly without wrapping in `<repetition>`. Collection typ
 | SSR003 | Field referenced in template is readonly with no matching constructor — add constructor or remove readonly |
 | SSR004 | Field type missing `[Template]` — add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
 | SSR005 | Scalar field inside repetition block — use a collection type instead |
-| SSR006 | Template ambiguity across interface implementations — adjust templates so each implementation is distinguishable |
+| SSR006 | Template ambiguity across interface implementations: adjust templates so each implementation is distinguishable |
+
+## See Also
+
+- [Getting Started](./getting-started): Installation and first use
+- [Template Syntax](./template-syntax): The four primitives, built-in types, collection formats
+- [Diagnostics](./diagnostics): SSR001-SSR006 reference
+- [Core Concepts](./core-concepts): End-to-end architecture
+- [Example: Enum Tags & Aliases](/en/examples/enum-and-alias)
+- [Example: Custom Generics](/en/examples/custom-generics)

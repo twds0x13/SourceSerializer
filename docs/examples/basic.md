@@ -1,4 +1,4 @@
-# 基础示例
+# 示例: 基础用法
 
 SourceSerializer 的核心用法：声明类型、解析文本、序列化回文本。
 
@@ -44,3 +44,9 @@ block.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
 ```
 
 运行测试参考 `PrimitiveScannerTests.cs`、`UnmanagedStructTests.cs` 中的完整用例。
+
+## 参见
+
+- [快速入门](/guide/getting-started)：安装与首次使用
+- [模板语法](/guide/template-syntax)：四种原语
+- [Template API](/api/template-attribute)：`[Template]` 完整签名

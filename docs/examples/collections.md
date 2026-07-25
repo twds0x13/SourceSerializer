@@ -1,4 +1,4 @@
-# 集合示例
+# 示例: 集合类型
 
 集合类型在模板中直接使用，无需显式声明模板。
 
@@ -42,3 +42,9 @@ struct HasNestedHashSet { List<HashSet<float>> Nested; }
 ```
 
 运行测试参考 `CollectionRepetitionTests.cs`、`GenericTemplateTests.cs` 中的完整用例。
+
+## 参见
+
+- [模板语法](/guide/template-syntax)：集合序列化格式
+- [模板写作指南](/guide/template-writing)：集合字段的完整写法
+- [示例: 自定义泛型](/examples/custom-generics)：泛型集合嵌套

@@ -1,6 +1,6 @@
 # 热更新与跨程序集注册
 
-SourceSerializer 的核心设计之一是**编译期生成与运行时注册的同一代码路径**。SG 生成的 `GeneratedSerializers.Init()` 既可在主程序集启动时调用，也可在热更 DLL 加载时调用——两边走完全相同的注册逻辑。
+SourceSerializer 的核心设计之一是**编译期生成与运行时注册的同一代码路径**。SG 生成的 `GeneratedSerializers.Init()` 既可在主程序集启动时调用，也可在热更 DLL 加载时调用：两边走完全相同的注册逻辑。
 
 ## 场景
 
@@ -9,15 +9,15 @@ SourceSerializer 的核心设计之一是**编译期生成与运行时注册的�
 ```
 1. 服务端 v3.4 已运行多年，有 StrikeDamage、SpellDamage、DotDamage，
    均实现 IDamage 接口。SG 生成的 Block_IDamage 可以分发这三种类型。
-2. 新资料片需要 ReflectDamage——也实现 IDamage，但多一个反弹比例字段。
+2. 新资料片需要 ReflectDamage：也实现 IDamage，但多一个反弹比例字段。
 3. 不能等客户端大版本（三个月后），需要热更 DLL 推送。
 ```
 
 ## 手写 ISerializerBlock\<T\>
 
-热更 DLL 中的新类型**依赖 SG 生成**——DLL 编译时 SG 同样为其生成 `GeneratedSerializers`。但如果 DLL 中的类型没有 `[Template]`（例如用第三方类型或需要自定义格式），需手写实现。
+热更 DLL 中的新类型**依赖 SG 生成**：DLL 编译时 SG 同样为其生成 `GeneratedSerializers`。但如果 DLL 中的类型没有 `[Template]`（例如用第三方类型或需要自定义格式），需手写实现。
 
-推荐格式与文档模板风格一致——`TypeName(arg1, arg2)`：
+格式与文档模板风格一致：`TypeName(arg1, arg2)`：
 
 ```csharp
 // 类型定义
@@ -27,7 +27,7 @@ public struct HotSword
     public float Crit;
 }
 
-// 手写序列化器块 —— Sword(100, 0.15)
+// 手写序列化器块 ： Sword(100, 0.15)
 public readonly struct Block_HotSword : ISerializerBlock<HotSword>
 {
     public int Scan(ReadOnlySpan<char> text, int pos, out HotSword value)
@@ -86,12 +86,12 @@ GeneratedSerializers.Init();
 SerializerBlocks.AddBlock(typeof(HotSword), new Block_HotSword());
 SerializerBlocks.AddBlock(typeof(HotShield), new Block_HotShield());
 
-// 路径 C：混合 —— 先 Init() 注册 SG 生成的，再 AddBlock 补充手写的
+// 路径 C：混合 ： 先 Init() 注册 SG 生成的，再 AddBlock 补充手写的
 ```
 
-主程序集的 `EnsureInitialized()` 在首次 `TryGet<T>` 时通过 AppDomain 反射扫描所有已加载程序集的 `GeneratedSerializers.Init()`。但热更 DLL 的 `Init()` 需要在 DLL 加载后**显式调用**——因为它在首次扫描之后才被加载。
+主程序集的 `EnsureInitialized()` 在首次 `TryGet<T>` 时通过 AppDomain 反射扫描所有已加载程序集的 `GeneratedSerializers.Init()`。但热更 DLL 的 `Init()` 需要在 DLL 加载后**显式调用**：因为它在首次扫描之后才被加载。
 
-`Init()` 是幂等的——`_initCalled` 守护字段确保二次调用直接返回。
+`Init()` 是幂等的：`_initCalled` 守护字段确保二次调用直接返回。
 
 ## 接口扩展（链合并）
 
@@ -114,7 +114,7 @@ SerializerBlocks.AddBlock(typeof(HotShield), new Block_HotShield());
 //                 → link1 试 Reflect → 成功！
 ```
 
-对于非接口类型，`AddBlock` 仍然是覆盖语义——后注册替换先注册。只有接口类型走链合并路径。
+对于非接口类型，`AddBlock` 仍然是覆盖语义：后注册替换先注册。只有接口类型走链合并路径。
 
 ## 移除与版本管理
 
@@ -125,10 +125,10 @@ SerializerBlocks.RemoveBlock(typeof(HotSword));
 SerializerBlocks.RemoveBlock<IDamage>();
 ```
 
-`RemoveBlock` 从字典中删除 key。对于接口类型，删除的是整个 `ChainBlock`——所有链节同时移除。不需要单独移除链节的能力。
+`RemoveBlock` 从字典中删除 key。对于接口类型，删除的是整个 `ChainBlock`：所有链节同时移除。不需要单独移除链节的能力。
 
 ## 参见
 
 - [接口链合并内部原理](../technical/internals#接口链合并-chainblock-t)
 - [SerializerBlocks API](../api/serializer-blocks)
-- [HotReloadTests](https://github.com/twds0x13/SourceSerializer/blob/main/tests/SourceSerializer.Tests/HotReloadTests.cs) — 可运行的完整测试用例
+- [HotReloadTests](https://github.com/twds0x13/SourceSerializer/blob/main/tests/SourceSerializer.Tests/HotReloadTests.cs)：可运行的完整测试用例

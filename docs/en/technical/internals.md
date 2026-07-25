@@ -31,3 +31,11 @@ foreach (var item in value) { ... }
 ## EmitHelpers Shared Utilities
 
 `EmitHelpers` unifies method name generation (`GetMethodName`), unique variable naming (`GetUniqueVar`), and counter management across CodeEmitter and EmitCodeEmitter. Eliminates ~20 lines of duplicated code.
+
+## See Also
+
+- [SG Pipeline Overview](./pipeline/overview): Compile-time pipeline stages
+- [Architecture Decisions](./architecture-decisions): Design trade-offs
+- [Known Issues](./known-issues): Class type variable scoping issue
+- [SerializerBlocks API](../api/serializer-blocks): Runtime registry
+- [Hot Reload & Cross-Assembly](../guide/hot-reload): ChainBlock usage scenarios

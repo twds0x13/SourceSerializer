@@ -76,3 +76,10 @@ var sb = new StringBuilder();
 emit.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
 Console.WriteLine(sb.ToString()); // "Point2D(3.5, -2.1)"
 ```
+
+## 参见
+
+- [模板语法](/guide/template-syntax)：四种原语与模板声明
+- [模板写作指南](/guide/template-writing)：12 个场景的完整示例
+- [ExternalTemplate 属性](./external-template-attribute)：外部类型的模板覆盖
+- [SerializerBlocks API](./serializer-blocks)：运行时获取生成的 block

@@ -36,3 +36,9 @@
 | 开放泛型 (Open Generic) | `Wrapper<T>`，类型参数未关闭 |
 | 闭合泛型 (Closed Generic) | `Wrapper<float>`，类型参数已关闭 |
 | 泛型传递闭包 | `List<Wrapper<float>>` 中的递归合成过程 |
+
+## 参见
+
+- [核心概念](/guide/core-concepts)：端到端架构全景
+- [模板语法](/guide/template-syntax)：四种原语与术语使用
+- [内部机制](/technical/internals)：术语对应的源码细节

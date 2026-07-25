@@ -2,7 +2,7 @@
 
 本文用具体数据结构演示模板的完整写法。每个例子给出 C# 类型定义、模板、可解析的输入示例。
 
-模板推荐的统一风格：**`TypeName(<type field>, <type field>, ...)`**——函数调用式包裹，逗号+空格分隔。与 `List(...)`、`Dict(...)`、`HashSet(...)` 集合格式保持一致。
+模板的统一风格：**`TypeName(<type field>, <type field>, ...)`**：函数调用式包裹，逗号+空格分隔。与 `List(...)`、`Dict(...)`、`HashSet(...)` 集合格式保持一致。
 
 ---
 
@@ -115,7 +115,7 @@ struct Skill
 | `IDictionary<K,V>` | `Dictionary<K,V>`, `SortedDictionary<K,V>`, `IDictionary<K,V>` 等 | `Dict(k: v, ...)` |
 | `IReadOnlyDictionary<K,V>` | `IReadOnlyDictionary<K,V>` 等 | `Dict(k: v, ...)` |
 
-**接口优先原则**：推荐为自定义集合定义接口并标注模板，而非逐个类标注。类级 `[ExternalTemplate]` 优先级高于接口模板。
+**接口优先原则**：为自定义集合定义接口并标注模板，而非逐个类标注。类级 `[ExternalTemplate]` 优先级高于接口模板。
 
 ```csharp
 [Template("Payload(<int Id>, <float[] Data>)")]
@@ -344,7 +344,7 @@ struct Ability
 两种写法等价，选用任意一种：
 
 ```csharp
-// 紧凑语法（推荐）
+// 紧凑语法
 [Template("Point(<float X>, <float Y><optional>, <float Z></optional>)")]
 
 // XML 语法
@@ -385,7 +385,16 @@ struct Ability
 |------|------|
 | SSR001 | 模板语法错误 |
 | SSR002 | 循环依赖 |
-| SSR003 | 模板引用的字段是 readonly 且无匹配构造器 — 添加构造器或移除 readonly |
-| SSR004 | 字段类型缺少 `[Template]` — 加 `[Template]`、`[ExternalTemplate]`、或 `[TemplateIgnore]` |
-| SSR005 | 标量字段在重复块内 — 改用集合类型 |
-| SSR006 | 接口实现间模板歧义 — 调整模板使各实现可区分 |
+| SSR003 | 模板引用的字段是 readonly 且无匹配构造器：添加构造器或移除 readonly |
+| SSR004 | 字段类型缺少 `[Template]`：加 `[Template]`、`[ExternalTemplate]`、或 `[TemplateIgnore]` |
+| SSR005 | 标量字段在重复块内：改用集合类型 |
+| SSR006 | 接口实现间模板歧义：调整模板使各实现可区分 |
+
+## 参见
+
+- [快速入门](./getting-started)：安装与首次使用
+- [模板语法](./template-syntax)：四种原语、内置类型、集合格式
+- [编译期诊断](./diagnostics)：SSR001-SSR006 完整诊断码参考
+- [核心概念](./core-concepts)：端到端架构全景
+- [示例: 枚举标签与别名](/examples/enum-and-alias)
+- [示例: 自定义泛型](/examples/custom-generics)

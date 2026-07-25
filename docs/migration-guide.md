@@ -31,3 +31,9 @@ block.Emit(sb, value);
 ### 内置类型计数
 
 内置类型共 13 种：`float`、`double`、`int`、`uint`、`long`、`ulong`、`short`、`ushort`、`byte`、`sbyte`、`bool`、`char`、`string`。
+
+## 参见
+
+- [快速入门](/guide/getting-started)：最新版本的安装与首次使用
+- [常见问题](/faq)：常见使用问题
+- [SerializerBlocks API](/api/serializer-blocks)：最新的运行时 API
