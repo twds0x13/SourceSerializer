@@ -19,6 +19,12 @@ Complete interface for the compile-time source generator and runtime registries.
 | [`SerializerRegistry`](./serializer-registry) | Zero-allocation span scanners and emitters for 17 built-in types |
 | [`SerializerBlocks`](./serializer-blocks) | Bidirectional serializer block registry, `TryGet<T>` for Scan + Emit |
 
+## Architecture
+
+SourceSerializer's pipeline spans compile time and runtime: `[Template]` attributes trigger SG compile-time code generation, producing three `.g.cs` files for `GeneratedSerializers`. At runtime, `EnsureInitialized()` automatically discovers all assemblies' `Init()` entry points via reflection and registers generated and hand-written `ISerializerBlock<T>` implementations with `SerializerBlocks`. `TryGet<T>` retrieves a block from the registry, and `Scan`/`Emit` perform parsing and serialization.
+
+For the full architecture overview, see [Core Concepts](/en/guide/core-concepts).
+
 ## Type Relationships
 
 ```mermaid

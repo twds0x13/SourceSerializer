@@ -19,6 +19,12 @@
 | [`SerializerRegistry`](./serializer-registry) | 13 种内置类型的零分配 span 扫描器与发射器 |
 | [`SerializerBlocks`](./serializer-blocks) | 双向序列化器块注册表，`TryGet<T>` 获取 Scan + Emit 能力 |
 
+## 架构
+
+SourceSerializer 的管线跨越编译期和运行时：[Template] 属性触发 SG 编译期代码生成，产出 `GeneratedSerializers` 的三份 `.g.cs` 文件。运行时 `EnsureInitialized()` 自动反射发现所有程序集的 `Init()` 注册入口，将生成的和手写的 `ISerializerBlock<T>` 实现注册到 `SerializerBlocks`。`TryGet<T>` 从注册表获取 block，`Scan` 和 `Emit` 执行解析和序列化。
+
+完整架构全景见 [核心概念](/guide/core-concepts)。
+
 ## 类型关系
 
 ```mermaid
