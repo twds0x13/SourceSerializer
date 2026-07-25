@@ -10,60 +10,6 @@ using System.Text;
 namespace SourceSerializer
 {
     /// <summary>
-    /// 非泛型标记接口：使 <see cref="ISerializerBlock{TData}"/> 可被 <c>params ISerializerBlock[]</c> 接收。
-    /// </summary>
-    public interface ISerializerBlock { }
-
-    /// <summary>
-    /// 序列化器块接口：将 scan（反序列化）和 emit（序列化）合并为一个双向能力。
-    /// 每个标记了 [Template] 的类型在编译期由 SG 生成实现此接口的 struct。
-    /// </summary>
-    public interface ISerializerBlock<TData> : ISerializerBlock
-    {
-        /// <summary>从 text 的 pos 位置开始扫描，写入 out value，返回新的位置。返回 pos 表示失败。</summary>
-        int Scan(ReadOnlySpan<char> text, int pos, out TData value);
-
-        /// <summary>将 value 序列化到 sb。</summary>
-        void Emit(StringBuilder sb, TData value);
-    }
-
-    /// <summary>
-    /// 接口分发的链式合并块。将多个 <see cref="ISerializerBlock{T}"/> 合并为一个：
-    /// Scan 依次尝试所有链节，首个推进者胜出；Emit 仅对实际匹配的链节输出。
-    /// </summary>
-    /// <remarks>
-    /// 线程安全：链节列表的写入必须在持有 <see cref="SerializerBlocks"/> 锁的情况下进行，
-    /// 且所有 <c>AddBlock</c> 调用应在任何 <c>Serialize</c>/<c>Deserialize</c> 调用前完成。
-    /// </remarks>
-    internal sealed class ChainBlock<T> : ISerializerBlock<T>
-    {
-        private readonly List<ISerializerBlock<T>> _links = new();
-
-        public void AddLink(ISerializerBlock<T> block) => _links.Add(block);
-
-        public int Scan(ReadOnlySpan<char> text, int pos, out T value)
-        {
-            foreach (var link in _links)
-            {
-                int r = link.Scan(text, pos, out value);
-                if (r > pos) return r;
-            }
-            value = default!;
-            return pos;
-        }
-
-        public void Emit(StringBuilder sb, T value)
-        {
-            int before = sb.Length;
-            foreach (var link in _links)
-            {
-                link.Emit(sb, value);
-                if (sb.Length > before) return;
-            }
-        }
-    }
-
-    /// <summary>
     /// 序列化器块注册表。跨程序集的中心注册点——SG 和外部代码均可通过
     /// <see cref="AddBlock{T}"/> / <see cref="AddBlocks"/> / <see cref="RemoveBlock{T}"/>
     /// 显式注册/移除 <see cref="ISerializerBlock{TData}"/> 实现。
@@ -98,19 +44,19 @@ namespace SourceSerializer
             }
 
             // 2. Register built-in types (always)
-            AddBlock<float>(new SerializerRegistry.BuiltinBlock_Float());
-            AddBlock<double>(new SerializerRegistry.BuiltinBlock_Double());
-            AddBlock<int>(new SerializerRegistry.BuiltinBlock_Int());
-            AddBlock<uint>(new SerializerRegistry.BuiltinBlock_Uint());
-            AddBlock<long>(new SerializerRegistry.BuiltinBlock_Long());
-            AddBlock<ulong>(new SerializerRegistry.BuiltinBlock_Ulong());
-            AddBlock<short>(new SerializerRegistry.BuiltinBlock_Short());
-            AddBlock<ushort>(new SerializerRegistry.BuiltinBlock_Ushort());
-            AddBlock<byte>(new SerializerRegistry.BuiltinBlock_Byte());
-            AddBlock<sbyte>(new SerializerRegistry.BuiltinBlock_Sbyte());
-            AddBlock<bool>(new SerializerRegistry.BuiltinBlock_Bool());
-            AddBlock<char>(new SerializerRegistry.BuiltinBlock_Char());
-            AddBlock<string>(new SerializerRegistry.BuiltinBlock_String());
+            AddBlock<float>(new BuiltinBlocks.BuiltinBlock_Float());
+            AddBlock<double>(new BuiltinBlocks.BuiltinBlock_Double());
+            AddBlock<int>(new BuiltinBlocks.BuiltinBlock_Int());
+            AddBlock<uint>(new BuiltinBlocks.BuiltinBlock_Uint());
+            AddBlock<long>(new BuiltinBlocks.BuiltinBlock_Long());
+            AddBlock<ulong>(new BuiltinBlocks.BuiltinBlock_Ulong());
+            AddBlock<short>(new BuiltinBlocks.BuiltinBlock_Short());
+            AddBlock<ushort>(new BuiltinBlocks.BuiltinBlock_Ushort());
+            AddBlock<byte>(new BuiltinBlocks.BuiltinBlock_Byte());
+            AddBlock<sbyte>(new BuiltinBlocks.BuiltinBlock_Sbyte());
+            AddBlock<bool>(new BuiltinBlocks.BuiltinBlock_Bool());
+            AddBlock<char>(new BuiltinBlocks.BuiltinBlock_Char());
+            AddBlock<string>(new BuiltinBlocks.BuiltinBlock_String());
         }
 
         /// <summary>

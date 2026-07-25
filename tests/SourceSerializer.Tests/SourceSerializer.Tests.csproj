@@ -15,6 +15,9 @@
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TypeAliasAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/ExternalTemplateAttribute.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/Attributes/TemplateIgnoreAttribute.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/ISerializerBlock.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/ChainBlock.cs" />
+    <Compile Include="../../packages/sourceserializer/Runtime/BuiltinBlocks.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerRegistry.cs" />
     <Compile Include="../../packages/sourceserializer/Runtime/SerializerBlocks.cs" />
   </ItemGroup>
