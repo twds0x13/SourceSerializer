@@ -1,3 +1,9 @@
+## [3.3.1](https://github.com/twds0x13/SourceSerializer/compare/v3.3.0...v3.3.1) (2026-07-25)
+
+### Bug Fixes
+
+* add missing .meta files for BuiltinBlocks, ChainBlock, ISerializerBlock ([e12df46](https://github.com/twds0x13/SourceSerializer/commit/e12df46dc82aa6c1be77c3b0523601f917741a96))
+
 ## [3.3.0](https://github.com/twds0x13/SourceSerializer/compare/v3.2.0...v3.3.0) (2026-07-24)
 
 ### Features
