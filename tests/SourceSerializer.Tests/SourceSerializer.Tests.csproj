@@ -40,6 +40,7 @@
     <Compile Include="CrossFeatureTests.cs" />      <!-- 跨功能组合 -->
     <Compile Include="HotReloadTests.cs" />        <!-- 热更新模拟：非泛型注册 -->
     <Compile Include="ChainBlockTests.cs" />      <!-- 接口链式合并 + standalone 模式 -->
+    <Compile Include="OptionalWithCtorTests.cs" /> <!-- 构造函数 + optional block hoisting -->
   </ItemGroup>
 
   <!-- Source Generator as Analyzer -->
