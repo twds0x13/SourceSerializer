@@ -1,3 +1,9 @@
+## [3.4.1](https://github.com/twds0x13/SourceSerializer/compare/v3.4.0...v3.4.1) (2026-07-26)
+
+### Bug Fixes
+
+* add missing .meta files and asmdef for Unity compatibility ([602c2a8](https://github.com/twds0x13/SourceSerializer/commit/602c2a814cfd317790c1458b4d91e64e6da1960a))
+
 ## [3.4.0](https://github.com/twds0x13/SourceSerializer/compare/v3.3.1...v3.4.0) (2026-07-26)
 
 ### Features
