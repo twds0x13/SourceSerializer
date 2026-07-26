@@ -186,45 +186,42 @@ namespace SourceSerializer.Generator
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             // Pipeline A: [Template] on struct or class
-            var structDeclarations = context.SyntaxProvider
-                .ForAttributeWithMetadataName(
-                    "SourceSerializer.TemplateAttribute",
-                    predicate: (node, _) => node is StructDeclarationSyntax || node is ClassDeclarationSyntax,
-                    transform: (ctx, _) => GetStructInfo(ctx, fromExternal: false))
+            var structDeclarations = context.SyntaxProvider.CreateSyntaxProvider(
+                predicate: static (node, _) =>
+                    node is StructDeclarationSyntax || node is ClassDeclarationSyntax,
+                transform: static (ctx, _) => GetStructInfo(ctx, fromExternal: false))
                 .Where(info => info.HasValue)
                 .Select((info, _) => info!.Value);
 
             // Pipeline B: [ExternalTemplate(typeof(X), "...")]
-            var externalDeclarations = context.SyntaxProvider
-                .ForAttributeWithMetadataName(
-                    "SourceSerializer.ExternalTemplateAttribute",
-                    predicate: (node, _) => true,
-                    transform: (ctx, _) => GetExternalInfo(ctx))
+            var externalFromAssembly = context.CompilationProvider
+                .Select((compilation, _) =>
+                    GetExternalFromAttributes(compilation.Assembly.GetAttributes()));
+            var externalFromTypes = context.SyntaxProvider.CreateSyntaxProvider(
+                predicate: static (node, _) =>
+                    node is StructDeclarationSyntax || node is ClassDeclarationSyntax,
+                transform: static (ctx, _) => GetExternalFromType(ctx))
                 .Where(info => info.HasValue)
                 .Select((info, _) => info!.Value);
+            var externalDeclarations = externalFromAssembly
+                .Combine(externalFromTypes.Collect())
+                .Select((pair, _) => pair.Left.AddRange(pair.Right));
 
-            // Pipeline C: [TypeAlias("Alias", "float")] — custom aliases
-            var typeAliases = context.SyntaxProvider
-                .ForAttributeWithMetadataName(
-                    "SourceSerializer.TypeAliasAttribute",
-                    predicate: (node, _) => true,
-                    transform: (ctx, _) => GetTypeAlias(ctx))
-                .Where(a => a.HasValue)
-                .Select((a, _) => a!.Value)
-                .Collect();
+            // Pipeline C: [TypeAlias("Alias", "float")]
+            var typeAliases = context.CompilationProvider
+                .Select((compilation, _) =>
+                    GetTypeAliasesFromAttributes(compilation.Assembly.GetAttributes()));
 
-            // Pipeline D: enum members with [Tag] — auto-generated tag scanners
-            var enumTags = context.SyntaxProvider
-                .ForAttributeWithMetadataName(
-                    "SourceSerializer.TagAttribute",
-                    predicate: (node, _) => node is EnumMemberDeclarationSyntax,
-                    transform: (ctx, _) => GetEnumTagInfo(ctx))
+            // Pipeline D: enum members with [Tag]
+            var enumTags = context.SyntaxProvider.CreateSyntaxProvider(
+                predicate: static (node, _) => node is EnumMemberDeclarationSyntax,
+                transform: static (ctx, _) => GetEnumTagInfo(ctx))
                 .Where(info => info.HasValue)
                 .Select((info, _) => info!.Value)
                 .Collect();
 
             var combined = structDeclarations.Collect()
-                .Combine(externalDeclarations.Collect())
+                .Combine(externalDeclarations)
                 .Combine(typeAliases)
                 .Combine(enumTags)
                 .Combine(context.CompilationProvider);
@@ -358,59 +355,75 @@ namespace SourceSerializer.Generator
             };
         }
 
-        private static StructTemplateInfo? GetStructInfo(GeneratorAttributeSyntaxContext ctx, bool fromExternal)
+        private static StructTemplateInfo? GetStructInfo(GeneratorSyntaxContext ctx, bool fromExternal)
         {
-            var structSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
+            if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node) is not INamedTypeSymbol structSymbol)
+                return null;
             string? template = ExtractTemplateArg(structSymbol, "TemplateAttribute");
             if (string.IsNullOrEmpty(template))
                 return null;
             return BuildStructTemplateInfo(structSymbol, template!, allowInternalCtors: true);
         }
 
-        /// <summary>
-        /// 从 [ExternalTemplate(typeof(X), "...")] 提取（目标类型, 模板）。
-        /// attribute 可在 assembly/class/struct 上。
-        /// </summary>
-        private static StructTemplateInfo? GetExternalInfo(GeneratorAttributeSyntaxContext ctx)
+        /// <summary>从 assembly 级 [ExternalTemplate] 提取</summary>
+        private static System.Collections.Immutable.ImmutableArray<StructTemplateInfo> GetExternalFromAttributes(
+            System.Collections.Immutable.ImmutableArray<AttributeData> attrs)
         {
-            foreach (var attr in ctx.Attributes)
+            var results = System.Collections.Immutable.ImmutableArray.CreateBuilder<StructTemplateInfo>();
+            foreach (var attr in attrs)
             {
                 if (attr.AttributeClass == null
                     || attr.AttributeClass.Name != "ExternalTemplateAttribute"
                     || attr.ConstructorArguments.Length < 2)
                     continue;
-
                 var typeArg = attr.ConstructorArguments[0];
                 if (typeArg.Kind != TypedConstantKind.Type || typeArg.Value == null)
                     continue;
-
                 var targetType = (INamedTypeSymbol)typeArg.Value;
                 string? template = attr.ConstructorArguments[1].Value as string;
                 if (string.IsNullOrEmpty(template))
                     continue;
+                results.Add(BuildStructTemplateInfo(targetType, template!, allowInternalCtors: false));
+            }
+            return results.ToImmutable();
+        }
 
+        /// <summary>从类型级 [ExternalTemplate(typeof(X), "...")] 提取</summary>
+        private static StructTemplateInfo? GetExternalFromType(GeneratorSyntaxContext ctx)
+        {
+            if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node) is not INamedTypeSymbol symbol)
+                return null;
+            foreach (var attr in symbol.GetAttributes())
+            {
+                if (attr.AttributeClass == null
+                    || attr.AttributeClass.Name != "ExternalTemplateAttribute"
+                    || attr.ConstructorArguments.Length < 2)
+                    continue;
+                var typeArg = attr.ConstructorArguments[0];
+                if (typeArg.Kind != TypedConstantKind.Type || typeArg.Value == null)
+                    continue;
+                var targetType = (INamedTypeSymbol)typeArg.Value;
+                string? template = attr.ConstructorArguments[1].Value as string;
+                if (string.IsNullOrEmpty(template))
+                    continue;
                 return BuildStructTemplateInfo(targetType, template!, allowInternalCtors: false);
             }
-
             return null;
         }
 
         /// <summary>从 [Tag("tag")] 提取枚举标签映射</summary>
-        private static (string EnumName, string MemberName, string Tag)? GetEnumTagInfo(GeneratorAttributeSyntaxContext ctx)
+        private static (string EnumName, string MemberName, string Tag)? GetEnumTagInfo(GeneratorSyntaxContext ctx)
         {
-            var memberSymbol = ctx.TargetSymbol as IFieldSymbol;
-            if (memberSymbol == null) return null;
-
+            if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node) is not IFieldSymbol memberSymbol)
+                return null;
             var enumType = memberSymbol.ContainingType;
             if (enumType == null || enumType.TypeKind != TypeKind.Enum) return null;
-
-            foreach (var attr in ctx.Attributes)
+            foreach (var attr in memberSymbol.GetAttributes())
             {
                 if (attr.AttributeClass == null
                     || attr.AttributeClass.Name != "TagAttribute"
                     || attr.ConstructorArguments.Length < 1)
                     continue;
-
                 var tag = attr.ConstructorArguments[0].Value as string;
                 if (!string.IsNullOrEmpty(tag))
                     return (enumType.Name, memberSymbol.Name, tag!);
@@ -432,22 +445,23 @@ namespace SourceSerializer.Generator
             return map;
         }
 
-        /// <summary>从 [TypeAlias("alias", "type")] 提取别名映射</summary>
-        private static (string Alias, string CSharpType)? GetTypeAlias(GeneratorAttributeSyntaxContext ctx)
+        /// <summary>从 assembly 级 [TypeAlias("alias", "type")] 提取别名映射</summary>
+        private static System.Collections.Immutable.ImmutableArray<(string Alias, string CSharpType)> GetTypeAliasesFromAttributes(
+            System.Collections.Immutable.ImmutableArray<AttributeData> attrs)
         {
-            foreach (var attr in ctx.Attributes)
+            var results = System.Collections.Immutable.ImmutableArray.CreateBuilder<(string, string)>();
+            foreach (var attr in attrs)
             {
                 if (attr.AttributeClass == null
                     || attr.AttributeClass.Name != "TypeAliasAttribute"
                     || attr.ConstructorArguments.Length < 2)
                     continue;
-
                 string? alias = attr.ConstructorArguments[0].Value as string;
                 string? csharpType = attr.ConstructorArguments[1].Value as string;
                 if (!string.IsNullOrEmpty(alias) && !string.IsNullOrEmpty(csharpType))
-                    return (alias!, csharpType!);
+                    results.Add((alias!, csharpType!));
             }
-            return null;
+            return results.ToImmutable();
         }
 
         /// <summary>用 Roslyn 类型系统判定字段的集合分类，同时提取元素类型</summary>
