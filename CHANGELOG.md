@@ -1,3 +1,9 @@
+## [3.4.4](https://github.com/twds0x13/SourceSerializer/compare/v3.4.3...v3.4.4) (2026-07-26)
+
+### Bug Fixes
+
+* downgrade SG to Roslyn 4.1 for Unity 2022.3 compatibility ([adf8a43](https://github.com/twds0x13/SourceSerializer/commit/adf8a436fb140f134ffab35d39003e4cb8f46342))
+
 ## [3.4.3](https://github.com/twds0x13/SourceSerializer/compare/v3.4.2...v3.4.3) (2026-07-26)
 
 ### Bug Fixes
