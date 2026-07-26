@@ -25,3 +25,5 @@ CLAUDE.md
 .idea/
 *.user
 *.suo
+**/SourceGenerator~/bin/
+**/SourceGenerator~/obj/
