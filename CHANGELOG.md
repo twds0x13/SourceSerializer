@@ -1,3 +1,9 @@
+## [3.4.5](https://github.com/twds0x13/SourceSerializer/compare/v3.4.4...v3.4.5) (2026-07-26)
+
+### Bug Fixes
+
+* relax SSR007 to require only one side delimiter ([3d52216](https://github.com/twds0x13/SourceSerializer/commit/3d522160564d1313ddaef65cb44b6f0d071bce79))
+
 ## [3.4.4](https://github.com/twds0x13/SourceSerializer/compare/v3.4.3...v3.4.4) (2026-07-26)
 
 ### Bug Fixes
