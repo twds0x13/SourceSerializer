@@ -16,7 +16,7 @@
 
 ## ADR-4: 合并 Scanner/Emitter 共享工具
 
-提取 `EmitHelpers` 静态类，统一方法名生成、计数器管理、`EmitEntry` 字段复制。消除 CodeEmitter 和 EmitCodeEmitter 之间的重复代码和手工程式。
+提取 `EmitHelpers` 静态类，统一方法名生成、计数器管理、`EmitEntry` 字段复制。消除 ScanCodeEmitter 和 EmitCodeEmitter 之间的重复代码和手工程式。
 
 ## ADR-5: CollectionKind 重命名
 

@@ -8,6 +8,7 @@ using NUnit.Framework;
 /// 需要 Roslyn 内存编译测试（AdhocWorkspace / CSharpCompilation）来验证触发路径。
 /// 本文件记录当前状态和待补缺口。
 /// </summary>
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public class DiagnosticTests
 {
     // SSR001 — Template Parse Error

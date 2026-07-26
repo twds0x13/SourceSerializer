@@ -13,7 +13,7 @@ flowchart TD
     E --> F[泛型实例合成]
     F --> G[接口分派映射]
     G --> H[校验: SSR003/SSR005/SSR006]
-    H --> I[CodeEmitter]
+    H --> I[ScanCodeEmitter]
     H --> J[EmitCodeEmitter]
     H --> K[BlockEmitter]
     I --> L[SerializerScanners.g.cs]
@@ -34,7 +34,7 @@ flowchart TD
 | 泛型实例合成 | 开放泛型模板 + 字段引用 | 具体泛型 struct 定义 | `List<float>` 等具体实例基于默认模板自动合成 | 用户只声明 `Wrapper<T>`，SG 在遇到 `Wrapper<float>` 引用时自动合成具体模板。零手动声明每个具体实例 |
 | 接口分派映射 | 具现类型的 ImplementedInterfaces | 接口到具现列表的映射 | 为每个接口收集所有实现类型 | Roslyn `AllInterfaces` 在编译期提供完整类型信息；运行时无需反射判断类型归属 |
 | 校验 | AST + 依赖图 + 接口映射 | 诊断 (SSR003/005/006) | readonly 字段检测、标量在 repetition 内警告、模板歧义检测 | 全部诊断在编译期拦截，用户不会等到运行时才发现模板定义错误。`IsUnmanagedType` 是 Roslyn 权威判定，零行手动规则 |
-| CodeEmitter | AST | `SerializerScanners.g.cs` | 生成 `Scan_Xxx` span 扫描器 | Scan 和 Emit 共享同一 AST 输入但生成不同方向的方法体。分离 emitter 类避免代码生成时 `if (isEmit)` 分支污染 |
+| ScanCodeEmitter | AST | `SerializerScanners.g.cs` | 生成 `Scan_Xxx` span 扫描器 | Scan 和 Emit 共享同一 AST 输入但生成不同方向的方法体。分离 emitter 类避免代码生成时 `if (isEmit)` 分支污染 |
 | EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | 生成 `Emit_Xxx` 序列化器 | 同上。回写方向的代码生成逻辑（`StringBuilder.Append`、foreach 迭代）与读取方向完全不同 |
 | BlockEmitter | EmitEntry 列表 | `SerializerBlocks.g.cs` | 生成 `Init()` 注册入口 + `Block_Xxx` 包装结构体 | Init() 注册逻辑独立生成：Scanner 和 Emitter 不感知注册机制。三个 .g.cs 文件各司其职 |
 

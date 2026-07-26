@@ -13,7 +13,7 @@ flowchart TD
     E --> F[Generic instance synthesis]
     F --> G[Interface dispatch mapping]
     G --> H[Validation: SSR003/SSR005/SSR006]
-    H --> I[CodeEmitter]
+    H --> I[ScanCodeEmitter]
     H --> J[EmitCodeEmitter]
     H --> K[BlockEmitter]
     I --> L[SerializerScanners.g.cs]
@@ -34,7 +34,7 @@ flowchart TD
 | Generic instance synthesis | Open generic templates + field references | Concrete generic struct definitions | Auto-synthesize concrete instances like `List<float>` from default templates | The user only declares `Wrapper<T>`; the SG auto-synthesizes the concrete template when it encounters a `Wrapper<float>` reference. Zero manual per-instance declarations |
 | Interface dispatch mapping | ImplementedInterfaces of concrete types | Interface-to-implementations mapping | Collect all implementing types for each interface | Roslyn `AllInterfaces` provides complete type information at compile time; no runtime reflection needed to determine type membership |
 | Validation | AST + dependency graph + interface mapping | Diagnostics (SSR003/005/006) | Readonly field detection, scalar-in-repetition warning, template ambiguity detection | All diagnostics are caught at compile time; users never encounter runtime errors from template definition mistakes. `IsUnmanagedType` is the authoritative Roslyn judgment, with zero lines of manual rules |
-| CodeEmitter | AST | `SerializerScanners.g.cs` | Generate `Scan_Xxx` span scanners | Scan and Emit share the same AST input but generate methods for opposite directions. Separate emitter classes avoid `if (isEmit)` branching in code generation |
+| ScanCodeEmitter | AST | `SerializerScanners.g.cs` | Generate `Scan_Xxx` span scanners | Scan and Emit share the same AST input but generate methods for opposite directions. Separate emitter classes avoid `if (isEmit)` branching in code generation |
 | EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | Generate `Emit_Xxx` serializers | Same rationale as above. Write-direction code generation logic (`StringBuilder.Append`, foreach iteration) is entirely different from read-direction |
 | BlockEmitter | EmitEntry list | `SerializerBlocks.g.cs` | Generate `Init()` registration entry point + `Block_Xxx` wrapper structs | Init() registration logic is generated independently: Scanner and Emitter are unaware of the registration mechanism. Three .g.cs files, each with a single responsibility |
 

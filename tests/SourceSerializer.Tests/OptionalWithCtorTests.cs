@@ -6,7 +6,7 @@ using SourceSerializer;
 // ═══════════════════════════════════════════════════════
 // Test type: readonly struct with matching constructor
 // AND <optional> block — exercises the hoisting mechanism
-// in CodeEmitter.EmitHoistedDecls.
+// in ScanCodeEmitter.EmitHoistedDecls.
 // ═══════════════════════════════════════════════════════
 
 [Template("<float X><optional>, <float Y></optional>")]

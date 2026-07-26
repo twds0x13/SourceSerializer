@@ -11,6 +11,10 @@ namespace SourceSerializer
     /// <see cref="SerializerRegistry"/> 的静态 Scan_*/Emit_* 方法。
     /// 通过 <see cref="SerializerBlocks"/> 的 EnsureInitialized 统一注册。
     /// </summary>
+    /// <remarks>
+    /// BuiltinBlock_* 均为 2 行委托包装器——实际逻辑在 SerializerRegistry 中已全覆盖。
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     internal static class BuiltinBlocks
     {
         internal readonly struct BuiltinBlock_Float : ISerializerBlock<float>

@@ -84,7 +84,7 @@ SG 生成的全部 Scan/Emit 方法和 Block 结构体位于 `public static part
 
 ## EmitHelpers 共享工具
 
-`EmitHelpers` 统一了 CodeEmitter 和 EmitCodeEmitter 的方法名生成（`GetMethodName`）、唯一变量名生成（`GetUniqueVar`）、名称消毒（sanitize `[]`）和计数器管理。
+`EmitHelpers` 统一了 ScanCodeEmitter 和 EmitCodeEmitter 的方法名生成（`GetMethodName`）、唯一变量名生成（`GetUniqueVar`）、名称消毒（sanitize `[]`）和计数器管理。
 
 ## 参见
 

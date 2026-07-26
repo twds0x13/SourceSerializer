@@ -14,7 +14,7 @@ flowchart TD
     D --> E["Generic instance synthesis"]
     E --> F["Interface dispatch mapping"]
     F --> G["Validation: SSR003/005/006"]
-    G --> H["CodeEmitter<br/>generates Scan methods"]
+    G --> H["ScanCodeEmitter<br/>generates Scan methods"]
     G --> I["EmitCodeEmitter<br/>generates Emit methods"]
     G --> J["BlockEmitter<br/>generates Init + Block"]
     H --> K["SerializerScanners.g.cs"]

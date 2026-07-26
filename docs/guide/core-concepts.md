@@ -14,7 +14,7 @@ flowchart TD
     D --> E["泛型实例合成"]
     E --> F["接口分派映射"]
     F --> G["校验: SSR003/005/006"]
-    G --> H["CodeEmitter<br/>生成 Scan 方法"]
+    G --> H["ScanCodeEmitter<br/>生成 Scan 方法"]
     G --> I["EmitCodeEmitter<br/>生成 Emit 方法"]
     G --> J["BlockEmitter<br/>生成 Init + Block"]
     H --> K["SerializerScanners.g.cs"]

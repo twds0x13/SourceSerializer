@@ -10,12 +10,14 @@ using SourceSerializer;
 /// <summary>武器接口 — 模拟跨程序集的接口分发。</summary>
 public interface IWeapon { }
 
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public struct Sword : IWeapon
 {
     public float Atk;
     public override string ToString() => $"Sword({Atk})";
 }
 
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public struct Bow : IWeapon
 {
     public float Range;
@@ -23,6 +25,7 @@ public struct Bow : IWeapon
 }
 
 /// <summary>第三个武器类型 — 模拟热更 DLL 第三次注册的追加链节。</summary>
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public struct Staff : IWeapon
 {
     public int Mana;
@@ -102,6 +105,7 @@ readonly struct Block_IWeapon_Bow : ISerializerBlock<IWeapon>
 }
 
 /// <summary>模拟第二个热更 DLL SG 生成的 IWeapon 分发块 — 只认识 Staff。</summary>
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 readonly struct Block_IWeapon_Staff : ISerializerBlock<IWeapon>
 {
     public int Scan(ReadOnlySpan<char> text, int pos, out IWeapon value)
@@ -171,7 +175,7 @@ public class ChainBlockTests
         SerializerBlocks.AddBlock<IWeapon>(new Block_IWeapon_Sword());
 
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
-        int r = block.Scan("Sword(100)".AsSpan(), 0, out IWeapon v);
+        int r = block.Scan(WhitespaceStripper.Strip("Sword(100)").AsSpan(), 0, out IWeapon v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Sword>());
         Assert.That(((Sword)v).Atk, Is.EqualTo(100f).Within(1e-5f));
@@ -199,12 +203,12 @@ public class ChainBlockTests
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
 
         // 链节 0 匹配 Sword
-        int r1 = block.Scan("Sword(100)".AsSpan(), 0, out IWeapon v1);
+        int r1 = block.Scan(WhitespaceStripper.Strip("Sword(100)").AsSpan(), 0, out IWeapon v1);
         Assert.That(r1, Is.GreaterThan(0));
         Assert.That(v1, Is.InstanceOf<Sword>());
 
         // 链节 0 不匹配 → 链节 1 匹配 Bow
-        int r2 = block.Scan("Bow(50)".AsSpan(), 0, out IWeapon v2);
+        int r2 = block.Scan(WhitespaceStripper.Strip("Bow(50)").AsSpan(), 0, out IWeapon v2);
         Assert.That(r2, Is.GreaterThan(0));
         Assert.That(v2, Is.InstanceOf<Bow>());
         Assert.That(((Bow)v2).Range, Is.EqualTo(50f).Within(1e-5f));
@@ -241,17 +245,17 @@ public class ChainBlockTests
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
 
         // Sword 仍在链中
-        int r1 = block.Scan("Sword(100)".AsSpan(), 0, out IWeapon v1);
+        int r1 = block.Scan(WhitespaceStripper.Strip("Sword(100)").AsSpan(), 0, out IWeapon v1);
         Assert.That(r1, Is.GreaterThan(0));
         Assert.That(v1, Is.InstanceOf<Sword>());
 
         // Bow 仍在链中
-        int r2 = block.Scan("Bow(50)".AsSpan(), 0, out IWeapon v2);
+        int r2 = block.Scan(WhitespaceStripper.Strip("Bow(50)").AsSpan(), 0, out IWeapon v2);
         Assert.That(r2, Is.GreaterThan(0));
         Assert.That(v2, Is.InstanceOf<Bow>());
 
         // 新增 Staff 可用
-        int r3 = block.Scan("Staff(42)".AsSpan(), 0, out IWeapon v3);
+        int r3 = block.Scan(WhitespaceStripper.Strip("Staff(42)").AsSpan(), 0, out IWeapon v3);
         Assert.That(r3, Is.GreaterThan(0));
         Assert.That(v3, Is.InstanceOf<Staff>());
         Assert.That(((Staff)v3).Mana, Is.EqualTo(42));
@@ -266,7 +270,7 @@ public class ChainBlockTests
         SerializerBlocks.AddBlock<IWeapon>(new Block_IWeapon_Bow());
 
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
-        int r = block.Scan("NotAWeapon".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("NotAWeapon").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -296,7 +300,7 @@ public class ChainBlockTests
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
         Assert.That(block, Is.InstanceOf<ChainBlock<IWeapon>>());
 
-        int r = block.Scan("Bow(50)".AsSpan(), 0, out IWeapon v);
+        int r = block.Scan(WhitespaceStripper.Strip("Bow(50)").AsSpan(), 0, out IWeapon v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Bow>());
     }

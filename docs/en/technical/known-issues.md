@@ -4,7 +4,7 @@
 
 `[Template]` on `class` types has a variable scoping issue. For class types such as `NamedPoint`, the SG-generated `Scan` method may reference non-existent variables (e.g. `_Y_42`).
 
-Root cause: When `CodeEmitter` processes the `NeedsHeapAlloc` path (class types), the variable declaration and scoping strategy differs from the struct path. The code generation logic for this path has not yet been fully investigated.
+Root cause: When `ScanCodeEmitter` processes the `NeedsHeapAlloc` path (class types), the variable declaration and scoping strategy differs from the struct path. The code generation logic for this path has not yet been fully investigated.
 
 Scope: `class` types only. `struct` types (including `readonly struct`) are unaffected.
 

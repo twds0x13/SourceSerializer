@@ -16,7 +16,7 @@ Code comments and documentation long referenced a non-existent "managed Walk pha
 
 ## ADR-4: Merged Scanner/Emitter Shared Utilities
 
-Extracted `EmitHelpers` static class, unifying method name generation, counter management, and `EmitEntry` field copying. Eliminated duplicated code and manual boilerplate between CodeEmitter and EmitCodeEmitter.
+Extracted `EmitHelpers` static class, unifying method name generation, counter management, and `EmitEntry` field copying. Eliminated duplicated code and manual boilerplate between ScanCodeEmitter and EmitCodeEmitter.
 
 ## ADR-5: CollectionKind Rename
 

@@ -77,7 +77,7 @@ flowchart TD
     B --> C[XML string]
     C --> D[XmlTemplateParser.Parse]
     D --> E[AST node list]
-    E --> F[CodeEmitter.EmitAll]
+    E --> F[ScanCodeEmitter.EmitAll]
     F --> G[C# span scanner source]
 ```
 

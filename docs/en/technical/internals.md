@@ -30,7 +30,7 @@ foreach (var item in value) { ... }
 
 ## EmitHelpers Shared Utilities
 
-`EmitHelpers` unifies method name generation (`GetMethodName`), unique variable naming (`GetUniqueVar`), and counter management across CodeEmitter and EmitCodeEmitter. Eliminates ~20 lines of duplicated code.
+`EmitHelpers` unifies method name generation (`GetMethodName`), unique variable naming (`GetUniqueVar`), and counter management across ScanCodeEmitter and EmitCodeEmitter. Eliminates ~20 lines of duplicated code.
 
 ## See Also
 
