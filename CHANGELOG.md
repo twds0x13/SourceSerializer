@@ -1,3 +1,9 @@
+## [3.4.3](https://github.com/twds0x13/SourceSerializer/compare/v3.4.2...v3.4.3) (2026-07-26)
+
+### Bug Fixes
+
+* remove SourceGenerator~.meta, add Plugins.meta ([7fc8ab6](https://github.com/twds0x13/SourceSerializer/commit/7fc8ab64873d378b46872b953b87a8f3ef42f0c8))
+
 ## [3.4.2](https://github.com/twds0x13/SourceSerializer/compare/v3.4.1...v3.4.2) (2026-07-26)
 
 ### Bug Fixes
