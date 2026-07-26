@@ -1,3 +1,9 @@
+## [3.4.6](https://github.com/twds0x13/SourceSerializer/compare/v3.4.5...v3.4.6) (2026-07-26)
+
+### Bug Fixes
+
+* repurpose SSR007 to block ExternalTemplate on built-in types ([2dc37cd](https://github.com/twds0x13/SourceSerializer/commit/2dc37cd4acd2acaa853f0a989c7dde6a2fe81022))
+
 ## [3.4.5](https://github.com/twds0x13/SourceSerializer/compare/v3.4.4...v3.4.5) (2026-07-26)
 
 ### Bug Fixes
