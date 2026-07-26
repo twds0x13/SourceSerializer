@@ -2,7 +2,6 @@ using System;
 using NUnit.Framework;
 using SourceSerializer;
 
-[AllowUnquotedStrings]
 [Template("<string Name><optional>, <int Age></optional>")]
 public class Person
 {

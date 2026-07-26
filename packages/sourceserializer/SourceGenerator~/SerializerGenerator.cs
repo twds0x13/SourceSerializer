@@ -175,12 +175,11 @@ namespace SourceSerializer.Generator
             "neither is fully contained within the other.",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
-        private static readonly DiagnosticDescriptor UnmatchableScanPatternError = new(
-            "SSR007", "Unmatchable scan pattern",
-            "String field '{0}' in template '{1}' requires quoted input (\"value\") " +
-            "for reliable parsing after whitespace removal. " +
-            "Unquoted strings may consume unbounded input. " +
-            "Use double-quoted string values in your input.",
+        private static readonly DiagnosticDescriptor BuiltinTypeOverrideError = new(
+            "SSR007", "Cannot override built-in type",
+            "Cannot override built-in type '{0}' with [ExternalTemplate]. " +
+            "Built-in types ({1}) are handled directly by the serializer registry " +
+            "and cannot be replaced via ExternalTemplate.",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -328,18 +327,6 @@ namespace SourceSerializer.Generator
                 }
             }
 
-            // 检测 [AllowUnquotedStrings] 抑制标记
-            bool allowBareStrings = false;
-            foreach (var attr in typeSymbol.GetAttributes())
-            {
-                if (attr.AttributeClass?.Name == "AllowUnquotedStringsAttribute"
-                    || attr.AttributeClass?.Name == "AllowUnquotedStrings")
-                {
-                    allowBareStrings = true;
-                    break;
-                }
-            }
-
             return new StructTemplateInfo
             {
                 StructName = structName,
@@ -351,7 +338,6 @@ namespace SourceSerializer.Generator
                 ImplementedInterfaces = typeSymbol.AllInterfaces.Select(i => i.ToDisplayString()).ToArray(),
                 IsReadonlyStruct = isReadonlyStruct,
                 MatchedCtorParams = matchedCtorParams,
-                AllowBareStrings = allowBareStrings,
             };
         }
 
@@ -380,6 +366,8 @@ namespace SourceSerializer.Generator
                 if (typeArg.Kind != TypedConstantKind.Type || typeArg.Value == null)
                     continue;
                 var targetType = (INamedTypeSymbol)typeArg.Value;
+                if (BuiltinTypeNames.All.Contains(targetType.Name))
+                    continue; // 内置类型不可覆盖（SSR007 在 GenerateSource 中报错）
                 string? template = attr.ConstructorArguments[1].Value as string;
                 if (string.IsNullOrEmpty(template))
                     continue;
@@ -403,6 +391,8 @@ namespace SourceSerializer.Generator
                 if (typeArg.Kind != TypedConstantKind.Type || typeArg.Value == null)
                     continue;
                 var targetType = (INamedTypeSymbol)typeArg.Value;
+                if (BuiltinTypeNames.All.Contains(targetType.Name))
+                    continue; // 内置类型不可覆盖（SSR007 在 GenerateSource 中报错）
                 string? template = attr.ConstructorArguments[1].Value as string;
                 if (string.IsNullOrEmpty(template))
                     continue;
@@ -589,10 +579,23 @@ namespace SourceSerializer.Generator
                 // ── 2.8 Validate: no bare string fields (SSR007) ──
                 // 空白符剔除后裸字符串退化为无限匹配机。
                 // 扩展点：后续可扩展检测集合模板缺失闭合结构符等不可匹配模式。
-                var aliasLookup = new Dictionary<string, string>(StringComparer.Ordinal);
-                foreach (var (alias, csharpType) in typeAliases)
-                    aliasLookup[alias] = csharpType;
-                ValidateUnmatchableScanPatterns(context, parsed, aliasLookup);
+                // ── 2.9 Validate: no ExternalTemplate overriding built-in types ──
+                foreach (var attr in compilation.Assembly.GetAttributes())
+                {
+                    if (attr.AttributeClass == null
+                        || attr.AttributeClass.Name != "ExternalTemplateAttribute"
+                        || attr.ConstructorArguments.Length < 1)
+                        continue;
+                    var typeArg = attr.ConstructorArguments[0];
+                    if (typeArg.Kind != TypedConstantKind.Type || typeArg.Value is not INamedTypeSymbol targetType)
+                        continue;
+                    if (BuiltinTypeNames.All.Contains(targetType.Name))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            BuiltinTypeOverrideError, Location.None,
+                            targetType.Name, string.Join(", ", BuiltinTypeNames.All)));
+                    }
+                }
 
                 // ── 3. Topological sort ──
                 var ordered = TopologicalSort(parsed, depGraph);
@@ -917,109 +920,6 @@ namespace SourceSerializer.Generator
         /// 退化为无限匹配机，必须使用引号字符串输入。
         /// 扩展点：后续可检测集合模板缺失闭合结构符等不可匹配模式。
         /// </summary>
-        private static void ValidateUnmatchableScanPatterns(
-            SourceProductionContext context,
-            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed,
-            Dictionary<string, string> aliasLookup)
-        {
-            foreach (var (info, ast) in parsed)
-            {
-                if (info.IsOpenGeneric) continue;
-                if (info.AllowBareStrings) continue;
-                CheckBareStrings(context, ast, info.StructName, aliasLookup);
-            }
-        }
-
-        /// <summary>
-        /// 递归检查节点列表中是否存在裸 string 字段——即两侧都没有 non-empty
-        /// LiteralTextNode 前后缀（紧凑空白符后）。至少一侧存在即可——Scan_String
-        /// 仅接受引号字符串，\" 本身就是终止担保。
-        /// </summary>
-        private static void CheckBareStrings(
-            SourceProductionContext context,
-            List<TemplateNode> nodes,
-            string structName,
-            Dictionary<string, string> aliasLookup)
-        {
-            for (int i = 0; i < nodes.Count; i++)
-            {
-                switch (nodes[i])
-                {
-                    case FieldDirectiveNode f:
-                        string typeName = aliasLookup.TryGetValue(f.TypeAlias, out var backing)
-                            ? backing : f.TypeAlias;
-                        if (!typeName.Equals("string", StringComparison.OrdinalIgnoreCase)
-                            && !typeName.Equals("System.String", StringComparison.OrdinalIgnoreCase))
-                            break;
-
-                        bool hasPrefix = i > 0 && nodes[i - 1] is LiteralTextNode prev
-                            && StripLiteralWhitespace(prev.Text).Length > 0;
-                        bool hasSuffix = i + 1 < nodes.Count && nodes[i + 1] is LiteralTextNode next
-                            && StripLiteralWhitespace(next.Text).Length > 0;
-
-                        if (!hasPrefix && !hasSuffix)
-                        {
-                            context.ReportDiagnostic(Diagnostic.Create(
-                                UnmatchableScanPatternError, Location.None,
-                                f.FieldName, structName));
-                        }
-                        break;
-
-                    case OptionalBlockNode opt:
-                        CheckBareStrings(context, opt.Body, structName, aliasLookup);
-                        break;
-
-                    case RepetitionNode rep:
-                        if (rep.First != null)
-                            CheckBareStrings(context, rep.First, structName, aliasLookup);
-                        CheckBareStrings(context, rep.Body, structName, aliasLookup);
-                        break;
-
-                    case IndentNode ind:
-                        CheckBareStrings(context, ind.Body, structName, aliasLookup);
-                        break;
-                }
-            }
-        }
-
-        /// <summary>剔除所有空白符——与 ScanCodeEmitter.StripWhitespace 语义一致。</summary>
-        private static string StripLiteralWhitespace(string text)
-        {
-            if (text.Length == 0) return text;
-            foreach (char c in text)
-                if (char.IsWhiteSpace(c))
-                    goto slow;
-            return text;
-        slow:
-            var sb = new System.Text.StringBuilder(text.Length);
-            foreach (char c in text)
-                if (!char.IsWhiteSpace(c))
-                    sb.Append(c);
-            return sb.ToString();
-        }
-
-        /// <summary>递归查找节点列表中的所有 FieldDirectiveNode。</summary>
-        private static List<FieldDirectiveNode> FindAllFieldDirectives(List<TemplateNode> nodes)
-        {
-            var result = new List<FieldDirectiveNode>();
-            foreach (var node in nodes)
-            {
-                if (node is FieldDirectiveNode f)
-                    result.Add(f);
-                else if (node is OptionalBlockNode opt)
-                    result.AddRange(FindAllFieldDirectives(opt.Body));
-                else if (node is RepetitionNode rep)
-                {
-                    if (rep.First != null)
-                        result.AddRange(FindAllFieldDirectives(rep.First));
-                    result.AddRange(FindAllFieldDirectives(rep.Body));
-                }
-                else if (node is IndentNode ind)
-                    result.AddRange(FindAllFieldDirectives(ind.Body));
-            }
-            return result;
-        }
-
         /// <summary>
         /// 扫描已解析模板的字段引用，为泛型集合类型（如 List&lt;NamedValue&gt;）
         /// 自动解析开放泛型模板并合成 StructTemplateInfo。
@@ -1124,7 +1024,6 @@ namespace SourceSerializer.Generator
                             Fields = synthFields,
                             IsReadonlyStruct = openInfo.IsReadonlyStruct,
                             MatchedCtorParams = openInfo.MatchedCtorParams,
-                            AllowBareStrings = openInfo.AllowBareStrings, // 继承开放泛型的抑制标记
                         };
                         result.Add((synthInfo, ast));
                     }
@@ -1152,7 +1051,6 @@ namespace SourceSerializer.Generator
                             Fields = new List<FieldInfo>(),
                             IsReadonlyStruct = false,
                             MatchedCtorParams = null,
-                            AllowBareStrings = true, // 合成数组类型，开放泛型已验证
                         };
                         result.Add((synthInfo, ast));
                     }
@@ -1457,9 +1355,6 @@ namespace SourceSerializer.Generator
             public bool IsReadonlyStruct;
             /// <summary>匹配构造器的参数名列表（按参数顺序）。null 表示无匹配构造器。</summary>
             public string[]? MatchedCtorParams;
-            /// <summary>类型声明了 [AllowUnquotedStrings]——抑制 SSR007。</summary>
-            public bool AllowBareStrings;
-
             public TemplateCommon ToCommon() => new()
             {
                 StructName = StructName,

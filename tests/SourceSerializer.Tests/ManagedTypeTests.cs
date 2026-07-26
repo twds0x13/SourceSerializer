@@ -8,7 +8,6 @@ using SourceSerializer;
 // Managed test types (class + managed struct)
 // ═══════════════════════════════════════════════════════
 
-[AllowUnquotedStrings]
 [Template("<string Name>|<float Value>")]
 public class NamedValue
 {
@@ -30,7 +29,6 @@ public class Modifiable
     public List<NamedValue> Mods;
 }
 
-[AllowUnquotedStrings]
 [Template("<string Id>,<int Count>")]
 public struct InventoryItem
 {

@@ -40,7 +40,6 @@ public struct UsesPair
 }
 
 /// <summary>managed 类型参数 — class（验证 NeedsHeapAlloc/NeedsWalkPhase）</summary>
-[AllowUnquotedStrings]
 [Template("<T Value>")]
 public class Box<T>
 {
@@ -85,7 +84,6 @@ public struct HasListOfWrapper
 [Template("<HashSet<float> Items>")]
 public struct UsesHashSet { public HashSet<float> Items; }
 
-[AllowUnquotedStrings]
 [Template("<string Name>")]
 public struct UsesString { public string Name; }
 

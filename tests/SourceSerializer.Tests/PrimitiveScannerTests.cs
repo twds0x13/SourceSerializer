@@ -22,7 +22,6 @@ public struct UlongOnly { public ulong Val; }
 [Template("<double Val>")]
 public struct DoubleOnly { public double Val; }
 
-[AllowUnquotedStrings]
 [Template("<string Val>")]
 public struct StringOnly { public string Val; }
 

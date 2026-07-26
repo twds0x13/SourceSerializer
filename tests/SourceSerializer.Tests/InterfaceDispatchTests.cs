@@ -79,7 +79,6 @@ public struct IntValue : IValue
     public int Val;
 }
 
-[AllowUnquotedStrings]
 [Template("<string Val>")]
 public class StringValue : IValue
 {
