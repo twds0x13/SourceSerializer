@@ -931,8 +931,9 @@ namespace SourceSerializer.Generator
         }
 
         /// <summary>
-        /// 递归检查节点列表中是否存在裸 string 字段——即两侧缺乏 non-empty
-        /// LiteralTextNode 前后缀（紧凑空白符后）。两侧均需存在才算安全。
+        /// 递归检查节点列表中是否存在裸 string 字段——即两侧都没有 non-empty
+        /// LiteralTextNode 前后缀（紧凑空白符后）。至少一侧存在即可——Scan_String
+        /// 仅接受引号字符串，\" 本身就是终止担保。
         /// </summary>
         private static void CheckBareStrings(
             SourceProductionContext context,
@@ -956,7 +957,7 @@ namespace SourceSerializer.Generator
                         bool hasSuffix = i + 1 < nodes.Count && nodes[i + 1] is LiteralTextNode next
                             && StripLiteralWhitespace(next.Text).Length > 0;
 
-                        if (!hasPrefix || !hasSuffix)
+                        if (!hasPrefix && !hasSuffix)
                         {
                             context.ReportDiagnostic(Diagnostic.Create(
                                 UnmatchableScanPatternError, Location.None,
