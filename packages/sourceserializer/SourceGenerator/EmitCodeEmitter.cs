@@ -108,11 +108,12 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false, string valueName = "value")
+            string indent, bool isCollection = false, string valueName = "value",
+            int indentLevel = 0)
         {
             for (int i = 0; i < nodes.Count; i++)
             {
-                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName);
+                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName, indentLevel);
             }
         }
 
@@ -121,7 +122,8 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false, string valueName = "value")
+            string indent, bool isCollection = false, string valueName = "value",
+            int indentLevel = 0)
         {
             switch (node)
             {
@@ -132,10 +134,13 @@ namespace SourceSerializer.Generator
                     EmitFieldDirective(sb, field, indent, dependencyGraph, typeAliases, enumTags, fieldTypes, isCollection, valueName);
                     break;
                 case OptionalBlockNode opt:
-                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName);
+                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName, indentLevel);
                     break;
                 case RepetitionNode rep:
-                    EmitRepetitionBlock(sb, rep, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection);
+                    EmitRepetitionBlock(sb, rep, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, indentLevel);
+                    break;
+                case IndentNode indentNode:
+                    EmitIndentBlock(sb, indentNode, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName, indentLevel);
                     break;
             }
         }
@@ -205,12 +210,13 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection = false, string valueName = "value")
+            string indent, bool isCollection = false, string valueName = "value",
+            int indentLevel = 0)
         {
             var optFields = FindOptFields(opt.Body);
             if (optFields.Count == 0)
             {
-                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName);
+                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, valueName, indentLevel);
                 return;
             }
 
@@ -228,6 +234,34 @@ namespace SourceSerializer.Generator
             sb.AppendLine($"{indent}}}");
         }
 
+        /// <summary>
+        /// 生成缩进块代码：&lt;indent&gt; 开口换行 + indentLevel+1 个 tab，
+        /// body 在 indentLevel+1 执行，&lt;/indent&gt; 闭口换行 + indentLevel 个 tab。
+        /// </summary>
+        private static void EmitIndentBlock(
+            StringBuilder sb, IndentNode indentNode, string structTypeName,
+            Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
+            Dictionary<string, List<(string, string)>> enumTags,
+            Dictionary<string, FieldInfo> fieldTypes,
+            string indent, bool isCollection, string valueName, int indentLevel)
+        {
+            int nextLevel = indentLevel + 1;
+
+            // 开口：\n + nextLevel tabs
+            sb.AppendLine($"{indent}sb.Append('\\n');");
+            if (nextLevel > 0)
+                sb.AppendLine($"{indent}for (int __ti = 0; __ti < {nextLevel}; __ti++) sb.Append('\\t');");
+
+            // Body
+            EmitNodeList(sb, indentNode.Body, structTypeName, dependencyGraph, typeAliases,
+                enumTags, fieldTypes, indent, isCollection, valueName, nextLevel);
+
+            // 闭口：\n + indentLevel tabs
+            sb.AppendLine($"{indent}sb.Append('\\n');");
+            if (indentLevel > 0)
+                sb.AppendLine($"{indent}for (int __ti = 0; __ti < {indentLevel}; __ti++) sb.Append('\\t');");
+        }
+
         private static List<string> FindOptFields(List<TemplateNode> nodes)
         {
             var result = new List<string>();
@@ -239,6 +273,8 @@ namespace SourceSerializer.Generator
                     result.AddRange(FindOptFields(opt.Body));
                 else if (node is RepetitionNode rep)
                     result.AddRange(FindOptFields(rep.Body));
+                else if (node is IndentNode ind)
+                    result.AddRange(FindOptFields(ind.Body));
             }
             return result;
         }
@@ -272,7 +308,7 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph, Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
-            string indent, bool isCollection)
+            string indent, bool isCollection, int indentLevel = 0)
         {
             // 确定迭代源：自集合类型迭代 value 自身，用户 struct 迭代 value.FieldName
             string iterSource;
@@ -307,11 +343,11 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{step}    if (__first_{flagId})");
                 sb.AppendLine($"{step}    {{");
                 sb.AppendLine($"{step}        __first_{flagId} = false;");
-                EmitNodeList(sb, rep.First!, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step + "    ", isCollection: true, elemValueName);
+                EmitNodeList(sb, rep.First!, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step + "    ", isCollection: true, valueName: elemValueName, indentLevel: indentLevel);
                 sb.AppendLine($"{step}    }}");
                 sb.AppendLine($"{step}    else");
                 sb.AppendLine($"{step}    {{");
-                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step + "    ", isCollection: true, elemValueName);
+                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step + "    ", isCollection: true, valueName: elemValueName, indentLevel: indentLevel);
                 sb.AppendLine($"{step}    }}");
                 sb.AppendLine($"{step}}}");
                 sb.AppendLine($"{indent}}}");
@@ -324,7 +360,7 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{step}foreach (var {itemVar} in {iterSource})");
                 sb.AppendLine($"{step}{{");
                 sb.AppendLine($"{step}    var {elemValueName} = {itemVar};");
-                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step + "    ", isCollection: true, elemValueName);
+                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, step + "    ", isCollection: true, valueName: elemValueName, indentLevel: indentLevel);
                 sb.AppendLine($"{step}}}");
                 sb.AppendLine($"{indent}}}");
             }
@@ -356,6 +392,11 @@ namespace SourceSerializer.Generator
                 if (node is RepetitionNode nested)
                 {
                     var r = FindCollectionField(nested.Body, fieldTypes);
+                    if (r != null) return r;
+                }
+                if (node is IndentNode ind)
+                {
+                    var r = FindCollectionField(ind.Body, fieldTypes);
                     if (r != null) return r;
                 }
             }
