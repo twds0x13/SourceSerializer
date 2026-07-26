@@ -59,7 +59,7 @@ public class ReadonlyStructTests
     public void ReadonlyStruct_ParsesViaConstructor()
     {
         Assert.That(SerializerBlocks.TryGet<Damage>(out var block), Is.True);
-        int r = block.Scan("10.5 0.25".AsSpan(), 0, out Damage v);
+        int r = block.Scan(WhitespaceStripper.Strip("10.5 0.25").AsSpan(), 0, out Damage v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Attack, Is.EqualTo(10.5f).Within(1e-5f));
         Assert.That(v.CritRate, Is.EqualTo(0.25f).Within(1e-5f));
@@ -83,7 +83,7 @@ public class ReadonlyStructTests
     {
         Assert.That(SerializerBlocks.TryGet<ReadonlyPoint2D>(out var block), Is.True);
         Assert.That(
-        int r = block.Scan("1.5 -3".AsSpan(), 0, out ReadonlyPoint2D parsed);
+        int r = block.Scan(WhitespaceStripper.Strip("1.5 -3").AsSpan(), 0, out ReadonlyPoint2D parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.X, Is.EqualTo(1.5f).Within(1e-5f));
         Assert.That(parsed.Y, Is.EqualTo(-3f).Within(1e-5f));
@@ -97,7 +97,7 @@ public class ReadonlyStructTests
     public void ReadonlyStruct_InternalCtor_IsMatched()
     {
         Assert.That(SerializerBlocks.TryGet<InternalCtor>(out var block), Is.True);
-        int r = block.Scan("42".AsSpan(), 0, out InternalCtor v);
+        int r = block.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out InternalCtor v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Value, Is.EqualTo(42f).Within(1e-5f));
     }
@@ -106,7 +106,7 @@ public class ReadonlyStructTests
     public void ReadonlyStruct_ThreeFields_ParsesCorrectly()
     {
         Assert.That(SerializerBlocks.TryGet<FullDamage>(out var block), Is.True);
-        int r = block.Scan("100 0.5 50".AsSpan(), 0, out FullDamage v);
+        int r = block.Scan(WhitespaceStripper.Strip("100 0.5 50").AsSpan(), 0, out FullDamage v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Attack, Is.EqualTo(100f).Within(1e-5f));
         Assert.That(v.CritRate, Is.EqualTo(0.5f).Within(1e-5f));
@@ -122,7 +122,7 @@ public class ReadonlyStructTests
         Assert.That(        var original = new Damage(100f, 0.25f);
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.Attack, Is.EqualTo(100f).Within(1e-5f));
         Assert.That(parsed.CritRate, Is.EqualTo(0.25f).Within(1e-5f));
@@ -135,7 +135,7 @@ public class ReadonlyStructTests
         Assert.That(        var original = new FullDamage(100f, 0.5f, 50f);
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.Attack, Is.EqualTo(100f).Within(1e-5f));
         Assert.That(parsed.CritRate, Is.EqualTo(0.5f).Within(1e-5f));

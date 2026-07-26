@@ -27,7 +27,7 @@ public class CrossFeatureTests
     public void MultiTag_As_IVector_Scans()
     {
         Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
-        int r = block.Scan("Mlt 1.5".AsSpan(), 0, out var v);
+        int r = block.Scan(WhitespaceStripper.Strip("Mlt 1.5").AsSpan(), 0, out var v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<MultiTag>());
         Assert.That(((MultiTag)v).V, Is.EqualTo(1.5f).Within(1e-5f));
@@ -37,7 +37,7 @@ public class CrossFeatureTests
     public void MultiTag_As_IShape_Scans()
     {
         Assert.That(SerializerBlocks.TryGet<IShape>(out var block), Is.True);
-        int r = block.Scan("Mlt 99".AsSpan(), 0, out var v);
+        int r = block.Scan(WhitespaceStripper.Strip("Mlt 99").AsSpan(), 0, out var v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<MultiTag>());
         Assert.That(((MultiTag)v).V, Is.EqualTo(99f).Within(1e-5f));
@@ -50,7 +50,7 @@ public class CrossFeatureTests
     {
         Assert.That(SerializerBlocks.TryGet<DualInterface>(out var block), Is.True);
         // A=MultiTag（匹配 IVector），B 不匹配
-        int r = block.Scan("Mlt 1.5".AsSpan(), 0, out var v);
+        int r = block.Scan(WhitespaceStripper.Strip("Mlt 1.5").AsSpan(), 0, out var v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.A, Is.InstanceOf<MultiTag>());
         Assert.That(v.B, Is.Null);
@@ -61,7 +61,7 @@ public class CrossFeatureTests
     {
         Assert.That(SerializerBlocks.TryGet<DualInterface>(out var block), Is.True);
         // A=MultiTag, B=ShapeB
-        int r = block.Scan("Mlt 1.5, B(\"hi\")".AsSpan(), 0, out var v);
+        int r = block.Scan(WhitespaceStripper.Strip("Mlt 1.5, B(\"hi\")").AsSpan(), 0, out var v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.A, Is.InstanceOf<MultiTag>());
         Assert.That(v.B, Is.InstanceOf<ShapeB>());

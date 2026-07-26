@@ -81,6 +81,14 @@ namespace SourceSerializer.Generator
                     {
                         current.Append("</optional>");
                     }
+                    else if (trimmed == "indent")
+                    {
+                        current.Append("<indent>");
+                    }
+                    else if (trimmed == "/indent")
+                    {
+                        current.Append("</indent>");
+                    }
                     else if (trimmed == "repetition")
                     {
                         // 开始缓冲 <repetition> 内容，结束时转为 <first>/<body>

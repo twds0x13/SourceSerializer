@@ -35,7 +35,7 @@ namespace SourceSerializer.Generator
     /// </summary>
     // 纯编译期代码发射器，运行时从不实例化
     [ExcludeFromCodeCoverage]
-    internal static class CodeEmitter
+    internal static class ScanCodeEmitter
     {
         /// <summary>
         /// 每次扫描方法生成时的可变状态。由 <see cref="EmitMethod"/> 创建，
@@ -74,7 +74,8 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph,
             Dictionary<string, string>? typeAliases = null,
             Dictionary<string, List<(string MemberName, string Tag)>>? enumTagMap = null,
-            Dictionary<string, List<string>>? interfaceMap = null)
+            Dictionary<string, List<string>>? interfaceMap = null,
+            bool compactWhitespace = false)
         {
             var tAliases = typeAliases ?? new Dictionary<string, string>();
             var eTags = enumTagMap ?? new Dictionary<string, List<(string, string)>>(StringComparer.Ordinal);
@@ -97,7 +98,7 @@ namespace SourceSerializer.Generator
 
             foreach (var e in structs)
             {
-                sb.Append(EmitMethod(e.Common.StructName, e.Nodes, e.Common.NeedsHeapAlloc, e.Common.IsCollection, e.Common.IsArrayCollection, e.Common.MatchedCtorParams, dependencyGraph, tAliases, eTags, e.FieldTypes));
+                sb.Append(EmitMethod(e.Common.StructName, e.Nodes, e.Common.NeedsHeapAlloc, e.Common.IsCollection, e.Common.IsArrayCollection, e.Common.MatchedCtorParams, dependencyGraph, tAliases, eTags, e.FieldTypes, compactWhitespace));
                 sb.AppendLine();
             }
 
@@ -166,7 +167,8 @@ namespace SourceSerializer.Generator
             Dictionary<string, string> dependencyGraph,
             Dictionary<string, string> typeAliases,
             Dictionary<string, List<(string, string)>> enumTags,
-            Dictionary<string, FieldInfo> fieldTypes)
+            Dictionary<string, FieldInfo> fieldTypes,
+            bool compactWhitespace = false)
         {
             var sb = new StringBuilder();
             string methodName = EmitHelpers.GetMethodName("Scan",structTypeName);
@@ -211,7 +213,7 @@ namespace SourceSerializer.Generator
             sb.AppendLine();
 
             // 顶层 failure mode: 直接 return start
-            EmitNodeList(sb, nodes, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, IndentTop, failureLabel: null, isInRepetition: false, isCollection: isCollection, isArrayCollection: isArrayCollection, strategy: strategy, state: state);
+            EmitNodeList(sb, nodes, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, IndentTop, failureLabel: null, isInRepetition: false, isCollection: isCollection, isArrayCollection: isArrayCollection, strategy: strategy, state: state, compactWhitespace: compactWhitespace);
 
             if (strategy.UseConstructor)
             {
@@ -243,11 +245,12 @@ namespace SourceSerializer.Generator
             string indent, string? failureLabel, bool isInRepetition, bool isCollection = false,
             bool isArrayCollection = false,
             EmitStrategy strategy = default,
-            EmitScanState? state = null)
+            EmitScanState? state = null,
+            bool compactWhitespace = false)
         {
             for (int i = 0; i < nodes.Count; i++)
             {
-                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, failureLabel, isInRepetition, isCollection, isArrayCollection, strategy, state);
+                EmitNode(sb, nodes[i], structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, failureLabel, isInRepetition, isCollection, isArrayCollection, strategy, state, compactWhitespace);
             }
         }
 
@@ -259,21 +262,26 @@ namespace SourceSerializer.Generator
             string indent, string? failureLabel, bool isInRepetition, bool isCollection = false,
             bool isArrayCollection = false,
             EmitStrategy strategy = default,
-            EmitScanState? state = null)
+            EmitScanState? state = null,
+            bool compactWhitespace = false)
         {
             switch (node)
             {
                 case LiteralTextNode lit:
-                    EmitLiteralText(sb, lit, indent, failureLabel);
+                    EmitLiteralText(sb, lit, indent, failureLabel, compactWhitespace);
                     break;
                 case FieldDirectiveNode field:
                     EmitFieldDirective(sb, field, indent, dependencyGraph, typeAliases, enumTags, fieldTypes, failureLabel, isInRepetition, isCollection, isArrayCollection, strategy, state);
                     break;
                 case OptionalBlockNode opt:
-                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, strategy, state);
+                    EmitOptionalBlock(sb, opt, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, strategy, state, compactWhitespace);
                     break;
                 case RepetitionNode rep:
-                    EmitRepetitionBlock(sb, rep, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, isArrayCollection, strategy, state);
+                    EmitRepetitionBlock(sb, rep, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, isCollection, isArrayCollection, strategy, state, compactWhitespace);
+                    break;
+                case IndentNode ind:
+                    // 缩进标签本身是 no-op，但 body 内的字段仍需扫描
+                    EmitNodeList(sb, ind.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, indent, failureLabel, isInRepetition, isCollection, isArrayCollection, strategy, state, compactWhitespace);
                     break;
             }
         }
@@ -287,9 +295,9 @@ namespace SourceSerializer.Generator
 
         // ── 裸文字 ────────────────────────────────────
 
-        private static void EmitLiteralText(StringBuilder sb, LiteralTextNode lit, string indent, string? failureLabel)
+        private static void EmitLiteralText(StringBuilder sb, LiteralTextNode lit, string indent, string? failureLabel, bool compactWhitespace = false)
         {
-            string text = lit.Text;
+            string text = compactWhitespace ? StripWhitespace(lit.Text) : lit.Text;
             if (text.Length == 0) return;
             string fail = MakeFailure(failureLabel);
 
@@ -456,7 +464,8 @@ namespace SourceSerializer.Generator
             Dictionary<string, FieldInfo> fieldTypes,
             string indent, bool isCollection = false, bool isArrayCollection = false,
             EmitStrategy strategy = default,
-            EmitScanState? state = null)
+            EmitScanState? state = null,
+            bool compactWhitespace = false)
         {
             if (rep.Body.Count == 0) return;
 
@@ -494,7 +503,7 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{indent}// <first> — try first element (no separator)");
                 sb.AppendLine($"{indent}int {savedVar} = pos;");
                 sb.AppendLine($"{indent}{{");
-                EmitNodeList(sb, rep.First, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, firstFail, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state);
+                EmitNodeList(sb, rep.First, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, firstFail, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
                 sb.AppendLine($"{innerIndent}goto repLoop_{id};");
                 sb.AppendLine($"{indent}}}");
                 sb.AppendLine($"{indent}{firstFail}:");
@@ -506,7 +515,7 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{indent}while (true)");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{innerIndent}{savedVar} = pos;");
-                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, failLabel, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state);
+                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, failLabel, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
                 sb.AppendLine($"{innerIndent}continue;");
                 sb.AppendLine($"{innerIndent}{failLabel}:");
                 sb.AppendLine($"{innerIndent}    pos = saved_{id};");
@@ -520,7 +529,7 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{indent}while (true)");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{innerIndent}int saved_{id} = pos;");
-                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, failLabel, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state);
+                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, failLabel, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
                 sb.AppendLine($"{innerIndent}continue;");
                 sb.AppendLine($"{innerIndent}{failLabel}:");
                 sb.AppendLine($"{innerIndent}    pos = saved_{id};");
@@ -624,7 +633,8 @@ namespace SourceSerializer.Generator
             Dictionary<string, List<(string, string)>> enumTags,
             Dictionary<string, FieldInfo> fieldTypes,
             string indent, bool isCollection = false, EmitStrategy strategy = default,
-            EmitScanState? state = null)
+            EmitScanState? state = null,
+            bool compactWhitespace = false)
         {
             int id = state != null ? state.OptCounter++ : 0;
             string skipLabel = $"skipOpt_{id}";
@@ -641,7 +651,7 @@ namespace SourceSerializer.Generator
             if (opt.Body.Count > 0 && opt.Body[0] is LiteralTextNode firstLit && firstLit.Text.Length <= 6)
             {
                 // 有前置字面量：反转条件为提前 goto skip，避免 if { } 作用域包裹 body
-                string text = firstLit.Text;
+                string text = compactWhitespace ? StripWhitespace(firstLit.Text) : firstLit.Text;
                 sb.Append($"{innerIndent}if (!(pos + {text.Length} <= src.Length");
                 for (int i = 0; i < text.Length; i++)
                 {
@@ -654,13 +664,13 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{innerIndent}pos += {text.Length};");
                 var rest = GetRest(opt.Body, 1);
                 if (rest.Count > 0)
-                    EmitNodeList(sb, rest, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, skipLabel, isInRepetition: false, isCollection: isCollection, strategy: strategy, state: state);
+                    EmitNodeList(sb, rest, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, skipLabel, isInRepetition: false, isCollection: isCollection, strategy: strategy, state: state, compactWhitespace: compactWhitespace);
                 sb.AppendLine($"{innerIndent}goto {endLabel};");
             }
             else
             {
                 // 无前置字面量：直接尝试 body
-                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, skipLabel, isInRepetition: false, isCollection: isCollection, strategy: strategy, state: state);
+                EmitNodeList(sb, opt.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, skipLabel, isInRepetition: false, isCollection: isCollection, strategy: strategy, state: state, compactWhitespace: compactWhitespace);
                 sb.AppendLine($"{innerIndent}goto {endLabel};");
             }
 
@@ -740,6 +750,31 @@ namespace SourceSerializer.Generator
 
         private static string EscapeForComment(string text)
             => text.Replace("\n", "\\n").Replace("\r", "\\r");
+
+        /// <summary>剔除字符串中的所有空白符，用于紧凑模板生成。</summary>
+        private static string StripWhitespace(string text)
+        {
+            if (text.Length == 0) return text;
+            // 快速路径：无空白符则直接返回
+            bool hasWhitespace = false;
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (char.IsWhiteSpace(text[i])) { hasWhitespace = true; break; }
+            }
+            if (!hasWhitespace) return text;
+
+            int write = 0;
+            char[]? rented = null;
+            Span<char> buffer = text.Length <= 256
+                ? stackalloc char[256]
+                : (rented = System.Buffers.ArrayPool<char>.Shared.Rent(text.Length));
+            foreach (char c in text)
+                if (!char.IsWhiteSpace(c))
+                    buffer[write++] = c;
+            string result = buffer.Slice(0, write).ToString();
+            if (rented != null) System.Buffers.ArrayPool<char>.Shared.Return(rented);
+            return result;
+        }
 
         /// <summary>
         /// 生成数组 new 表达式。若 elemType 本身是数组（如 float[]），

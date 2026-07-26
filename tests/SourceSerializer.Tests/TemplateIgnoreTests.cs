@@ -36,7 +36,7 @@ public class TemplateIgnoreTests
     public void IgnoredField_SkipsSerialization()
     {
         Assert.That(SerializerBlocks.TryGet<ContainerWithIgnoredField>(out var block), Is.True);
-        int pos = block.Scan("3.5".AsSpan(), 0, out ContainerWithIgnoredField v);
+        int pos = block.Scan(WhitespaceStripper.Strip("3.5").AsSpan(), 0, out ContainerWithIgnoredField v);
         Assert.That(pos, Is.GreaterThan(0));
         Assert.That(v.Value, Is.EqualTo(3.5f));
         Assert.That(v.InternalData.X, Is.EqualTo(0f)); // default, 未被扫描

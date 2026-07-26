@@ -45,6 +45,13 @@ namespace SourceSerializer.Generator
             $"Repetition(First={(First != null ? First.Count + " nodes" : "none")}, Body={Body.Count} nodes)";
     }
 
+    internal sealed class IndentNode : TemplateNode
+    {
+        public List<TemplateNode> Body { get; }
+        public IndentNode(List<TemplateNode> body) => Body = body;
+        public override string ToString() => $"Indent({Body.Count} children)";
+    }
+
     // ═══════════════════════════════════════════════════════
     // XML → AST 解析器
     // ═══════════════════════════════════════════════════════
@@ -62,6 +69,7 @@ namespace SourceSerializer.Generator
         private static readonly XName RepName    = "repetition";
         private static readonly XName FirstName  = "first";
         private static readonly XName BodyName   = "body";
+        private static readonly XName IndentName = "indent";
 
         /// <summary>XML 字符串 → AST 节点列表</summary>
         public static List<TemplateNode> Parse(string xml)
@@ -103,6 +111,10 @@ namespace SourceSerializer.Generator
                 {
                     nodes.Add(ParseRepetition(child));
                 }
+                else if (child.Name == IndentName)
+                {
+                    nodes.Add(new IndentNode(ParseChildren(child)));
+                }
                 else if (child.Name == FirstName)
                 {
                     // <first> at root: treat as repetition with First
@@ -128,7 +140,7 @@ namespace SourceSerializer.Generator
                 {
                     throw new FormatException(
                         $"Unknown element '<{child.Name}>' in template. " +
-                        "Allowed: <field>, <text>, <optional>, <first>, <body>, <repetition>.");
+                        "Allowed: <field>, <text>, <optional>, <indent>, <first>, <body>, <repetition>.");
                 }
             }
 
@@ -164,6 +176,7 @@ namespace SourceSerializer.Generator
             if (child.Name == TextName) return new LiteralTextNode(child.Value);
             if (child.Name == OptName) return new OptionalBlockNode(ParseChildren(child));
             if (child.Name == RepName) return ParseRepetition(child);
+            if (child.Name == IndentName) return new IndentNode(ParseChildren(child));
             throw new FormatException($"Unexpected element '<{child.Name}>' inside <repetition>.");
         }
 

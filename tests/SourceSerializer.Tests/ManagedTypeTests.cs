@@ -8,6 +8,7 @@ using SourceSerializer;
 // Managed test types (class + managed struct)
 // ═══════════════════════════════════════════════════════
 
+[AllowUnquotedStrings]
 [Template("<string Name>|<float Value>")]
 public class NamedValue
 {
@@ -29,7 +30,8 @@ public class Modifiable
     public List<NamedValue> Mods;
 }
 
-[Template("<string Id> <int Count>")]
+[AllowUnquotedStrings]
+[Template("<string Id>,<int Count>")]
 public struct InventoryItem
 {
     public string Id;
@@ -46,7 +48,7 @@ public class ManagedTypeTests
     public void NamedValue_ParsesStringAndFloat()
     {
         Assert.That(SerializerBlocks.TryGet<NamedValue>(out var block), Is.True);
-        int r = block.Scan("sword|3.5".AsSpan(), 0, out NamedValue v);
+        int r = block.Scan(WhitespaceStripper.Strip("\"sword\"|3.5").AsSpan(), 0, out NamedValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Name, Is.EqualTo("sword"));
         Assert.That(v.Value, Is.EqualTo(3.5f).Within(1e-5f));
@@ -56,7 +58,7 @@ public class ManagedTypeTests
     public void NamedValue_QuotedString()
     {
         Assert.That(SerializerBlocks.TryGet<NamedValue>(out var block), Is.True);
-        int r = block.Scan("\"fire sword\"|10".AsSpan(), 0, out NamedValue v);
+        int r = block.Scan(WhitespaceStripper.Strip("\"fire sword\"|10").AsSpan(), 0, out NamedValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Name, Is.EqualTo("fire sword"));
         Assert.That(v.Value, Is.EqualTo(10f));
@@ -66,7 +68,7 @@ public class ManagedTypeTests
     public void Pair_ParsesNestedClasses()
     {
         Assert.That(SerializerBlocks.TryGet<Pair>(out var block), Is.True);
-        int r = block.Scan("(sword|1) , (shield|2)".AsSpan(), 0, out Pair v);
+        int r = block.Scan(WhitespaceStripper.Strip("(\"sword\"|1) , (\"shield\"|2)").AsSpan(), 0, out Pair v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.A.Name, Is.EqualTo("sword"));
         Assert.That(v.A.Value, Is.EqualTo(1f));
@@ -78,7 +80,7 @@ public class ManagedTypeTests
     public void Modifiable_WithManagedList()
     {
         Assert.That(SerializerBlocks.TryGet<Modifiable>(out var block), Is.True);
-        int r = block.Scan("100, List(sword|1.5, shield|2.5)".AsSpan(), 0, out Modifiable v);
+        int r = block.Scan(WhitespaceStripper.Strip("100, List(\"sword\"|1.5, \"shield\"|2.5)").AsSpan(), 0, out Modifiable v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Mods, Is.Not.Null);
@@ -92,7 +94,7 @@ public class ManagedTypeTests
     public void Modifiable_EmptyMods()
     {
         Assert.That(SerializerBlocks.TryGet<Modifiable>(out var block), Is.True);
-        int r = block.Scan("100".AsSpan(), 0, out Modifiable v);
+        int r = block.Scan(WhitespaceStripper.Strip("100").AsSpan(), 0, out Modifiable v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Mods, Is.Not.Null);
@@ -103,7 +105,7 @@ public class ManagedTypeTests
     public void InventoryItem_ManagedStruct()
     {
         Assert.That(SerializerBlocks.TryGet<InventoryItem>(out var block), Is.True);
-        int r = block.Scan("item001 5".AsSpan(), 0, out InventoryItem v);
+        int r = block.Scan("\"item001\",5".AsSpan(), 0, out InventoryItem v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Id, Is.EqualTo("item001"));
         Assert.That(v.Count, Is.EqualTo(5));
@@ -113,7 +115,7 @@ public class ManagedTypeTests
         Assert.That(SerializerBlocks.TryGet<NamedValue>(out var b), Is.True);
         var o = new NamedValue { Name = "sword", Value = 1.5f };
         var sb = new StringBuilder(); b.Emit(sb, o);
-        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        int r = b.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var p);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(p.Name, Is.EqualTo("sword"));
         Assert.That(p.Value, Is.EqualTo(1.5f).Within(1e-5f));
@@ -122,7 +124,7 @@ public class ManagedTypeTests
         Assert.That(SerializerBlocks.TryGet<InventoryItem>(out var b), Is.True);
         var o = new InventoryItem { Id = "item001", Count = 5 };
         var sb = new StringBuilder(); b.Emit(sb, o);
-        int r = b.Scan(sb.ToString().AsSpan(), 0, out var p);
+        int r = b.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var p);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(p.Id, Is.EqualTo("item001"));
         Assert.That(p.Count, Is.EqualTo(5));

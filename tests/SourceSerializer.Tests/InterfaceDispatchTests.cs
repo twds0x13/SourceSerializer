@@ -79,6 +79,7 @@ public struct IntValue : IValue
     public int Val;
 }
 
+[AllowUnquotedStrings]
 [Template("<string Val>")]
 public class StringValue : IValue
 {
@@ -103,7 +104,7 @@ public class InterfaceDispatchTests
     public void IVector_Scan_Vec2()
     {
         Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
-        int r = block.Scan("Vec2(1.5, -2)".AsSpan(), 0, out IVector v);
+        int r = block.Scan(WhitespaceStripper.Strip("Vec2(1.5, -2)").AsSpan(), 0, out IVector v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Vec2>());
         var v2 = (Vec2)v;
@@ -115,7 +116,7 @@ public class InterfaceDispatchTests
     public void IVector_Scan_Vec3D()
     {
         Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
-        int r = block.Scan("Vec3D(3, 5, 7)".AsSpan(), 0, out IVector v);
+        int r = block.Scan(WhitespaceStripper.Strip("Vec3D(3, 5, 7)").AsSpan(), 0, out IVector v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Vec3D>());
         var v3 = (Vec3D)v;
@@ -130,7 +131,7 @@ public class InterfaceDispatchTests
     public void VectorWrapper_Scan()
     {
         Assert.That(SerializerBlocks.TryGet<VectorWrapper>(out var block), Is.True);
-        int r = block.Scan("Vec2(1.5, -2)".AsSpan(), 0, out VectorWrapper v);
+        int r = block.Scan(WhitespaceStripper.Strip("Vec2(1.5, -2)").AsSpan(), 0, out VectorWrapper v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.V, Is.InstanceOf<Vec2>());
     }
@@ -141,7 +142,7 @@ public class InterfaceDispatchTests
     public void Attack_Scan_EmptyTargets()
     {
         Assert.That(SerializerBlocks.TryGet<Attack>(out var block), Is.True);
-        int r = block.Scan("100".AsSpan(), 0, out Attack v);
+        int r = block.Scan(WhitespaceStripper.Strip("100").AsSpan(), 0, out Attack v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Targets, Is.Not.Null);
@@ -152,7 +153,7 @@ public class InterfaceDispatchTests
     public void Attack_Scan_MixedTargets()
     {
         Assert.That(SerializerBlocks.TryGet<Attack>(out var block), Is.True);
-        int r = block.Scan("100, List(Vec3D(1.5, -2, 3), Vec2(5, 7))".AsSpan(), 0, out Attack v);
+        int r = block.Scan(WhitespaceStripper.Strip("100, List(Vec3D(1.5, -2, 3), Vec2(5, 7))").AsSpan(), 0, out Attack v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Targets.Count, Is.EqualTo(2));
@@ -195,7 +196,7 @@ public class InterfaceDispatchTests
         var original = new Vec3D { X = 3f, Y = 5f, Z = 7f };
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out IVector parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out IVector parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed, Is.InstanceOf<Vec3D>());
         var v3 = (Vec3D)parsed;
@@ -210,7 +211,7 @@ public class InterfaceDispatchTests
     public void IValue_Scan_IntValue()
     {
         Assert.That(SerializerBlocks.TryGet<IValue>(out var block), Is.True);
-        int r = block.Scan("42".AsSpan(), 0, out IValue v);
+        int r = block.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out IValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<IntValue>());
         Assert.That(((IntValue)v).Val, Is.EqualTo(42));
@@ -220,7 +221,7 @@ public class InterfaceDispatchTests
     public void IValue_Scan_StringValue()
     {
         Assert.That(SerializerBlocks.TryGet<IValue>(out var block), Is.True);
-        int r = block.Scan("hello".AsSpan(), 0, out IValue v);
+        int r = block.Scan(WhitespaceStripper.Strip("\"hello\"").AsSpan(), 0, out IValue v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<StringValue>());
         Assert.That(((StringValue)v).Val, Is.EqualTo("hello"));
@@ -232,7 +233,7 @@ public class InterfaceDispatchTests
     public void IVector_InvalidInput_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<IVector>(out var block), Is.True);
-        int r = block.Scan("not_a_vector".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("not_a_vector").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -244,7 +245,7 @@ public class InterfaceDispatchTests
     public void IShape_Scan_ShapeA()
     {
         Assert.That(SerializerBlocks.TryGet<IShape>(out var block), Is.True);
-        int r = block.Scan("A(1.5)".AsSpan(), 0, out IShape v);
+        int r = block.Scan(WhitespaceStripper.Strip("A(1.5)").AsSpan(), 0, out IShape v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<ShapeA>());
         Assert.That(((ShapeA)v).V, Is.EqualTo(1.5f).Within(1e-5f));
@@ -254,7 +255,7 @@ public class InterfaceDispatchTests
     public void IShape_Scan_ShapeB()
     {
         Assert.That(SerializerBlocks.TryGet<IShape>(out var block), Is.True);
-        int r = block.Scan("B(\"hello\")".AsSpan(), 0, out IShape v);
+        int r = block.Scan(WhitespaceStripper.Strip("B(\"hello\")").AsSpan(), 0, out IShape v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<ShapeB>());
         Assert.That(((ShapeB)v).V, Is.EqualTo("hello"));
@@ -264,7 +265,7 @@ public class InterfaceDispatchTests
     public void IShape_Scan_ShapeC()
     {
         Assert.That(SerializerBlocks.TryGet<IShape>(out var block), Is.True);
-        int r = block.Scan("C(42)".AsSpan(), 0, out IShape v);
+        int r = block.Scan(WhitespaceStripper.Strip("C(42)").AsSpan(), 0, out IShape v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<ShapeC>());
         Assert.That(((ShapeC)v).V, Is.EqualTo(42));
@@ -304,7 +305,7 @@ public class InterfaceDispatchTests
         var original = new ShapeA { V = 2.5f };
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out IShape parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out IShape parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed, Is.InstanceOf<ShapeA>());
         Assert.That(((ShapeA)parsed).V, Is.EqualTo(2.5f).Within(1e-5f));
@@ -317,7 +318,7 @@ public class InterfaceDispatchTests
         var original = new ShapeB { V = "world" };
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out IShape parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out IShape parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed, Is.InstanceOf<ShapeB>());
         Assert.That(((ShapeB)parsed).V, Is.EqualTo("world"));
@@ -330,7 +331,7 @@ public class InterfaceDispatchTests
         var original = new ShapeC { V = 99 };
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out IShape parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out IShape parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed, Is.InstanceOf<ShapeC>());
         Assert.That(((ShapeC)parsed).V, Is.EqualTo(99));
@@ -340,7 +341,7 @@ public class InterfaceDispatchTests
     public void ShapeBag_Empty()
     {
         Assert.That(SerializerBlocks.TryGet<ShapeBag>(out var block), Is.True);
-        int r = block.Scan("100".AsSpan(), 0, out ShapeBag v);
+        int r = block.Scan(WhitespaceStripper.Strip("100").AsSpan(), 0, out ShapeBag v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Items, Is.Not.Null);
@@ -351,7 +352,7 @@ public class InterfaceDispatchTests
     public void ShapeBag_Mixed()
     {
         Assert.That(SerializerBlocks.TryGet<ShapeBag>(out var block), Is.True);
-        int r = block.Scan("100, List(C(42), A(1.5), B(\"hi\"))".AsSpan(), 0, out ShapeBag v);
+        int r = block.Scan(WhitespaceStripper.Strip("100, List(C(42), A(1.5), B(\"hi\"))").AsSpan(), 0, out ShapeBag v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Base, Is.EqualTo(100f));
         Assert.That(v.Items.Count, Is.EqualTo(3));
@@ -367,7 +368,7 @@ public class InterfaceDispatchTests
     public void IShape_InvalidInput_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<IShape>(out var block), Is.True);
-        int r = block.Scan("not_a_shape".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("not_a_shape").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 }

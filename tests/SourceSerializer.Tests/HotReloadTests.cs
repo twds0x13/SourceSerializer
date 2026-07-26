@@ -9,6 +9,7 @@ using SourceSerializer;
 /// </summary>
 
 // 测试用类型：模拟热更 DLL 中的 struct 定义
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public struct HotSword
 {
     public float Atk;
@@ -17,6 +18,7 @@ public struct HotSword
     public override readonly string ToString() => $"Sword({Atk}, {Crit})";
 }
 
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public struct HotShield
 {
     public float Def;
@@ -44,9 +46,9 @@ public readonly struct Block_HotSword : ISerializerBlock<HotSword>
         if (pos == pre) return start;
         value.Atk = atk;
 
-        // ", "
-        if (pos + 1 >= text.Length || text[pos] != ',' || text[pos + 1] != ' ') return start;
-        pos += 2;
+        // ","
+        if (pos >= text.Length || text[pos] != ',') return start;
+        pos++;
 
         pos = SerializerRegistry.Scan_Float(text, pos, out float crit);
         if (pos == pre) return start;
@@ -87,9 +89,9 @@ public readonly struct Block_HotShield : ISerializerBlock<HotShield>
         if (pos == pre) return start;
         value.Def = def;
 
-        // ", "
-        if (pos + 1 >= text.Length || text[pos] != ',' || text[pos + 1] != ' ') return start;
-        pos += 2;
+        // ","
+        if (pos >= text.Length || text[pos] != ',') return start;
+        pos++;
 
         pos = SerializerRegistry.Scan_Float(text, pos, out float weight);
         if (pos == pre) return start;

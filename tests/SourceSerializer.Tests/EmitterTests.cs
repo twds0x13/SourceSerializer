@@ -177,7 +177,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.X, Is.EqualTo(3.5f).Within(1e-5f));
         Assert.That(parsed.Y, Is.EqualTo(-2.1f).Within(1e-5f));
@@ -192,7 +192,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.X, Is.EqualTo(1f));
         Assert.That(parsed.Y, Is.EqualTo(2f));
@@ -208,7 +208,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.Pos.X, Is.EqualTo(1f));
         Assert.That(parsed.Pos.Y, Is.EqualTo(2f));
@@ -223,13 +223,13 @@ public class EmitterTests
         Assert.That(SerializerBlocks.TryGet<SpellCard>(out var block), Is.True);
 
         const string input = "10.5|draw 2|idx:1";
-        int r = block.Scan(input.AsSpan(), 0, out var card);
+        int r = block.Scan(WhitespaceStripper.Strip(input).AsSpan(), 0, out var card);
         Assert.That(r, Is.GreaterThan(0));
 
         var sb = new StringBuilder();
         block.Emit(sb, card);
 
-        r = block.Scan(sb.ToString().AsSpan(), 0, out var card2);
+        r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var card2);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(card2.Damage, Is.EqualTo(card.Damage).Within(1e-5f));
         Assert.That(card2.DrawsProvide, Is.EqualTo(card.DrawsProvide));
@@ -258,7 +258,7 @@ public class EmitterTests
         Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
 
         const string input = "fire|10";
-        int r = block.Scan(input.AsSpan(), 0, out var spell);
+        int r = block.Scan(WhitespaceStripper.Strip(input).AsSpan(), 0, out var spell);
         Assert.That(r, Is.GreaterThan(0));
 
         var sb = new StringBuilder();
@@ -278,7 +278,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(sb.ToString().AsSpan(), 0, out var parsed);
+        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed.Name, Is.EqualTo("sword"));
         Assert.That(parsed.Value, Is.EqualTo(3.5f).Within(1e-5f));

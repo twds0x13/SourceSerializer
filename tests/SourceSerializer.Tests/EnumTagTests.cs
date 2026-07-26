@@ -30,7 +30,7 @@ public class EnumTagTests
     public void TaggedSpell_ParsesFire()
     {
         Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan("fire|10".AsSpan(), 0, out TaggedSpell v);
+        int r = block.Scan(WhitespaceStripper.Strip("fire|10").AsSpan(), 0, out TaggedSpell v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Type, Is.EqualTo(Element.Fire));
         Assert.That(v.Power, Is.EqualTo(10f));
@@ -40,7 +40,7 @@ public class EnumTagTests
     public void TaggedSpell_ParsesIce()
     {
         Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan("ice|5".AsSpan(), 0, out TaggedSpell v);
+        int r = block.Scan(WhitespaceStripper.Strip("ice|5").AsSpan(), 0, out TaggedSpell v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Type, Is.EqualTo(Element.Ice));
         Assert.That(v.Power, Is.EqualTo(5f));
@@ -50,7 +50,7 @@ public class EnumTagTests
     public void TaggedSpell_ParsesMagic()
     {
         Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan("magic|100".AsSpan(), 0, out TaggedSpell v);
+        int r = block.Scan(WhitespaceStripper.Strip("magic|100").AsSpan(), 0, out TaggedSpell v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Type, Is.EqualTo(Element.Magic));
     }
@@ -59,7 +59,7 @@ public class EnumTagTests
     public void TaggedSpell_UnknownTag_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan("water|10".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("water|10").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -69,7 +69,7 @@ public class EnumTagTests
     public void IntBackedEnum_ScanAndEmit()
     {
         Assert.That(SerializerBlocks.TryGet<IntSpell>(out var block), Is.True);
-        int r = block.Scan("Fire 10".AsSpan(), 0, out var v);
+        int r = block.Scan(WhitespaceStripper.Strip("Fire 10").AsSpan(), 0, out var v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Elem, Is.EqualTo(IntElement.Fire));
         Assert.That(v.Power, Is.EqualTo(10));

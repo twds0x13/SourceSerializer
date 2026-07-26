@@ -6,14 +6,14 @@ using SourceSerializer;
 // Unmanaged struct test types
 // ═══════════════════════════════════════════════════════
 
-[Template("<float X> <float Y>")]
+[Template("<float X>,<float Y>")]
 public struct Point2D
 {
     public float X;
     public float Y;
 }
 
-[Template("<float X> <float Y> <float Z>")]
+[Template("<float X>,<float Y>,<float Z>")]
 public struct Vec3
 {
     public float X;
@@ -39,7 +39,7 @@ public struct XmlPoint2D
     public float Y;
 }
 
-[ExternalTemplate(typeof(ExternalPoint), "<float A> <float B>")]
+[ExternalTemplate(typeof(ExternalPoint), "<float A>,<float B>")]
 public struct ExternalPoint
 {
     public float A;
@@ -66,7 +66,7 @@ public class UnmanagedStructTests
     public void Point2D_ParsesTwoFloats()
     {
         Assert.That(SerializerBlocks.TryGet<Point2D>(out var block), Is.True);
-        int r = block.Scan("3.5 -2.1".AsSpan(), 0, out Point2D v);
+        int r = block.Scan(WhitespaceStripper.Strip("3.5,-2.1").AsSpan(), 0, out Point2D v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.X, Is.EqualTo(3.5f).Within(1e-5f));
         Assert.That(v.Y, Is.EqualTo(-2.1f).Within(1e-5f));
@@ -76,7 +76,7 @@ public class UnmanagedStructTests
     public void Point2D_NoMatch_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<Point2D>(out var block), Is.True);
-        int r = block.Scan("hello".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("hello").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -84,7 +84,7 @@ public class UnmanagedStructTests
     public void Point2D_WrongLiteral_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<Point2D>(out var block), Is.True);
-        int r = block.Scan("abc 1.0".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("abc 1.0").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -92,7 +92,7 @@ public class UnmanagedStructTests
     public void Point2D_TruncatedInput_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<Point2D>(out var block), Is.True);
-        int r = block.Scan("1.0".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("1.0").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -100,7 +100,7 @@ public class UnmanagedStructTests
     public void FloatField_AsDouble()
     {
         Assert.That(SerializerBlocks.TryGet<Point2D>(out var block), Is.True);
-        int r = block.Scan("1.5d -2.0".AsSpan(), 0, out Point2D v);
+        int r = block.Scan(WhitespaceStripper.Strip("1.5d,-2.0").AsSpan(), 0, out Point2D v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.X, Is.EqualTo(1.5f).Within(1e-5f));
     }
@@ -111,7 +111,7 @@ public class UnmanagedStructTests
     public void Vec3_ParsesThreeFloats()
     {
         Assert.That(SerializerBlocks.TryGet<Vec3>(out var block), Is.True);
-        int r = block.Scan("1 2 3".AsSpan(), 0, out Vec3 v);
+        int r = block.Scan(WhitespaceStripper.Strip("1,2,3").AsSpan(), 0, out Vec3 v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.X, Is.EqualTo(1f));
         Assert.That(v.Y, Is.EqualTo(2f));
@@ -122,7 +122,7 @@ public class UnmanagedStructTests
     public void Vec3_EmptyString_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<Vec3>(out var block), Is.True);
-        int r = block.Scan("".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -132,7 +132,7 @@ public class UnmanagedStructTests
     public void Entity_ParsesNestedVec3()
     {
         Assert.That(SerializerBlocks.TryGet<Entity>(out var block), Is.True);
-        int r = block.Scan("(1 2 3)".AsSpan(), 0, out Entity v);
+        int r = block.Scan(WhitespaceStripper.Strip("(1,2,3)").AsSpan(), 0, out Entity v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Pos.X, Is.EqualTo(1f));
         Assert.That(v.Pos.Y, Is.EqualTo(2f));
@@ -145,7 +145,7 @@ public class UnmanagedStructTests
     public void XmlPoint2D_ParsesWithCommaSeparator()
     {
         Assert.That(SerializerBlocks.TryGet<XmlPoint2D>(out var block), Is.True);
-        int r = block.Scan("1.5, -2.5".AsSpan(), 0, out XmlPoint2D v);
+        int r = block.Scan(WhitespaceStripper.Strip("1.5,-2.5").AsSpan(), 0, out XmlPoint2D v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.X, Is.EqualTo(1.5f).Within(1e-5f));
         Assert.That(v.Y, Is.EqualTo(-2.5f).Within(1e-5f));
@@ -157,7 +157,7 @@ public class UnmanagedStructTests
     public void ExternalPoint_ParsesCorrectly()
     {
         Assert.That(SerializerBlocks.TryGet<ExternalPoint>(out var block), Is.True);
-        int r = block.Scan("10 20".AsSpan(), 0, out ExternalPoint v);
+        int r = block.Scan(WhitespaceStripper.Strip("10,20").AsSpan(), 0, out ExternalPoint v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.A, Is.EqualTo(10f));
         Assert.That(v.B, Is.EqualTo(20f));
@@ -169,7 +169,7 @@ public class UnmanagedStructTests
     public void SpellCard_FullFormat_ParsesAllFields()
     {
         Assert.That(SerializerBlocks.TryGet<SpellCard>(out var block), Is.True);
-        int r = block.Scan("10.5|draw 2|idx:1".AsSpan(), 0, out SpellCard v);
+        int r = block.Scan(WhitespaceStripper.Strip("10.5|draw 2|idx:1").AsSpan(), 0, out SpellCard v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Damage, Is.EqualTo(10.5f).Within(1e-5f));
         Assert.That(v.DrawsProvide, Is.EqualTo(2));
@@ -180,7 +180,7 @@ public class UnmanagedStructTests
     public void SpellCard_WithoutDraw_ParsesDamageAndIndex()
     {
         Assert.That(SerializerBlocks.TryGet<SpellCard>(out var block), Is.True);
-        int r = block.Scan("10.5|idx:0".AsSpan(), 0, out SpellCard v);
+        int r = block.Scan(WhitespaceStripper.Strip("10.5|idx:0").AsSpan(), 0, out SpellCard v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Damage, Is.EqualTo(10.5f).Within(1e-5f));
         Assert.That(v.StartIndex, Is.EqualTo(0));
@@ -190,7 +190,7 @@ public class UnmanagedStructTests
     public void SpellCard_WithoutPipe_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<SpellCard>(out var block), Is.True);
-        int r = block.Scan("10.5".AsSpan(), 0, out _);
+        int r = block.Scan(WhitespaceStripper.Strip("10.5").AsSpan(), 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 }

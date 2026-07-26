@@ -209,11 +209,28 @@ namespace SourceSerializer
         {
             if (TryGet<TData>(out var block))
             {
-                int r = block.Scan(text.AsSpan(), 0, out var value);
+                string compact = WhitespaceStripper.Strip(text);
+                int r = block.Scan(compact.AsSpan(), 0, out var value);
                 if (r > 0) return value;
                 throw new FormatException($"Failed to deserialize '{text}' as {typeof(TData).Name}.");
             }
             throw new InvalidOperationException($"No SerializerBlock registered for {typeof(TData).Name}. Add [Template] to the type.");
+        }
+
+        /// <summary>
+        /// 扫描字符串文本为 TData。等价于 <see cref="Deserialize{TData}"/> 但不抛异常——
+        /// 失败时返回 false。
+        /// </summary>
+        public static bool TryScan<TData>(string text, out TData value)
+        {
+            if (TryGet<TData>(out var block))
+            {
+                string compact = WhitespaceStripper.Strip(text);
+                int r = block.Scan(compact.AsSpan(), 0, out value);
+                if (r > 0) return true;
+            }
+            value = default!;
+            return false;
         }
 
         /// <summary>

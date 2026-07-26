@@ -385,41 +385,19 @@ namespace SourceSerializer
                 return pos;
             int start = pos;
 
-            // Quoted: "hello world"
-            if (src[pos] == '"')
-            {
-                pos++;
-                int contentStart = pos;
-                while (pos < src.Length && src[pos] != '"')
-                    pos++;
-                if (pos >= src.Length)
-                    return start;
-                value = src.Slice(contentStart, pos - contentStart).ToString();
-                pos++;
-                return pos;
-            }
-
-            // Unquoted: read until whitespace or delimiter
-            while (pos < src.Length && !IsStringTerminator(src[pos]))
-                pos++;
-
-            if (pos == start)
+            // 仅接受引号字符串——裸字符串在空白符剔除后是无限匹配机
+            if (src[pos] != '"')
                 return start;
-            value = src.Slice(start, pos - start).ToString();
-            return pos;
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsStringTerminator(char c)
-        {
-            return char.IsWhiteSpace(c)
-                || c == '|'
-                || c == '>'
-                || c == ','
-                || c == ')'
-                || c == '}'
-                || c == ']'
-                || c == '('; // 集合格式 List(...)、HashSet(...) 等的前缀边界
+            pos++;
+            int contentStart = pos;
+            while (pos < src.Length && src[pos] != '"')
+                pos++;
+            if (pos >= src.Length)
+                return start;
+            value = src.Slice(contentStart, pos - contentStart).ToString();
+            pos++;
+            return pos;
         }
 
         /// <summary>
