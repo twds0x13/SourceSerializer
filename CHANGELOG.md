@@ -1,3 +1,9 @@
+## [3.4.2](https://github.com/twds0x13/SourceSerializer/compare/v3.4.1...v3.4.2) (2026-07-26)
+
+### Bug Fixes
+
+* ship pre-compiled SG DLL for Unity compatibility ([aedcafb](https://github.com/twds0x13/SourceSerializer/commit/aedcafbf3dfec28041fbec8a3d6caac9e8a1f2d4))
+
 ## [3.4.1](https://github.com/twds0x13/SourceSerializer/compare/v3.4.0...v3.4.1) (2026-07-26)
 
 ### Bug Fixes
