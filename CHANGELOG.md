@@ -1,3 +1,10 @@
+## [3.4.0](https://github.com/twds0x13/SourceSerializer/compare/v3.3.1...v3.4.0) (2026-07-26)
+
+### Features
+
+* indent emission ([fa6af29](https://github.com/twds0x13/SourceSerializer/commit/fa6af29294b7d0271a7d57a18f58d5c64b9d3262))
+* whitespace-tolerant parsing ([02dea07](https://github.com/twds0x13/SourceSerializer/commit/02dea070fad26e3492b572808952e9b359ef596e))
+
 ## [3.3.1](https://github.com/twds0x13/SourceSerializer/compare/v3.3.0...v3.3.1) (2026-07-25)
 
 ### Bug Fixes
