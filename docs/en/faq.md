@@ -1,51 +1,144 @@
-# Frequently Asked Questions
+# Troubleshooting Guide
 
-## Template Declaration
+A symptom-organized diagnostic guide. If you are not sure where to start, match your symptom first, then follow the steps.
 
-**Q: How do I declare a template for a readonly struct?**
+## Deserialization Failures
 
-A: Readonly structs need a matching constructor. The SG automatically discovers constructors whose parameters match field names and types.
+### Symptom: `TryGet<T>` returns false
 
-**Q: Can I use custom types in templates?**
+The type has no registered serializer block.
 
-A: Yes. Add `[Template]` to the custom type, then reference it in nested templates. The SG resolves dependency order automatically.
+**Checklist:**
 
-**Q: How do I apply templates to BCL types?**
+1. Does the type have a `[Template]` attribute? SSR004 catches missing template dependencies at compile time, but hot-reload DLLs can bypass SG compilation.
+2. Are all fields marked with `[TemplateIgnore]`? An empty template still registers the type, but Scan consumes no input.
+3. Was `EnsureInitialized()` called? The first `TryGet<T>` triggers it automatically. If `RemoveBlock<T>` was called manually beforehand, subsequent `TryGet<T>` will not re-trigger initialization.
+4. Cross-assembly scenario: is the hot-reload DLL's `GeneratedSerializers.Init()` explicitly invoked? `EnsureInitialized()` only scans loaded assemblies once on the first `TryGet<T>`. Later-loaded DLLs require manual initialization.
 
-A: Use `[ExternalTemplate(typeof(List<>), "...")]` to override defaults. Class-level overrides take priority over default interface templates.
+### Symptom: `Scan` returns pos (no advance)
 
-## Runtime
+The input format does not match the template. Scan cannot recognize the first literal character or field type at the current position.
 
-**Q: What if TryGet returns false?**
+**Checklist:**
 
-A: Check that the type has a `[Template]` attribute. Check for `[TemplateIgnore]` on all fields resulting in an empty template.
+1. Compare field by field: are delimiters consistent? Does the template have a space after commas?
+2. Are string fields quoted? `Scan_String` requires double quotes.
+3. Are enum tags spelled correctly? The `[Tag("fire")]` scanner matches the tag string exactly.
+4. Optional blocks: fields at default values can be omitted from input — this is normal behavior, not a parse failure.
+5. Interface dispatch prefix ambiguity: if two concrete type templates are prefixes of each other (`Vec(x,y)` and `Vec(x,y,z)`), the scanner may stop early on the first type. Check SSR006.
+6. If calling `block.Scan(span, pos, out _)` directly, input whitespace is **not** automatically stripped. Use `Deserialize<T>()` or call `WhitespaceStripper.Strip()` manually first.
 
-**Q: Scan returns 0?**
+### Symptom: `Deserialize<T>` throws an exception
 
-A: Input doesn't match the template format. Check separators, field types, optional block positions. Compare template against input.
+- `InvalidOperationException: "No SerializerBlock registered for X"` — type unregistered, see the TryGet checklist above.
+- `FormatException: "Failed to deserialize 'X' as Y"` — Scan failed but block exists, see the Scan checklist above.
 
-**Q: Do I need to cache ISerializerBlock?**
+### Symptom: Whitespace causes parse failures
 
-A: Not required. `TryGet<T>` is a static field read with negligible overhead (~2ns). Caching in a `static readonly` field is friendlier.
+**Only affects direct `block.Scan` calls.** `Deserialize<T>()` and `TryScan<T>()` automatically invoke `WhitespaceStripper.Strip()` in v3.4+.
 
-**Q: How to serialize collections like List?**
+When calling `block.Scan(text, 0, out _)` directly:
+- Literal text in templates requires exact character-by-character match. `"Point2D(3.5, -2.1)"` and `"Point2D( 3.5 , -2.1 )"` are not equivalent.
+- Solution: use `Deserialize<T>()` or manually call `WhitespaceStripper.Strip(text)` before Scan.
 
-A: `List<T>` and similar have default interface templates. Use `ISerializerBlock<List<T>>` directly. Format: first element no separator, subsequent comma-space separated.
+## Serialization Issues
 
-## Generics
+### Symptom: Emit output does not match template definition
 
-**Q: How to write templates for custom generic types?**
+1. Does field order match the template declaration order? Emit outputs fields in template order.
+2. Enum fields without `[Tag]` fall back to `value.ToString()`, outputting the C# member name rather than a custom string.
+3. Optional blocks: when a field equals its default value, the entire optional block is skipped. This is by design, not a bug.
+4. String fields are handled by `Emit_String`, which always outputs double quotes.
 
-A: Use type parameter names as placeholders: `[Template("<T Value>")]`. Concrete instances like `Wrapper<float>` are synthesized automatically.
+### Symptom: Output lacks indentation
 
-**Q: Why isn't my custom collection type working?**
+Does the template use `<indent>` tags? `<indent>...</indent>` injects newlines and tab indentation on Emit. For indentation inside collection fields, nest `<indent>` inside `<first>`/`<body>`:
 
-A: Define an interface for the collection and annotate it with a template rather than each concrete class. All implementing types automatically inherit the template.
+```csharp
+[Template("Config(<indent><first><string K>: <float V></first><body>, <string K>: <float V></body></indent>)")]
+```
 
-**Q: How do I use enum names instead of integers?**
+## Compile-Time Errors
 
-A: Add `[Tag("fire")]` on enum members, then use the enum type name directly in the template (e.g., `<Element Elem>`). The SG auto-generates bidirectional tag-to-value mapping. Enum values without `[Tag]` fall back to `value.ToString()` on emit.
+### SSR001-SSR007 Quick Reference
 
-**Q: How do I alias field type names?**
+| Code | Title | Trigger | Fix |
+|------|-------|---------|-----|
+| SSR001 | Template Parse Error | Template string does not conform to compact or XML syntax | Check angle bracket closure and quote pairing |
+| SSR002 | Circular template dependency | A references B, B references A | Break the cycle, convert one reference to a built-in type |
+| SSR003 | Readonly field | readonly field with no matching constructor | Provide a constructor with parameters matching fields by name and type |
+| SSR004 | Missing template dependency | Field type has no `[Template]` and is not a built-in type | Add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
+| SSR005 | Scalar field in repetition | Non-collection field inside `<repetition>` | Use a collection type like `List<T>` |
+| SSR006 | Template ambiguity | Two concrete types sharing an interface have prefix-ambiguous templates | Adjust templates so prefixes are distinguishable |
+| SSR007 | Overriding built-in type | `[ExternalTemplate]` targets one of the 13 built-in types | Remove ExternalTemplate, wrap in a higher-level template |
 
-A: Use `[assembly: TypeAlias("HP", "float")]` at assembly level. Write `<HP Health>` in templates. Parsing behavior is identical to the original type. Aliases can map to any registered type.
+## Performance
+
+### Symptom: Excessive string allocations (GC pressure)
+
+1. `Scan` accepts `ReadOnlySpan<char>` — do not create substrings; pass span slices directly.
+2. `Deserialize<T>()` internally calls `WhitespaceStripper.Strip()` which produces a new string — for high-frequency use, bypass the allocation with `TryGet` + `Scan(span)`.
+3. `Emit` uses `StringBuilder` — reuse the StringBuilder instance by calling `Clear()` instead of `new StringBuilder()`.
+4. Enum tag switch-on-string scanners: tag length affects match performance; put high-frequency tags earlier in the switch.
+
+### Symptom: Initialization delay
+
+`EnsureInitialized()` reflectively scans all loaded assemblies. The first call latency depends on assembly count (typically milliseconds). Optimization: warm up early in startup by calling `TryGet<AnyKnownType>` once. Subsequent calls have zero overhead.
+
+`SerializerBlocks.Serialize<T>()` and `Deserialize<T>()` internally call `TryGet<T>` on every invocation — a static field read of about 2ns; no additional caching needed.
+
+## Cross-Assembly / Hot Reload
+
+### Symptom: Hot-reload DLL types cannot be deserialized
+
+1. Did the SG run during the DLL's compilation? Check for `.g.cs` files in the `obj/` directory.
+2. Was `GeneratedSerializers.Init()` explicitly called after loading the DLL? `EnsureInitialized()` only scans once on first `TryGet<T>`.
+3. Interface types: verify chain merge is correct — new types append to the tail of `ChainBlock<T>`, preserving the parse priority of existing types.
+
+### Symptom: Type still usable after `RemoveBlock<T>`
+
+`RemoveBlock<T>()` is not an idempotent inverse — if the same type was registered via `AddBlock` twice (e.g., once from the main assembly and once from a hot-reload DLL), `RemoveBlock` removes the entire chain, invalidating all registrations at once. Subsequent `AddBlock` is required to restore.
+
+For interface types, `RemoveBlock` removes the entire `ChainBlock<T>` (all assemblies' contributions). Individual assembly contributions cannot be removed separately.
+
+### Symptom: `AddBlock` has no effect
+
+The first `AddBlock<T>` call triggers `EnsureInitialized()`. If hot-reload DLLs load after this point, they are not automatically discovered. Required ordering:
+
+```csharp
+// Correct order
+DLL.Load("hotfix.dll");           // 1. Load DLL first
+DLL.Invoke("GeneratedSerializers.Init");  // 2. Explicit init
+// TryGet can now find the DLL's new types
+```
+
+## ExternalTemplate Pitfalls
+
+### Symptom: ExternalTemplate override of built-in types does not work
+
+`ExternalTemplate(typeof(float), ...)` triggers SSR007 at compile time. The 13 built-in types are handled by hand-written zero-allocation span scanners and cannot be overridden.
+
+Solution: wrap the built-in type in a higher-level template:
+
+```csharp
+// Wrong
+[assembly: ExternalTemplate(typeof(float), "Float(<float>)")]  // SSR007
+
+// Correct
+[Template("MyFloat(<float Value>)")]
+struct MyFloat { float Value; }
+```
+
+### Symptom: ExternalTemplate override of default collection templates does not work
+
+The parameter to `ExternalTemplate(typeof(List<>), ...)` must be an open generic (`typeof(List<>)`), not a concrete instance (`typeof(List<float>)`).
+
+Class-level `ExternalTemplate` takes precedence over interface default templates — if the same type has both a class-level override and an interface-level default, the class-level override wins. Check for conflicting `ExternalTemplate` declarations.
+
+## See Also
+
+- [Diagnostics](/en/guide/diagnostics): complete SSR001-SSR007 error code reference
+- [Internals](/en/technical/internals): interface dispatch, ChainBlock merge, WhitespaceStripper implementation
+- [Indent & Whitespace Handling](/en/guide/indent-and-whitespace): `<indent>` syntax and three-tier whitespace strategy
+- [Hot Reload & Cross-Assembly](/en/guide/hot-reload): ChainBlock usage scenarios
+- [Migration Guide](/en/migration-guide): API changes between versions
