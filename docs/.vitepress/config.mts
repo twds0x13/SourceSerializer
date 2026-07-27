@@ -37,6 +37,7 @@ export default withMermaid(
                 { text: "模板写作", link: "/guide/template-writing" },
                 { text: "Managed vs Unmanaged", link: "/guide/managed-vs-unmanaged" },
                 { text: "编译期诊断", link: "/guide/diagnostics" },
+                { text: "热更新与跨程序集", link: "/guide/hot-reload" },
               ],
             },
             {
@@ -126,6 +127,7 @@ export default withMermaid(
                 { text: "Template Writing", link: "/en/guide/template-writing" },
                 { text: "Managed vs Unmanaged", link: "/en/guide/managed-vs-unmanaged" },
                 { text: "Diagnostics", link: "/en/guide/diagnostics" },
+                { text: "Hot Reload & Cross-Assembly", link: "/en/guide/hot-reload" },
               ],
             },
             {
