@@ -203,3 +203,21 @@ public struct Container
 ```
 
 Collection fields use `.Add()` instead of `=` for assignment, so all parsed values are retained in the list. Scalar fields inside `<repetition>` get overwritten on each iteration, which triggers the [SSR005 diagnostic](./diagnostics#ssr005-scalar-field-inside-repetition).
+
+## Whitespace Handling
+
+SourceSerializer uses a three-tier strategy to make input whitespace fully transparent to callers:
+
+**Tier 1: Compile-time (compactWhitespace)** — `ScanCodeEmitter` strips whitespace from literal text nodes before generating scanner code. The `compactWhitespace: true` option ensures that string constants in generated `Scan_Xxx` methods contain no spaces or newlines — these are already stripped at code generation time, reducing generated code size.
+
+**Tier 2: Runtime (WhitespaceStripper)** — `Deserialize<T>()` and `TryScan<T>()` automatically invoke `WhitespaceStripper.Strip()` before calling `Scan`, performing two-pass zero-allocation preprocessing: pass 1 counts the output length, pass 2 fills the output buffer via `string.Create`. Only whitespace outside quoted strings is stripped; whitespace inside quotes (including `\"` escapes) is preserved.
+
+**Tier 3: Caller-transparent** — to the caller, whitespace in input **has no effect** on parsing. The following three calls are equivalent:
+
+```csharp
+SerializerBlocks.Deserialize<Point2D>("Point2D(3.5, -2.1)");
+SerializerBlocks.Deserialize<Point2D>("  Point2D( 3.5 ,  -2.1 )  ");
+SerializerBlocks.Deserialize<Point2D>("Point2D(\n  3.5,\n  -2.1\n)");
+```
+
+Design rationale: separating whitespace preprocessing from scanners means generated scanner code doesn't need whitespace-skip branches before every literal text node — centralized preprocessing once, shared by all types. See [Indent & Whitespace Handling](/en/guide/indent-and-whitespace) for details.

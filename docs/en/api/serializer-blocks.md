@@ -5,7 +5,9 @@ Serializer block registry. The central cross-assembly registration point — bot
 ## Core Interface
 
 ```csharp
-public interface ISerializerBlock<TData>
+public interface ISerializerBlock { }  // non-generic marker, enables params ISerializerBlock[]
+
+public interface ISerializerBlock<TData> : ISerializerBlock
 {
     int Scan(ReadOnlySpan<char> text, int pos, out TData value);
     void Emit(StringBuilder sb, TData value);
@@ -16,6 +18,7 @@ public static class SerializerBlocks
     public static bool TryGet<TData>(out ISerializerBlock<TData>? block);
     public static string Serialize<TData>(TData value);
     public static TData Deserialize<TData>(string text);
+    public static bool TryScan<TData>(string text, out TData value);
 }
 ```
 
@@ -27,6 +30,50 @@ Checks whether type `TData` has a registered serializer block. The first call tr
 |-----------|------|-------------|
 | `block` | `out ISerializerBlock<TData>?` | Serializer block; `null` if not registered |
 | Return | `bool` | Whether the block was found |
+
+## Serialize / Deserialize / TryScan
+
+Three convenience methods that encapsulate the `TryGet` + `Emit`/`Scan` boilerplate for simple one-liner scenarios.
+
+### Serialize`<T>`
+
+```csharp
+public static string Serialize<TData>(TData value);
+```
+
+Calls `TryGet<TData>` to obtain the block, executes `Emit` via `StringBuilder`, and returns the resulting string. Throws `InvalidOperationException` for unregistered types.
+
+### Deserialize`<T>`
+
+```csharp
+public static TData Deserialize<TData>(string text);
+```
+
+Calls `TryGet<TData>` to obtain the block, preprocesses input via `WhitespaceStripper.Strip()`, then executes `Scan`. Throws `FormatException` on scan failure, `InvalidOperationException` for unregistered types.
+
+### TryScan`<T>`
+
+```csharp
+public static bool TryScan<TData>(string text, out TData value);
+```
+
+Same behavior as `Deserialize` but without exceptions: returns `false` on scan failure or unregistered type, with `value` set to `default`.
+
+Usage:
+
+```csharp
+// One-liner serialize
+string s = SerializerBlocks.Serialize(new Point2D { X = 3.5f, Y = -2.1f });
+
+// One-liner deserialize (auto whitespace stripping)
+Point2D v = SerializerBlocks.Deserialize<Point2D>("  Point2D( 3.5 ,  -2.1 )  ");
+
+// Non-throwing deserialize
+if (SerializerBlocks.TryScan<Point2D>(input, out var result))
+    Console.WriteLine(result);
+```
+
+Design rationale: these three methods, added in v3.4, exist to eliminate the seven-line `TryGet` + null-check + `new StringBuilder` + `Emit` + `ToString` (or `WhitespaceStripper.Strip` + `Scan`) boilerplate. Each method implementation is under 10 lines, delegating directly to `TryGet` and the corresponding `ISerializerBlock<T>` methods.
 
 ## AddBlock
 
@@ -69,6 +116,40 @@ public static void AddBlocks(params ISerializerBlock[] blocks);
 ```
 
 Batch-registers heterogeneous blocks. Each block's generic parameter is derived via reflection, delegating to `RegisterBlock<T>` to reuse chain merge logic.
+
+## Builder Fluent API
+
+`AddBlock<T>()` returns a `Builder` nested class instance, enabling fluent chaining:
+
+```csharp
+public sealed class Builder
+{
+    public Builder AddBlock<T>(ISerializerBlock<T> block);
+    public Builder AddBlock(Type dataType, ISerializerBlock block);
+    public Builder AddBlocks(params ISerializerBlock[] blocks);
+    public Builder RemoveBlock<T>();
+    public Builder RemoveBlock(Type dataType);
+}
+```
+
+All `Builder` methods delegate directly to the corresponding `SerializerBlocks` static methods, returning `Builder` itself for further chaining. `Builder` is pure syntactic sugar — it holds no state and is not a standalone registry.
+
+```csharp
+SerializerBlocks
+    .AddBlock(new Block_Point2D())
+    .AddBlock(typeof(Vec3), new Block_Vec3())
+    .AddBlocks(new Block_Player(), new Block_Enemy());
+```
+
+## ISerializerBlock (Non-Generic Marker)
+
+```csharp
+public interface ISerializerBlock { }
+```
+
+An empty marker interface whose sole purpose is to allow differently-typed `ISerializerBlock<T>` instances to be received as `params ISerializerBlock[]`. C# does not support `params ISerializerBlock<>[]` (arrays of different generic instantiations have no common base type), so a non-generic marker serves as the upper bound for `ISerializerBlock<T>`.
+
+Hand-written `ISerializerBlock<T>` implementations must also inherit this marker (otherwise `AddBlocks` won't accept them as parameters). SG-generated `Block_Xxx` structs include it automatically.
 
 ## GeneratedSerializers Initialization
 

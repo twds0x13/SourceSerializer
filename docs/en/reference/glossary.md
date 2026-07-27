@@ -11,6 +11,9 @@
 | Field | The type and name pair in `<float X>` |
 | Optional Block | Template fragment wrapped in `<optional>...</optional>`, backtracked on failure |
 | Repetition Block | Collection fragment wrapped in `<first>...</first><body>...</body>` |
+| Indent Block | Template fragment wrapped in `<indent>...</indent>`. Emit outputs hierarchical indent; Scan is a no-op |
+| compactWhitespace | `ScanCodeEmitter` compile-time option: strips whitespace from literal text before code generation, reducing generated code size |
+| WhitespaceStripper | Runtime input preprocessing: two-pass zero-allocation `string.Create` implementation, strips whitespace outside quoted strings |
 
 ## Runtime
 
@@ -19,6 +22,9 @@
 | Scanner | Process of parsing `TData` from `ReadOnlySpan<char>` |
 | Emitter | Process of serializing `TData` to `StringBuilder` |
 | Serializer Block | `ISerializerBlock<T>` instance, holds both scan and emit capability |
+| Non-Generic Marker | `ISerializerBlock` (no type parameter), enables `params ISerializerBlock[]` for heterogeneous `ISerializerBlock<T>` instances |
+| Convenience API | `SerializerBlocks.Serialize<T>()` / `Deserialize<T>()` / `TryScan<T>()` one-liner methods, eliminating TryGet + StringBuilder boilerplate |
+| Builder | `SerializerBlocks.Builder` nested class, fluent chaining builder returned by `AddBlock<T>()` |
 
 ## Compile Time
 
@@ -28,6 +34,8 @@
 | Interface Dispatch | Scanner tries all interface implementations, picks the one advancing farthest |
 | Default Interface Template | Built-in interface templates (IList, ISet, IDictionary, etc.) |
 | Roslyn Fallback | When a type is not in openGenerics, resolve via AllInterfaces |
+| SSR007 | Compile-time error: attempting to override one of 13 built-in types with `[ExternalTemplate]` |
+| Array Buffer | Code generation path for `T[]` collection fields: pre-allocated buffer + tracked count + final `Array.Copy`, contrasted with `List<T>`'s `.Add()` path |
 
 ## Generics
 

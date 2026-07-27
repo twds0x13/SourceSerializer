@@ -26,6 +26,7 @@ flowchart TD
     N --> O["SerializerBlocks.AddBlock&lt;T&gt;()<br/>runtime registry"]
     O --> P["TryGet&lt;T&gt;(out block)<br/>get ISerializerBlock&lt;T&gt;"]
     P --> Q["block.Scan / block.Emit<br/>deserialize / serialize"]
+    Q --> R["WhitespaceStripper.Strip()<br/>auto-called by Deserialize/TryScan"]
 ```
 
 Three key boundaries in the pipeline:
@@ -170,6 +171,6 @@ init.Invoke(null, null); // registers all types in the DLL
 ## Next Steps
 
 - [Getting Started](./getting-started): start here if you have not yet
-- [Template Syntax](./template-syntax): the four primitives, built-in types, collection formats
+- [Template Syntax](./template-syntax): the five primitives, built-in types, collection formats
 - [SG Pipeline Overview](../technical/pipeline/overview): deep dive into the compile-time pipeline
 - [API Reference](/en/api/): all attributes and runtime API

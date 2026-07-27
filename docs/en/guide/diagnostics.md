@@ -12,6 +12,7 @@ All SourceSerializer errors and warnings are reported at compile time via Roslyn
 | SSR004 | Error | Missing template dependency | Template references a type without `[Template]` and the field is not marked `[TemplateIgnore]` |
 | SSR005 | Error | Scalar field inside `<repetition>` | A non-collection field appears inside a `<repetition>` block |
 | SSR006 | Error | Template ambiguity | Two concrete types sharing an interface have templates that are prefixes of each other |
+| SSR007 | Error | Cannot override built-in type | `[ExternalTemplate]` targets one of the 13 built-in types |
 
 ## SSR001: Template Parse Error
 
@@ -143,6 +144,27 @@ struct Vec3 : IVector { float X; float Y; float Z; }
 ```
 
 Fix: adjust templates so each concrete type's prefix is distinguishable, e.g., `Vec2(...)` and `Vec3(...)` with different prefixes.
+
+## SSR007: Overriding Built-in Types
+
+Triggered when `[ExternalTemplate]` attempts to override one of the 13 built-in types.
+
+Trigger example:
+
+```csharp
+[assembly: ExternalTemplate(typeof(float), "Float(<float>)")]
+// → SSR007: Cannot override built-in type 'float'
+```
+
+Root cause: built-in types are handled by hand-written zero-allocation span scanners in `SerializerRegistry`. `[ExternalTemplate]` cannot generate code that matches the performance characteristics of these hand-written scanners — their `readonly ref struct` layout and SIMD-friendly branch structure cannot be expressed via template compilation. Additionally, allowing built-in type overrides would cause inconsistent type resolution across assemblies: the same type could be parsed in different formats depending on which assembly's template is active.
+
+Fix: remove `[ExternalTemplate]` for built-in types. To apply custom formatting to a built-in type, wrap it in a higher-level template:
+
+```csharp
+// Correct: wrap at a higher level
+[Template("MyFloat(<float Value>)")]
+struct MyFloat { float Value; }
+```
 
 ## See Also
 

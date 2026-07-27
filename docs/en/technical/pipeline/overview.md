@@ -22,6 +22,9 @@ flowchart TD
     L --> O["GeneratedSerializers (Scan_Xxx)"]
     M --> P["GeneratedSerializers (Emit_Xxx)"]
     N --> Q["GeneratedSerializers (Init + Block_Xxx)"]
+    Q --> R["Runtime: EnsureInitialized() reflection scan"]
+    R --> S["WhitespaceStripper.Strip() whitespace preprocessing"]
+    S --> T["block.Scan / block.Emit"]
 ```
 
 ## Pipeline Stages
@@ -33,10 +36,12 @@ flowchart TD
 | Dependency graph + topological sort | AST list | Ordered type list | Build dependency graph from field references, topologically sort to ensure nested types are generated first | Nested type templates must be generated before their outer types (B's Scan method references A's Scan method). Topological sort guarantees correct generation order |
 | Generic instance synthesis | Open generic templates + field references | Concrete generic struct definitions | Auto-synthesize concrete instances like `List<float>` from default templates | The user only declares `Wrapper<T>`; the SG auto-synthesizes the concrete template when it encounters a `Wrapper<float>` reference. Zero manual per-instance declarations |
 | Interface dispatch mapping | ImplementedInterfaces of concrete types | Interface-to-implementations mapping | Collect all implementing types for each interface | Roslyn `AllInterfaces` provides complete type information at compile time; no runtime reflection needed to determine type membership |
-| Validation | AST + dependency graph + interface mapping | Diagnostics (SSR003/005/006) | Readonly field detection, scalar-in-repetition warning, template ambiguity detection | All diagnostics are caught at compile time; users never encounter runtime errors from template definition mistakes. `IsUnmanagedType` is the authoritative Roslyn judgment, with zero lines of manual rules |
+| Validation | AST + dependency graph + interface mapping | Diagnostics (SSR003/005/006/007) | Readonly field detection, scalar-in-repetition warning, template ambiguity detection, built-in type ExternalTemplate override detection | All diagnostics are caught at compile time; users never encounter runtime errors from template definition mistakes. `IsUnmanagedType` is the authoritative Roslyn judgment, with zero lines of manual rules |
+| compactWhitespace | Template AST | Optimized generated code | Compile-time stripping of whitespace from literal text nodes, reducing string constant size in generated `Scan_Xxx` methods | ScanCodeEmitter option, not user-configurable. Works with runtime `WhitespaceStripper` for fully transparent input whitespace handling |
 | ScanCodeEmitter | AST | `SerializerScanners.g.cs` | Generate `Scan_Xxx` span scanners | Scan and Emit share the same AST input but generate methods for opposite directions. Separate emitter classes avoid `if (isEmit)` branching in code generation |
-| EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | Generate `Emit_Xxx` serializers | Same rationale as above. Write-direction code generation logic (`StringBuilder.Append`, foreach iteration) is entirely different from read-direction |
+| EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | Generate `Emit_Xxx` serializers with `<indent>` newline+indent injection | Same rationale as above. Write-direction code generation logic (`StringBuilder.Append`, foreach iteration, indentLevel management) is entirely different from read-direction |
 | BlockEmitter | EmitEntry list | `SerializerBlocks.g.cs` | Generate `Init()` registration entry point + `Block_Xxx` wrapper structs | Init() registration logic is generated independently: Scanner and Emitter are unaware of the registration mechanism. Three .g.cs files, each with a single responsibility |
+| WhitespaceStripper (Runtime) | Raw input string | Compact string | Single-pass runtime stripping of whitespace outside quoted strings (two-pass `string.Create`), auto-invoked in `Deserialize`/`TryScan` | Centralized preprocessing avoids per-type whitespace-skip branches in scanner code. Preserves quoted regions (including `\"` escapes) |
 
 ## Output Files
 

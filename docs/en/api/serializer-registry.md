@@ -35,3 +35,29 @@ public static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
 ```
 
 Return value convention: `> pos` indicates successful match and returns the end position; `== pos` indicates no match (parse failure), value is `default`.
+
+## Emit Methods
+
+Each built-in type also provides a corresponding Emit method with a uniform signature:
+
+```csharp
+public static void Emit_Xxx(StringBuilder sb, Xxx value)
+```
+
+| Type | Emit Method | Output Format |
+|------|------------|---------------|
+| `float` | `Emit_Float` | G9 format, `CultureInfo.InvariantCulture` |
+| `double` | `Emit_Double` | G17 format, `CultureInfo.InvariantCulture` |
+| `int` | `Emit_Int` | Integer text |
+| `uint` | `Emit_Uint` | Integer text |
+| `long` | `Emit_Long` | Integer text |
+| `ulong` | `Emit_Ulong` | Integer text |
+| `short` | `Emit_Short` | Integer text (delegates to `Emit_Int`) |
+| `ushort` | `Emit_Ushort` | Integer text (delegates to `Emit_Uint`) |
+| `byte` | `Emit_Byte` | Integer text (delegates to `Emit_Uint`) |
+| `sbyte` | `Emit_Sbyte` | Integer text (delegates to `Emit_Int`) |
+| `bool` | `Emit_Bool` | `"true"` or `"false"` |
+| `char` | `Emit_Char` | Single character (no quotes) |
+| `string` | `Emit_String` | Double-quoted, null produces no output |
+
+Design rationale: Emit methods use `StringBuilder` rather than returning `string` — this allows callers to compose multiple field outputs into a single `StringBuilder` instance, avoiding intermediate allocations from string concatenation. The `G9` (float) and `G17` (double) format specifiers guarantee round-trip fidelity: serializing then deserializing preserves the original value per IEEE 754.
