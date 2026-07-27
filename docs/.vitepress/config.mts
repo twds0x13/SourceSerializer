@@ -38,6 +38,7 @@ export default withMermaid(
                 { text: "Managed vs Unmanaged", link: "/guide/managed-vs-unmanaged" },
                 { text: "编译期诊断", link: "/guide/diagnostics" },
                 { text: "热更新与跨程序集", link: "/guide/hot-reload" },
+                { text: "缩进与空白符处理", link: "/guide/indent-and-whitespace" },
               ],
             },
             {
@@ -128,6 +129,7 @@ export default withMermaid(
                 { text: "Managed vs Unmanaged", link: "/en/guide/managed-vs-unmanaged" },
                 { text: "Diagnostics", link: "/en/guide/diagnostics" },
                 { text: "Hot Reload & Cross-Assembly", link: "/en/guide/hot-reload" },
+                { text: "Indent & Whitespace", link: "/en/guide/indent-and-whitespace" },
               ],
             },
             {
