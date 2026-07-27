@@ -1,3 +1,9 @@
+## [3.5.0](https://github.com/twds0x13/SourceSerializer/compare/v3.4.6...v3.5.0) (2026-07-27)
+
+### Features
+
+* expand built-in types from 13 to 16 (add IntPtr, UIntPtr, Guid) ([5f783b1](https://github.com/twds0x13/SourceSerializer/commit/5f783b1c08ea5f259809650020d4a2e7f70ccb4f))
+
 ## [3.4.6](https://github.com/twds0x13/SourceSerializer/compare/v3.4.5...v3.4.6) (2026-07-26)
 
 ### Bug Fixes
