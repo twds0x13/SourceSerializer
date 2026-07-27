@@ -41,7 +41,7 @@ public struct DamageData
 </literal-template>
 ```
 
-## 四种原语
+## 五种原语
 
 | 原语 | Compact 写法 | XML 元素 | 语义 |
 |------|-------------|---------|------|
@@ -49,8 +49,33 @@ public struct DamageData
 | 字段 | `<type name>` | `<field type="" name=""/>` | 调用对应类型扫描器，结果写入 name 字段 |
 | 可选块 | `<optional>...</optional>` | `<optional>...</optional>` | 尝试匹配内部节点，失败回退继续 |
 | 重复块 | `<repetition>...</repetition>` | `<repetition>...</repetition>` | 循环匹配内部节点，失败退出循环 |
+| 缩进块 | `<indent>...</indent>` | `<indent>...</indent>` | Emit 时注入换行+缩进，Scan 时 no-op |
 
 重复块的语义："匹配最后一次写入选定字段"。同一字段每轮迭代被覆盖，最终保留最后一轮的值。适合解析变长列表的最后一个元素。
+
+### 缩进块（`<indent>`）
+
+缩进块是纯 Emit 期指令。Scan 时它等于不存在——body 节点照常解析，`<indent>` 标签被跳过。Emit 时它注入换行和缩进制表符：
+
+```csharp
+// Compact 格式
+[Template("Zone(<string Name><indent>, <float X>, <float Y></indent>)")]
+struct Zone { string Name; float X; float Y; }
+
+// Emit 输出:
+// Zone("safe_zone",
+//  3.5, -2.1)
+```
+
+嵌套缩进逐层递增：外层 `<indent>` 注入 1 个 tab，内层注入 2 个 tab。设计原理：将格式化关注点从数据解析逻辑中分离——解析时不因缩进改变行为，输出时的格式由模板声明而非手写代码控制。
+
+与 `<repetition>` 嵌套以实现层级树状输出：
+
+```csharp
+[Template("Config(<indent><first><string Key>: <indent><float Value></indent></first><body>, <string Key>: <indent><float Value></indent></body></indent>)")]
+```
+
+详见 [缩进与空白符处理](/guide/indent-and-whitespace)。
 
 ## 嵌套
 
@@ -186,6 +211,6 @@ public struct Container
 ## 参见
 
 - [模板写作指南](./template-writing)：12 个场景的完整模板示例
-- [编译期诊断](./diagnostics)：SSR001-SSR006 错误代码
+- [编译期诊断](./diagnostics)：SSR001-SSR007 错误代码
 - [核心概念](./core-concepts)：端到端架构全景
 - [Template API](../api/template-attribute)：`[Template]` 的完整签名

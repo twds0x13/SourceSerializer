@@ -23,12 +23,12 @@ features:
     details: Unmanaged types with zero heap allocation; class, string, List, Dictionary fully supported for both Scan and Emit. Roslyn IsUnmanagedType compile-time dispatch.
   - title: Cross-Assembly + Hot Reload
     details: GeneratedSerializers.Init() discovered via AppDomain reflection. Interface dispatch chain merging (ChainBlock) lets hot-reload DLLs extend existing interfaces dynamically.
-  - title: Four XML Primitives + Collection Format
-    details: Literal text, field, optional block, repetition block. List()/Dict()/HashSet() function-call collection format, strings always quoted.
+  - title: Five XML Primitives + Collection Format
+    details: Literal text, field, optional block, repetition block, indent block. List()/Dict()/HashSet() function-call collection format, strings always quoted.
   - title: 13 Built-in Type Scanners
     details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string. Hand-written zero-allocation span scanners, public API.
   - title: Complete Compile-time Diagnostics
-    details: "6 diagnostic codes (SSR001-SSR006) — syntax errors, circular deps, readonly fields, missing types, scalar-in-repetition, template ambiguity. All caught at compile time."
+    details: "7 diagnostic codes (SSR001-SSR007) — syntax errors, circular deps, readonly fields, missing types, scalar-in-repetition, template ambiguity, built-in type override prevention. All caught at compile time."
   - title: Generic Synthesis + Interface Dispatch
     details: Open generic templates auto-synthesize concrete instances. Interface fields auto-dispatch to concrete types, first-match-wins.
   - title: Convenience API

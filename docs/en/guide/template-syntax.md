@@ -41,7 +41,7 @@ Equivalent to compact format. Best for multi-line complex templates:
 </literal-template>
 ```
 
-## Four Primitives
+## Five Primitives
 
 | Primitive | Compact | XML Element | Semantics |
 |-----------|---------|-------------|-----------|
@@ -49,8 +49,33 @@ Equivalent to compact format. Best for multi-line complex templates:
 | Field | `<type name>` | `<field type="" name=""/>` | Invokes the corresponding type scanner, writes result to field |
 | Optional block | `<optional>...</optional>` | `<optional>...</optional>` | Attempts to match inner nodes, rewinds on failure |
 | Repetition block | `<repetition>...</repetition>` | `<repetition>...</repetition>` | Loops matching inner nodes, exits loop on failure |
+| Indent block | `<indent>...</indent>` | `<indent>...</indent>` | Injects newline+indent on Emit, no-op on Scan |
 
 Repetition semantics: the last match writes to the selected field. Each iteration overwrites the same field, keeping only the final value. Suitable for parsing the last element of a variable-length list.
+
+### Indent Block (`<indent>`)
+
+The indent block is a pure emit-time directive. During Scan it is identity — body nodes parse as if `<indent>` wrappers don't exist, and the `<indent>` tags are skipped. During Emit it injects newlines and tab indentation:
+
+```csharp
+// Compact format
+[Template("Zone(<string Name><indent>, <float X>, <float Y></indent>)")]
+struct Zone { string Name; float X; float Y; }
+
+// Emit output:
+// Zone("safe_zone",
+//  3.5, -2.1)
+```
+
+Nested indents increment per level: the outer `<indent>` injects 1 tab, the inner injects 2. Design rationale: separating formatting concerns from data parsing logic — parsing behavior is unaffected by indentation, while output formatting is declared in the template rather than hand-written code.
+
+Nest with `<repetition>` for hierarchical tree output:
+
+```csharp
+[Template("Config(<indent><first><string Key>: <indent><float Value></indent></first><body>, <string Key>: <indent><float Value></indent></body></indent>)")]
+```
+
+See [Indent & Whitespace Handling](/en/guide/indent-and-whitespace) for details.
 
 ## Nesting
 
