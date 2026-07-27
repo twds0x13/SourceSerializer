@@ -393,8 +393,8 @@ Use `<first>/<body>` directly without wrapping in `<repetition>`. Collection typ
 ## See Also
 
 - [Getting Started](./getting-started): Installation and first use
-- [Template Syntax](./template-syntax): The four primitives, built-in types, collection formats
-- [Diagnostics](./diagnostics): SSR001-SSR006 reference
+- [Template Syntax](./template-syntax): The five primitives, built-in types, collection formats
+- [Diagnostics](./diagnostics): SSR001-SSR007 reference
 - [Core Concepts](./core-concepts): End-to-end architecture
 - [Example: Enum Tags & Aliases](/en/examples/enum-and-alias)
 - [Example: Custom Generics](/en/examples/custom-generics)

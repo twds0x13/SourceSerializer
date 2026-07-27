@@ -394,7 +394,7 @@ struct Ability
 
 - [快速入门](./getting-started)：安装与首次使用
 - [模板语法](./template-syntax)：四种原语、内置类型、集合格式
-- [编译期诊断](./diagnostics)：SSR001-SSR006 完整诊断码参考
+- [编译期诊断](./diagnostics)：SSR001-SSR007 完整诊断码参考
 - [核心概念](./core-concepts)：端到端架构全景
 - [示例: 枚举标签与别名](/examples/enum-and-alias)
 - [示例: 自定义泛型](/examples/custom-generics)

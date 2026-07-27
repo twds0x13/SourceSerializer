@@ -83,6 +83,6 @@ See `InterfaceDispatchTests.cs` and `ChainBlockTests.cs` for complete runnable t
 
 ## See Also
 
-- [Template Syntax](../guide/template-syntax): the four primitives and template declarations
+- [Template Syntax](../guide/template-syntax): the five primitives and template declarations
 - [Hot Reload & Cross-Assembly Registration](../guide/hot-reload): full ChainBlock chain merge mechanism
 - [Internals](../technical/internals): source-level details on interface dispatch and ChainBlock

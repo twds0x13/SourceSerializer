@@ -83,4 +83,4 @@ See `EnumTagTests.cs` and `TypeAliasTests.cs` for complete runnable test cases.
 
 - [Tag API](../api/tag-attribute): full API signature for enum tags
 - [TypeAlias API](../api/type-alias-attribute): full API signature for type aliases
-- [Template Syntax](../guide/template-syntax): the four primitives, built-in types, collection formats
+- [Template Syntax](../guide/template-syntax): the five primitives, built-in types, collection formats
