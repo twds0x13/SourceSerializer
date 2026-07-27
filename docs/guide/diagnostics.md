@@ -12,6 +12,7 @@ SourceSerializer 的所有错误和警告在编译期通过 Roslyn 诊断报告�
 | SSR004 | Error | Missing template dependency | 模板引用了无 `[Template]` 且非内置类型的字段类型，且字段未标记 `[TemplateIgnore]` |
 | SSR005 | Error | Scalar field inside `<repetition>` | 非集合字段出现在 `<repetition>` 块内 |
 | SSR006 | Error | Template ambiguity | 同接口的两种具现类型模板互为前缀，接口分派无法可靠区分 |
+| SSR007 | Error | Cannot override built-in type | `[ExternalTemplate]` 覆盖了 13 种内置类型之一 |
 
 ## SSR001：模板解析错误
 
@@ -144,7 +145,29 @@ struct Vec3 : IVector { float X; float Y; float Z; }
 
 修复方法：调整模板使各具现类型的前缀可区分，例如 `Vec2(...)` 和 `Vec3(...)` 使用不同前缀。
 
+## SSR007：覆盖内置类型
+
+尝试用 `[ExternalTemplate]` 覆盖 13 种内置类型之一时触发。
+
+触发示例：
+
+```csharp
+[assembly: ExternalTemplate(typeof(float), "Float(<float>)")]
+// → SSR007: Cannot override built-in type 'float'
+```
+
+根因：内置类型由 `SerializerRegistry` 中的手写零分配 span 扫描器处理。`[ExternalTemplate]` 无法生成与手写扫描器性能等价的代码——手写扫描器的 `readonly ref struct` 布局和 SIMD 友好的分支结构无法通过模板编译表达。同时，允许覆盖内置类型会导致跨程序集的类型解析行为不一致：同一类型在不同程序集的模板中可能被解析为不同的格式。
+
+修复：移除对内置类型的 `[ExternalTemplate]`。如需对内置类型应用自定义格式，在更上层模板中包装：
+
+```csharp
+// 正确：在更上层包装
+[Template("MyFloat(<float Value>)")]
+struct MyFloat { float Value; }
+```
+
 ## 参见
 
-- [模板语法](./template-syntax): compact 与 XML 格式
+- [模板语法](./template-syntax): compact 与 XML 格式，五种原语
 - [Managed vs Unmanaged](./managed-vs-unmanaged): 类型策略选择
+- [SerializerRegistry API](../api/serializer-registry): 13 种内置类型扫描与发射方法

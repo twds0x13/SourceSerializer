@@ -82,6 +82,31 @@ SG 生成的全部 Scan/Emit 方法和 Block 结构体位于 `public static part
 
 `Init()` 由 `SerializerBlocks.EnsureInitialized()` 通过 AppDomain 反射扫描自动发现和调用。幂等：二次调用直接返回。
 
+## 空白符剔除（WhitespaceStripper）
+
+`WhitespaceStripper` 是运行时输入预处理的核心组件，在 `Deserialize<T>()` 和 `TryScan<T>()` 中自动调用。采用两阶段零分配算法：
+
+**第一阶段（计数）**：遍历输入，跳过引号外部的所有空白符，计算输出长度。维护 `inString` 状态标志追踪是否处于双引号内部——引号内的空白符（及 `\"` 转义）完整计入输出长度。
+
+**第二阶段（填充）**：通过 `string.Create` 创建目标长度的字符串，在回调中重新遍历输入，将非空白字符（及引号内全部字符）逐字写入输出缓冲区。
+
+早返优化：如果输出长度等于输入长度（无空白符需剔除），直接返回原字符串避免复制；如果输出长度为 0（全空白），返回 `string.Empty`。
+
+设计原理：将空白符预处理从各类型的 `Scan_Xxx` 方法中分离，集中为单一零分配工具。生成的扫描器代码无需在每个 literal text 匹配前插入空白符跳过分支——扫描器假设输入已紧凑化。这一分离也使得空白符处理策略可独立演进（如未来增加注释支持），不波及每个类型的生成代码。
+
+## Array 缓冲区策略
+
+`T[]` 数组字段和 `List<T>` 集合字段在扫描器代码生成中使用不同的赋值路径：
+
+| 字段类型 | 代码生成路径 | 最终赋值 |
+|---------|------------|---------|
+| `List<T>` | 声明 `var __list = new List<T>()`，循环内 `__list.Add(item)` | 直接赋值 |
+| `T[]` | 声明 `var __buf = new T[16]`，循环内写入 `__buf[__cnt++]`，倍增扩容 | `Array.Copy(__buf, value, __cnt)` |
+
+`IsArrayCollection` 标志（`SerializerGenerator.cs` 第 1346 行）控制路径选择。`T[]` 无法使用 `.Add()`，采用预分配缓冲区 + 跟踪计数 + 最终 `Array.Copy` 的方案。缓冲区初始 16 元素，超出时倍增（上限 1024 后按 ×2 增长）。
+
+设计原理：`List<T>` 内部的增长策略和 `T[]` 的显式缓冲区管理目标相同——避免逐元素扩容导致的二次复制。区别在于 `List<T>` 封装了增长逻辑（`.Add()` 内部处理），而 `T[]` 需要代码生成器显式管理缓冲区。
+
 ## EmitHelpers 共享工具
 
 `EmitHelpers` 统一了 ScanCodeEmitter 和 EmitCodeEmitter 的方法名生成（`GetMethodName`）、唯一变量名生成（`GetUniqueVar`）、名称消毒（sanitize `[]`）和计数器管理。

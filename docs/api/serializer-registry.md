@@ -36,6 +36,32 @@ public static int Scan_Xxx(ReadOnlySpan<char> src, int pos, out Xxx value)
 
 返回值约定：`> pos` 表示匹配成功并返回结束位置；`== pos` 表示未匹配（解析失败），value 为 `default`。
 
+## Emit 方法
+
+每种内置类型同时提供对应的 Emit 方法，签名统一：
+
+```csharp
+public static void Emit_Xxx(StringBuilder sb, Xxx value)
+```
+
+| 类型 | Emit 方法 | 输出格式 |
+|------|----------|---------|
+| `float` | `Emit_Float` | G9 格式，`CultureInfo.InvariantCulture` |
+| `double` | `Emit_Double` | G17 格式，`CultureInfo.InvariantCulture` |
+| `int` | `Emit_Int` | 整数文本 |
+| `uint` | `Emit_Uint` | 整数文本 |
+| `long` | `Emit_Long` | 整数文本 |
+| `ulong` | `Emit_Ulong` | 整数文本 |
+| `short` | `Emit_Short` | 整数文本（委托到 `Emit_Int`） |
+| `ushort` | `Emit_Ushort` | 整数文本（委托到 `Emit_Uint`） |
+| `byte` | `Emit_Byte` | 整数文本（委托到 `Emit_Uint`） |
+| `sbyte` | `Emit_Sbyte` | 整数文本（委托到 `Emit_Int`） |
+| `bool` | `Emit_Bool` | `"true"` 或 `"false"` |
+| `char` | `Emit_Char` | 单字符（无引号） |
+| `string` | `Emit_String` | 双引号包裹，null 不输出 |
+
+设计原理：Emit 方法使用 `StringBuilder` 而非返回 `string`——允许调用方在单个 `StringBuilder` 实例上拼接多个字段的输出，避免字符串连接产生的中间分配。`G9`（float）和 `G17`（double）格式保证 round-trip：序列化再反序列化后值不变，符合 IEEE 754 规范。
+
 ## 参见
 
 - [SerializerBlocks API](./serializer-blocks)：用户类型注册表

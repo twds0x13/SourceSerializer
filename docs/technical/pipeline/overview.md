@@ -22,6 +22,9 @@ flowchart TD
     L --> O["GeneratedSerializers (Scan_Xxx)"]
     M --> P["GeneratedSerializers (Emit_Xxx)"]
     N --> Q["GeneratedSerializers (Init + Block_Xxx)"]
+    Q --> R["Runtime: EnsureInitialized() 反射发现"]
+    R --> S["WhitespaceStripper.Strip() 空白符预处理"]
+    S --> T["block.Scan / block.Emit"]
 ```
 
 ## 各阶段
@@ -33,10 +36,12 @@ flowchart TD
 | 依赖图 + 拓扑排序 | AST 列表 | 有序类型列表 | 按字段引用构建依赖图，拓扑排序确保嵌套类型先生成 | 嵌套类型的模板必须先于外层类型生成（B 引用 A 的 Scan 方法需要 A 先生成）。拓扑排序保证生成顺序正确 |
 | 泛型实例合成 | 开放泛型模板 + 字段引用 | 具体泛型 struct 定义 | `List<float>` 等具体实例基于默认模板自动合成 | 用户只声明 `Wrapper<T>`，SG 在遇到 `Wrapper<float>` 引用时自动合成具体模板。零手动声明每个具体实例 |
 | 接口分派映射 | 具现类型的 ImplementedInterfaces | 接口到具现列表的映射 | 为每个接口收集所有实现类型 | Roslyn `AllInterfaces` 在编译期提供完整类型信息；运行时无需反射判断类型归属 |
-| 校验 | AST + 依赖图 + 接口映射 | 诊断 (SSR003/005/006) | readonly 字段检测、标量在 repetition 内警告、模板歧义检测 | 全部诊断在编译期拦截，用户不会等到运行时才发现模板定义错误。`IsUnmanagedType` 是 Roslyn 权威判定，零行手动规则 |
+| 校验 | AST + 依赖图 + 接口映射 | 诊断 (SSR003/005/006/007) | readonly 字段检测、标量在 repetition 内警告、模板歧义检测、内置类型 ExternalTemplate 覆盖检测 | 全部诊断在编译期拦截，用户不会等到运行时才发现模板定义错误。`IsUnmanagedType` 是 Roslyn 权威判定，零行手动规则 |
+| compactWhitespace | 模板 AST | 优化后的生成代码 | 编译期去除 literal text 节点中的空白符，减小生成的 `Scan_Xxx` 方法中字符串常量体积 | ScanCodeEmitter 选项，非用户可配。配合运行时的 `WhitespaceStripper` 实现输入空白符完全透明 |
 | ScanCodeEmitter | AST | `SerializerScanners.g.cs` | 生成 `Scan_Xxx` span 扫描器 | Scan 和 Emit 共享同一 AST 输入但生成不同方向的方法体。分离 emitter 类避免代码生成时 `if (isEmit)` 分支污染 |
-| EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | 生成 `Emit_Xxx` 序列化器 | 同上。回写方向的代码生成逻辑（`StringBuilder.Append`、foreach 迭代）与读取方向完全不同 |
+| EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | 生成 `Emit_Xxx` 序列化器，含 `<indent>` 换行缩进注入 | 同上。回写方向的代码生成逻辑（`StringBuilder.Append`、foreach 迭代、indentLevel 管理）与读取方向完全不同 |
 | BlockEmitter | EmitEntry 列表 | `SerializerBlocks.g.cs` | 生成 `Init()` 注册入口 + `Block_Xxx` 包装结构体 | Init() 注册逻辑独立生成：Scanner 和 Emitter 不感知注册机制。三个 .g.cs 文件各司其职 |
+| WhitespaceStripper (Runtime) | 原始输入字符串 | 紧凑字符串 | 运行时单次扫描剔除引号外部空白符（两阶段 `string.Create`），在 `Deserialize`/`TryScan` 中自动调用 | 集中式预处理避免每个类型的扫描器代码插入空白符跳过分支。保护引号内区域（含 `\"` 转义）
 
 ## 输出文件
 

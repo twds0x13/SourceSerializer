@@ -5,7 +5,9 @@
 ## 核心接口
 
 ```csharp
-public interface ISerializerBlock<TData>
+public interface ISerializerBlock { }  // 非泛型标记接口，使 params ISerializerBlock[] 成为可能
+
+public interface ISerializerBlock<TData> : ISerializerBlock
 {
     int Scan(ReadOnlySpan<char> text, int pos, out TData value);
     void Emit(StringBuilder sb, TData value);
@@ -16,6 +18,7 @@ public static class SerializerBlocks
     public static bool TryGet<TData>(out ISerializerBlock<TData>? block);
     public static string Serialize<TData>(TData value);
     public static TData Deserialize<TData>(string text);
+    public static bool TryScan<TData>(string text, out TData value);
 }
 ```
 
@@ -27,6 +30,50 @@ public static class SerializerBlocks
 |------|------|------|
 | `block` | `out ISerializerBlock<TData>?` | 序列化器块，未注册时为 `null` |
 | 返回值 | `bool` | 是否成功获取 |
+
+## Serialize / Deserialize / TryScan
+
+三个便捷方法封装了 `TryGet` + `Emit`/`Scan` 的样板代码，适合简单场景下一行式调用。
+
+### Serialize`<T>`
+
+```csharp
+public static string Serialize<TData>(TData value);
+```
+
+调用 `TryGet<TData>` 获取 block，通过 `StringBuilder` 执行 `Emit` 后返回字符串。未注册类型抛出 `InvalidOperationException`。
+
+### Deserialize`<T>`
+
+```csharp
+public static TData Deserialize<TData>(string text);
+```
+
+调用 `TryGet<TData>` 获取 block，通过 `WhitespaceStripper.Strip()` 预处理输入后执行 `Scan`。Scan 失败抛出 `FormatException`，未注册类型抛出 `InvalidOperationException`。
+
+### TryScan`<T>`
+
+```csharp
+public static bool TryScan<TData>(string text, out TData value);
+```
+
+与 `Deserialize` 行为相同但不抛异常：Scan 失败或类型未注册时返回 `false`，`value` 为 `default`。
+
+使用示例：
+
+```csharp
+// 一行式序列化
+string s = SerializerBlocks.Serialize(new Point2D { X = 3.5f, Y = -2.1f });
+
+// 一行式反序列化（自动空白符剔除）
+Point2D v = SerializerBlocks.Deserialize<Point2D>("  Point2D( 3.5 ,  -2.1 )  ");
+
+// 非抛出式反序列化
+if (SerializerBlocks.TryScan<Point2D>(input, out var result))
+    Console.WriteLine(result);
+```
+
+设计原理：这三个方法在 v3.4 新增，目标是消除七行 `TryGet` + 判 null + `new StringBuilder` + `Emit` + `ToString`（或 `WhitespaceStripper.Strip` + `Scan`）的重复样板。每个方法的实现不超过 10 行，直接委托到 `TryGet` 和 `ISerializerBlock<T>` 的对应方法。
 
 ## AddBlock
 
@@ -69,6 +116,40 @@ public static void AddBlocks(params ISerializerBlock[] blocks);
 ```
 
 批量注册异构块。每个 block 的泛型参数通过反射推导，委托到 `RegisterBlock<T>` 以复用链合并逻辑。
+
+## Builder 流式 API
+
+`AddBlock<T>()` 返回 `Builder` 嵌套类实例，支持链式注册：
+
+```csharp
+public sealed class Builder
+{
+    public Builder AddBlock<T>(ISerializerBlock<T> block);
+    public Builder AddBlock(Type dataType, ISerializerBlock block);
+    public Builder AddBlocks(params ISerializerBlock[] blocks);
+    public Builder RemoveBlock<T>();
+    public Builder RemoveBlock(Type dataType);
+}
+```
+
+所有 `Builder` 方法直接委托到 `SerializerBlocks` 的对应静态方法，返回值均为 `Builder` 自身以支持进一步链式调用。`Builder` 是纯语法糖——不作为独立注册表，不持有状态。
+
+```csharp
+SerializerBlocks
+    .AddBlock(new Block_Point2D())
+    .AddBlock(typeof(Vec3), new Block_Vec3())
+    .AddBlocks(new Block_Player(), new Block_Enemy());
+```
+
+## ISerializerBlock（非泛型标记接口）
+
+```csharp
+public interface ISerializerBlock { }
+```
+
+空标记接口，唯一目的是使 `ISerializerBlock<T>` 的不同泛型实例可被统一接收为 `params ISerializerBlock[]` 参数类型。C# 不支持 `params ISerializerBlock<>[]`（不同泛型实参的数组无公共基类型），因此需要一个非泛型标记接口作为 `ISerializerBlock<T>` 的上界。
+
+手写 `ISerializerBlock<T>` 实现时需同时继承此标记接口（否则 `AddBlocks` 不接受其参数），SG 生成的 `Block_Xxx` 结构体自动包含。
 
 ## GeneratedSerializers 初始化
 

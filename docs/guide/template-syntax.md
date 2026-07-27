@@ -208,6 +208,24 @@ public struct Container
 
 集合类型的字段赋值使用 `.Add()` 而非 `=`，因此解析多个元素时所有值都被保留到列表中。标量字段在 `<repetition>` 块中每次迭代被覆盖，会触发 [SSR005 诊断](./diagnostics#ssr005重复块内的标量字段)。
 
+## 空白符处理
+
+SourceSerializer 通过三层策略实现对输入空白符的完全透明处理：
+
+**第一层：编译期（compactWhitespace）** — `ScanCodeEmitter` 在生成扫描器代码前去除 literal text 节点中的空白符。`compactWhitespace: true` 选项使得生成的 `Scan_Xxx` 方法中的字符串常量不包含空格和换行——这些空白符在生成代码时已被剥离，减少了生成代码体积。
+
+**第二层：运行时（WhitespaceStripper）** — `Deserialize<T>()` 和 `TryScan<T>()` 在调用 `Scan` 之前，自动调用 `WhitespaceStripper.Strip()` 对输入做两阶段零分配预处理：第一遍计算输出长度，第二遍通过 `string.Create` 填充输出缓冲区。仅剔除引号字符串外部的空白符，引号内部（包括 `\"` 转义）的空白符完整保留。
+
+**第三层：用户透明** — 对调用方来说，输入中的空白符**完全不影响解析结果**。以下三个调用等价：
+
+```csharp
+SerializerBlocks.Deserialize<Point2D>("Point2D(3.5, -2.1)");
+SerializerBlocks.Deserialize<Point2D>("  Point2D( 3.5 ,  -2.1 )  ");
+SerializerBlocks.Deserialize<Point2D>("Point2D(\n  3.5,\n  -2.1\n)");
+```
+
+设计原理：将空白符预处理从扫描器中分离，使得生成的扫描器代码无需为每个 literal text 节点插入空白符跳过分支——集中式预处理一次，后续所有类型共享。详见 [缩进与空白符处理](/guide/indent-and-whitespace)。
+
 ## 参见
 
 - [模板写作指南](./template-writing)：12 个场景的完整模板示例

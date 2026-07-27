@@ -11,6 +11,9 @@
 | 字段 (Field) | `<float X>` 中的 `float` 类型和 `X` 字段名 |
 | 可选块 (Optional Block) | `<optional>...</optional>` 包裹的模板片段，匹配失败回退 |
 | 重复块 (Repetition Block) | `<repetition><first>...</first><body>...</body></repetition>` 包裹的集合片段 |
+| 缩进块 (Indent Block) | `<indent>...</indent>` 包裹的模板片段。Emit 时输出层级缩进，Scan 时为 no-op |
+| compactWhitespace | `ScanCodeEmitter` 编译期选项：生成代码前去除 literal text 中的空白符，减小生成代码体积 |
+| WhitespaceStripper | 运行时输入预处理：两阶段零分配 `string.Create` 实现，剔除引号外部空白符 |
 
 ## 运行时
 
@@ -19,6 +22,9 @@
 | 扫描器 (Scanner) | 从 `ReadOnlySpan<char>` 解析出 `TData` 的过程 |
 | 发射器 (Emitter) | 将 `TData` 序列化到 `StringBuilder` 的过程 |
 | 序列化器块 (Serializer Block) | `ISerializerBlock<T>` 实例，同时持有扫描和发射能力 |
+| 非泛型标记接口 | `ISerializerBlock`（无泛型参数），使 `ISerializerBlock<T>` 实例可被 `params ISerializerBlock[]` 接收 |
+| 一行式 API (Convenience API) | `SerializerBlocks.Serialize<T>()` / `Deserialize<T>()` / `TryScan<T>()` 单方法调用封装，消除 TryGet + StringBuilder 样板 |
+| Builder | `SerializerBlocks.Builder` 嵌套类，`AddBlock<T>()` 返回的流式链式注册构建器 |
 
 ## 编译期
 
@@ -28,6 +34,8 @@
 | 接口分派 (Interface Dispatch) | 扫描器按声明顺序尝试所有具现类型，首个推进者胜出 |
 | 默认接口模板 | 系统内置的接口模板（IList、ISet、IReadOnlyList、IDictionary、IReadOnlyDictionary、Array） |
 | Roslyn 回退 | 不在 openGenerics 中时，通过 AllInterfaces 查找匹配接口 |
+| SSR007 | 编译期错误：尝试用 `[ExternalTemplate]` 覆盖 13 种内置类型之一 |
+| Array 缓冲区 | `T[]` 集合字段使用的代码生成路径：预分配缓冲区 + 跟踪计数 + 最终 `Array.Copy`，与 `List<T>` 的 `.Add()` 路径相对 |
 
 ## 泛型
 
@@ -40,5 +48,5 @@
 ## 参见
 
 - [核心概念](/guide/core-concepts)：端到端架构全景
-- [模板语法](/guide/template-syntax)：四种原语与术语使用
+- [模板语法](/guide/template-syntax)：五种原语与术语使用
 - [内部机制](/technical/internals)：术语对应的源码细节

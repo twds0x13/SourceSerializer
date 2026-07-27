@@ -26,6 +26,7 @@ flowchart TD
     N --> O["SerializerBlocks.AddBlock&lt;T&gt;()<br/>运行时注册表"]
     O --> P["TryGet&lt;T&gt;(out block)<br/>获取 ISerializerBlock&lt;T&gt;"]
     P --> Q["block.Scan / block.Emit<br/>解析 / 序列化"]
+    Q --> R["WhitespaceStripper.Strip()<br/>Deserialize/TryScan 自动调用"]
 ```
 
 管线的三个关键边界：
@@ -128,6 +129,14 @@ block.Scan("Point2D(3.5, -2.1)".AsSpan(), 0, out Point2D v);
 var sb = new StringBuilder();
 block.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
 // sb.ToString() == "Point2D(3.5, -2.1)"
+```
+
+直接调用 `block.Scan` 时，输入 blank 不会被自动剔除——如果需要空白符容忍，应使用便捷方法 `Deserialize<T>()` 或 `TryScan<T>()`，它们在调用 `Scan` 前自动执行 `WhitespaceStripper.Strip()`，使得调用方无需关心输入中的空白符。
+
+```csharp
+// 便捷方法：自动空白符剔除
+Point2D v = SerializerBlocks.Deserialize<Point2D>("  Point2D( 3.5 ,  -2.1 )  ");
+// 等价于直接调用 block.Scan 但无需手动 Strip
 ```
 
 ## 两个注册表

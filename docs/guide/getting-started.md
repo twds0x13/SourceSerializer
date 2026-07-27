@@ -55,6 +55,29 @@ emit.Emit(sb, new Point2D { X = 3.5f, Y = -2.1f });
 Console.WriteLine(sb.ToString()); // "Point2D(3.5, -2.1)"
 ```
 
+## 一行式便捷调用
+
+对于简单场景，可以直接使用 `SerializerBlocks` 的三个便捷方法，消除 `TryGet` + `StringBuilder` 样板代码：
+
+```csharp
+// 序列化
+string s = SerializerBlocks.Serialize(new Point2D { X = 3.5f, Y = -2.1f });
+
+// 反序列化（自动空白符剔除）
+Point2D v = SerializerBlocks.Deserialize<Point2D>("Point2D(3.5, -2.1)");
+
+// 非抛出式反序列化
+if (SerializerBlocks.TryScan<Point2D>(input, out var result))
+    Console.WriteLine(result);
+```
+
+输入中的空白符被 `WhitespaceStripper` 自动剔除，以下写法均等价：
+
+```csharp
+SerializerBlocks.Deserialize<Point2D>("Point2D(3.5, -2.1)");
+SerializerBlocks.Deserialize<Point2D>("  Point2D( 3.5 ,  -2.1 )  ");
+```
+
 ## 下一步
 
 - [模板语法](./template-syntax): compact 格式、XML 格式、四种原语、嵌套、泛型集合
