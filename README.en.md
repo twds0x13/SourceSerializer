@@ -23,7 +23,7 @@ Compile-time serialization: declare schema with attributes, source generator emi
 - `[Template("...")]` declares struct layout: fields, separators, optional blocks, repeatable sequences
 - Unmanaged path: span scanner, zero heap allocation, Burst-compatible
 - Serialization direction: compile-time generated `SerializerBlocks`, struct to StringBuilder with zero allocation
-- Built-in scanners and emitters for 13 C# primitive types (float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string)
+- Built-in scanners and emitters for 16 C# primitive types (float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string, IntPtr, UIntPtr, Guid)
 
 ## Installation
 

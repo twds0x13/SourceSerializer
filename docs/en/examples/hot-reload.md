@@ -46,7 +46,7 @@ public readonly struct Block_HotSword : ISerializerBlock<HotSword>
 }
 ```
 
-Hand-written blocks can call all 13 built-in `public static` Scan/Emit methods on `SerializerRegistry`, as well as SG-generated `Scan_Xxx`/`Emit_Xxx` methods on `GeneratedSerializers`.
+Hand-written blocks can call all 16 built-in `public static` Scan/Emit methods on `SerializerRegistry`, as well as SG-generated `Scan_Xxx`/`Emit_Xxx` methods on `GeneratedSerializers`.
 
 ## Registration and Usage
 
@@ -99,4 +99,4 @@ See `HotReloadTests.cs` for complete runnable test cases.
 
 - [Hot Reload & Cross-Assembly Registration](../guide/hot-reload): concept walkthrough and full scenario
 - [SerializerBlocks API](../api/serializer-blocks): AddBlock, RemoveBlock, chain merge API signatures
-- [SerializerRegistry API](../api/serializer-registry): Scan/Emit methods for 13 built-in types
+- [SerializerRegistry API](../api/serializer-registry): Scan/Emit methods for 16 built-in types

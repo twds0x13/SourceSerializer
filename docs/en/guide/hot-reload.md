@@ -74,7 +74,7 @@ public readonly struct Block_HotSword : ISerializerBlock<HotSword>
 }
 ```
 
-Hand-written blocks can call all 13 built-in types' public static Scan/Emit methods on `SerializerRegistry`, plus any `GeneratedSerializers.Scan_Xxx/Emit_Xxx` methods for types in the same assembly.
+Hand-written blocks can call all 16 built-in types' public static Scan/Emit methods on `SerializerRegistry`, plus any `GeneratedSerializers.Scan_Xxx/Emit_Xxx` methods for types in the same assembly.
 
 ## Registration and Initialization
 

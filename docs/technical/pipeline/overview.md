@@ -76,7 +76,7 @@ public static partial class GeneratedSerializers
 }
 ```
 
-`SerializerBlocks.EnsureInitialized()` 在首次 `TryGet<T>` 时通过 AppDomain 反射扫描所有已加载程序集，自动发现并调用所有 `GeneratedSerializers.Init()`。内置类型（13 种）的 `BuiltinBlock_*` 在扫描完成后注册，作为回退。
+`SerializerBlocks.EnsureInitialized()` 在首次 `TryGet<T>` 时通过 AppDomain 反射扫描所有已加载程序集，自动发现并调用所有 `GeneratedSerializers.Init()`。内置类型（16 种）的 `BuiltinBlock_*` 在扫描完成后注册，作为回退。
 
 **接口类型的链合并**：同一接口的多次 `AddBlock` 调用（来自不同程序集的 `Init()`）自动追加到 `ChainBlock<T>` 分发链。热更 DLL 加载后调用自身的 `Init()`，新类型自动追加到已有接口链尾。
 

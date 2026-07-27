@@ -57,6 +57,9 @@ namespace SourceSerializer
             AddBlock<bool>(new BuiltinBlocks.BuiltinBlock_Bool());
             AddBlock<char>(new BuiltinBlocks.BuiltinBlock_Char());
             AddBlock<string>(new BuiltinBlocks.BuiltinBlock_String());
+            AddBlock<IntPtr>(new BuiltinBlocks.BuiltinBlock_IntPtr());
+            AddBlock<UIntPtr>(new BuiltinBlocks.BuiltinBlock_UIntPtr());
+            AddBlock<Guid>(new BuiltinBlocks.BuiltinBlock_Guid());
         }
 
         /// <summary>

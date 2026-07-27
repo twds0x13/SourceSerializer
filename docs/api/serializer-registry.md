@@ -1,6 +1,6 @@
 # `SerializerRegistry`
 
-内置类型注册表。提供 13 种 C# 内置 unmanaged 类型的零分配 span 扫描方法。
+内置类型注册表。提供 16 种 C# 内置 unmanaged 类型的零分配 span 扫描方法。
 
 ## 签名
 
@@ -24,6 +24,9 @@ public static class SerializerRegistry
 | `sbyte` | `Scan_Sbyte` | 委托到 Scan_Int，结果截断为 sbyte |
 | `bool` | `Scan_Bool` | 精确匹配 `true` 或 `false` |
 | `char` | `Scan_Char` | 读取单个字符 |
+| `IntPtr` | `Scan_IntPtr` | 可选符号、整数（平台相关宽度：4 或 8 字节） |
+| `UIntPtr` | `Scan_UIntPtr` | 无符号整数（平台相关宽度） |
+| `Guid` | `Scan_Guid` | 标准 GUID 格式（36 字符带连字符） |
 | `string` | `Scan_String` | 引号包裹或非空白字符序列，Emit 始终加引号 |
 
 ## 扫描方法约定

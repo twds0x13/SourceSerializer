@@ -30,4 +30,4 @@ Generated `SerializerScanners.g.cs` and `SerializerEmitters.g.cs` no longer cont
 
 ### Built-in Type Count
 
-Built-in types increased from 12 to 17: added `decimal`, `nint`, `nuint`, `Half`, `string`.
+Built-in types: 16 total — float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string, IntPtr, UIntPtr, Guid.

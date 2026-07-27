@@ -1,6 +1,6 @@
 # `SerializerRegistry`
 
-Built-in type registry. Provides zero-allocation span scanner methods for 13 C# built-in unmanaged types.
+Built-in type registry. Provides zero-allocation span scanner methods for 16 C# built-in unmanaged types.
 
 ## Signature
 
@@ -24,6 +24,9 @@ public static class SerializerRegistry
 | `sbyte` | `Scan_Sbyte` | Delegates to Scan_Int, result truncated to sbyte |
 | `bool` | `Scan_Bool` | Exact match of `true` or `false` |
 | `char` | `Scan_Char` | Reads a single character |
+| `IntPtr` | `Scan_IntPtr` | Optional sign, integer (platform-dependent width: 4 or 8 bytes) |
+| `UIntPtr` | `Scan_UIntPtr` | Unsigned integer (platform-dependent width) |
+| `Guid` | `Scan_Guid` | Standard GUID format (36 characters with hyphens) |
 | `string` | `Scan_String` | Quoted or unquoted character sequence; Emit always adds quotes |
 
 ## Scanner Method Convention

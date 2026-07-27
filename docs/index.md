@@ -25,8 +25,8 @@ features:
     details: GeneratedSerializers.Init() 反射自动发现。接口分发链合并（ChainBlock），热更 DLL 可动态扩展已有接口的具现类型。
   - title: 五种 XML 原语 + 集合格式
     details: 裸文字、字段、可选块、重复块、缩进块。List()/Dict()/HashSet() 函数式集合格式，字符串始终加引号。
-  - title: 13 种内置类型扫描器
-    details: float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string。零分配手写 span 扫描器，public API。
+  - title: 16 种内置类型扫描器
+    details: float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string、IntPtr、UIntPtr、Guid。零分配手写 span 扫描器，public API。
   - title: 编译期全覆盖诊断
     details: 7 种编译期诊断（SSR001-SSR007）：语法错误、循环依赖、只读字段、缺失类型、重复块标量、模板歧义、内置类型覆盖拦截。全部在编译期拦截。
   - title: 泛型合成 + 接口分派

@@ -25,8 +25,8 @@ features:
     details: GeneratedSerializers.Init() discovered via AppDomain reflection. Interface dispatch chain merging (ChainBlock) lets hot-reload DLLs extend existing interfaces dynamically.
   - title: Five XML Primitives + Collection Format
     details: Literal text, field, optional block, repetition block, indent block. List()/Dict()/HashSet() function-call collection format, strings always quoted.
-  - title: 13 Built-in Type Scanners
-    details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string. Hand-written zero-allocation span scanners, public API.
+  - title: 16 Built-in Type Scanners
+    details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string, IntPtr, UIntPtr, Guid. Hand-written zero-allocation span scanners, public API.
   - title: Complete Compile-time Diagnostics
     details: "7 diagnostic codes (SSR001-SSR007) — syntax errors, circular deps, readonly fields, missing types, scalar-in-repetition, template ambiguity, built-in type override prevention. All caught at compile time."
   - title: Generic Synthesis + Interface Dispatch

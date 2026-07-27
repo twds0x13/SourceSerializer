@@ -16,7 +16,7 @@ Complete interface for the compile-time source generator and runtime registries.
 
 | Type | Description |
 |------|-------------|
-| [`SerializerRegistry`](./serializer-registry) | Zero-allocation span scanners and emitters for 17 built-in types |
+| [`SerializerRegistry`](./serializer-registry) | Zero-allocation span scanners and emitters for 16 built-in types |
 | [`SerializerBlocks`](./serializer-blocks) | Bidirectional serializer block registry, `TryGet<T>` for Scan + Emit |
 
 ## Architecture

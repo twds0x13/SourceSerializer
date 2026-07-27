@@ -59,6 +59,17 @@ namespace SourceSerializer.Generator
         // 常量
         // ═══════════════════════════════════════════════════════
 
+        /// <summary>内置类型名 → C# 变量类型名（关键字类型用小写，PascalCase 类型用原名）</summary>
+        private static readonly Dictionary<string, string> BuiltinCSharpTypeNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["float"] = "float", ["double"] = "double", ["int"] = "int",
+            ["uint"] = "uint", ["long"] = "long", ["ulong"] = "ulong",
+            ["short"] = "short", ["ushort"] = "ushort", ["byte"] = "byte",
+            ["sbyte"] = "sbyte", ["bool"] = "bool", ["char"] = "char",
+            ["string"] = "string",
+            ["IntPtr"] = "IntPtr", ["UIntPtr"] = "UIntPtr", ["Guid"] = "Guid",
+        };
+
         /// <summary>顶层方法体单层缩进（12 空格 = 3 层嵌套: class > method > body）</summary>
         private const string IndentTop = "            ";
 
@@ -378,7 +389,7 @@ namespace SourceSerializer.Generator
             if (BuiltinTypeNames.All.Contains(resolvedType))
             {
                 string scannerMethod = $"Scan_{char.ToUpperInvariant(resolvedType[0])}{resolvedType.Substring(1)}";
-                string csharpType = resolvedType.ToLowerInvariant();
+                string csharpType = BuiltinCSharpTypeNames.TryGetValue(resolvedType, out var ct) ? ct : resolvedType;
                 string aliasNote = resolvedType != typeAlias ? $" (alias→{resolvedType})" : "";
                 string preVar = EmitHelpers.GetUniqueVar("pre");
 
@@ -723,7 +734,7 @@ namespace SourceSerializer.Generator
         {
             string resolved = typeAliases.TryGetValue(typeAlias, out var backing) ? backing : typeAlias;
             if (BuiltinTypeNames.All.Contains(resolved))
-                return resolved.ToLowerInvariant();
+                return BuiltinCSharpTypeNames.TryGetValue(resolved, out var cst) ? cst : resolved;
             return typeAlias;
         }
 

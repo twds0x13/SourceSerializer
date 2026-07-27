@@ -71,7 +71,7 @@ public readonly struct Block_HotSword : ISerializerBlock<HotSword>
 }
 ```
 
-手写 block 可调用 `SerializerRegistry` 的全部 13 种内置类型的 public static Scan/Emit 方法，以及 SG 为同程序集类型生成的 `GeneratedSerializers.Scan_Xxx/Emit_Xxx` 方法。
+手写 block 可调用 `SerializerRegistry` 的全部 16 种内置类型的 public static Scan/Emit 方法，以及 SG 为同程序集类型生成的 `GeneratedSerializers.Scan_Xxx/Emit_Xxx` 方法。
 
 ## 注册与初始化
 

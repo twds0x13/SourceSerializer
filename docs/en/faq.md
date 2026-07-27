@@ -70,7 +70,7 @@ Does the template use `<indent>` tags? `<indent>...</indent>` injects newlines a
 | SSR004 | Missing template dependency | Field type has no `[Template]` and is not a built-in type | Add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
 | SSR005 | Scalar field in repetition | Non-collection field inside `<repetition>` | Use a collection type like `List<T>` |
 | SSR006 | Template ambiguity | Two concrete types sharing an interface have prefix-ambiguous templates | Adjust templates so prefixes are distinguishable |
-| SSR007 | Overriding built-in type | `[ExternalTemplate]` targets one of the 13 built-in types | Remove ExternalTemplate, wrap in a higher-level template |
+| SSR007 | Overriding built-in type | `[ExternalTemplate]` targets one of the 16 built-in types | Remove ExternalTemplate, wrap in a higher-level template |
 
 ## Performance
 
@@ -116,7 +116,7 @@ DLL.Invoke("GeneratedSerializers.Init");  // 2. Explicit init
 
 ### Symptom: ExternalTemplate override of built-in types does not work
 
-`ExternalTemplate(typeof(float), ...)` triggers SSR007 at compile time. The 13 built-in types are handled by hand-written zero-allocation span scanners and cannot be overridden.
+`ExternalTemplate(typeof(float), ...)` triggers SSR007 at compile time. The 16 built-in types are handled by hand-written zero-allocation span scanners and cannot be overridden.
 
 Solution: wrap the built-in type in a higher-level template:
 

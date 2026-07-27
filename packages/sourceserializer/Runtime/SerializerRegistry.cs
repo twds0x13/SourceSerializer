@@ -400,6 +400,48 @@ namespace SourceSerializer
             return pos;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Scan_IntPtr(ReadOnlySpan<char> src, int pos, out IntPtr value)
+        {
+            value = default;
+            long result;
+            int next = Scan_Long(src, pos, out result);
+            if (next == pos)
+                return pos;
+            value = (IntPtr)result;
+            return next;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Scan_UIntPtr(ReadOnlySpan<char> src, int pos, out UIntPtr value)
+        {
+            value = default;
+            ulong result;
+            int next = Scan_Ulong(src, pos, out result);
+            if (next == pos)
+                return pos;
+            value = (UIntPtr)result;
+            return next;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Scan_Guid(ReadOnlySpan<char> src, int pos, out Guid value)
+        {
+            value = default;
+            if (pos >= src.Length)
+                return pos;
+            var slice = src.Slice(pos);
+#if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
+            if (!Guid.TryParse(slice, out value))
+                return pos;
+#else
+            if (!Guid.TryParse(slice.ToString(), out value))
+                return pos;
+#endif
+            // Guid.TryParse 不报告消费长度，用标准格式长度 36 字符推进
+            return pos + 36;
+        }
+
         /// <summary>
         /// 将字符串追加到 StringBuilder，始终加引号以消除与数值类型的歧义。
         /// </summary>
@@ -459,5 +501,14 @@ namespace SourceSerializer
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Emit_Char(StringBuilder sb, char value) => sb.Append(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Emit_IntPtr(StringBuilder sb, IntPtr value) => sb.Append(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Emit_UIntPtr(StringBuilder sb, UIntPtr value) => sb.Append(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Emit_Guid(StringBuilder sb, Guid value) => sb.Append(value.ToString("D"));
     }
 }

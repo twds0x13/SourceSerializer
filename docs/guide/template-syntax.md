@@ -108,9 +108,9 @@ flowchart TD
 
 ## 内置类型
 
-13 种 C# 内置类型直接可用，无需额外配置：
+16 种 C# 内置类型直接可用，无需额外配置：
 
-float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string。
+float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string、IntPtr、UIntPtr、Guid。
 
 每个内置类型有对应的零分配 span 扫描器（如 `Scan_Float`、`Scan_Int`），由 `SerializerRegistry` 提供。
 

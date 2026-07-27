@@ -120,5 +120,29 @@ namespace SourceSerializer
             public void Emit(StringBuilder sb, string value) =>
                 SerializerRegistry.Emit_String(sb, value);
         }
+
+        internal readonly struct BuiltinBlock_IntPtr : ISerializerBlock<IntPtr>
+        {
+            public int Scan(ReadOnlySpan<char> text, int pos, out IntPtr value) =>
+                SerializerRegistry.Scan_IntPtr(text, pos, out value);
+            public void Emit(StringBuilder sb, IntPtr value) =>
+                SerializerRegistry.Emit_IntPtr(sb, value);
+        }
+
+        internal readonly struct BuiltinBlock_UIntPtr : ISerializerBlock<UIntPtr>
+        {
+            public int Scan(ReadOnlySpan<char> text, int pos, out UIntPtr value) =>
+                SerializerRegistry.Scan_UIntPtr(text, pos, out value);
+            public void Emit(StringBuilder sb, UIntPtr value) =>
+                SerializerRegistry.Emit_UIntPtr(sb, value);
+        }
+
+        internal readonly struct BuiltinBlock_Guid : ISerializerBlock<Guid>
+        {
+            public int Scan(ReadOnlySpan<char> text, int pos, out Guid value) =>
+                SerializerRegistry.Scan_Guid(text, pos, out value);
+            public void Emit(StringBuilder sb, Guid value) =>
+                SerializerRegistry.Emit_Guid(sb, value);
+        }
     }
 }

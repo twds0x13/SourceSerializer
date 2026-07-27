@@ -70,7 +70,7 @@
 | SSR004 | 缺失模板依赖 | 字段类型无 `[Template]` 且不是内置类型 | 加 `[Template]`、`[ExternalTemplate]` 或 `[TemplateIgnore]` |
 | SSR005 | 重复块内的标量字段 | 非集合字段在 `<repetition>` 内 | 改用 `List<T>` 等集合类型 |
 | SSR006 | 模板歧义 | 同接口的两个具现类型模板互为前缀 | 调整模板使前缀可区分 |
-| SSR007 | 覆盖内置类型 | `[ExternalTemplate]` 目标为 13 种内置类型之一 | 移除 ExternalTemplate，在上层模板包装 |
+| SSR007 | 覆盖内置类型 | `[ExternalTemplate]` 目标为 16 种内置类型之一 | 移除 ExternalTemplate，在上层模板包装 |
 
 ## 性能
 
@@ -116,7 +116,7 @@ DLL.Invoke("GeneratedSerializers.Init");  // 2. 显式初始化
 
 ### 症状：`ExternalTemplate` 覆盖内置类型不生效
 
-`ExternalTemplate(typeof(float), ...)` 触发 SSR007 编译错误。13 种内置类型由手写零分配 span 扫描器处理，不可覆盖。
+`ExternalTemplate(typeof(float), ...)` 触发 SSR007 编译错误。16 种内置类型由手写零分配 span 扫描器处理，不可覆盖。
 
 解决方案：在更上层模板包装内置类型：
 

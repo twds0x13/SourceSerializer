@@ -172,7 +172,7 @@ public static partial class GeneratedSerializers
 
 ## 内置类型注册
 
-`EnsureInitialized()` 在扫描完所有 `GeneratedSerializers.Init()` 后注册 13 种内置类型（float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string）的 `BuiltinBlock_*`，确保内置类型始终可用。
+`EnsureInitialized()` 在扫描完所有 `GeneratedSerializers.Init()` 后注册 16 种内置类型（float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string、IntPtr、UIntPtr、Guid）的 `BuiltinBlock_*`，确保内置类型始终可用。
 
 ## 内部实现
 

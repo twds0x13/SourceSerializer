@@ -12,7 +12,7 @@ SourceSerializer 的所有错误和警告在编译期通过 Roslyn 诊断报告�
 | SSR004 | Error | Missing template dependency | 模板引用了无 `[Template]` 且非内置类型的字段类型，且字段未标记 `[TemplateIgnore]` |
 | SSR005 | Error | Scalar field inside `<repetition>` | 非集合字段出现在 `<repetition>` 块内 |
 | SSR006 | Error | Template ambiguity | 同接口的两种具现类型模板互为前缀，接口分派无法可靠区分 |
-| SSR007 | Error | Cannot override built-in type | `[ExternalTemplate]` 覆盖了 13 种内置类型之一 |
+| SSR007 | Error | Cannot override built-in type | `[ExternalTemplate]` 覆盖了 16 种内置类型之一 |
 
 ## SSR001：模板解析错误
 
@@ -74,7 +74,7 @@ public readonly struct Damage
 
 ## SSR004：缺失模板依赖
 
-字段类型既不是 13 种内置类型，也没有 `[Template]` 标注，且字段未标记 `[TemplateIgnore]`。编译将停止。
+字段类型既不是 16 种内置类型，也没有 `[Template]` 标注，且字段未标记 `[TemplateIgnore]`。编译将停止。
 
 触发示例：
 
@@ -147,7 +147,7 @@ struct Vec3 : IVector { float X; float Y; float Z; }
 
 ## SSR007：覆盖内置类型
 
-尝试用 `[ExternalTemplate]` 覆盖 13 种内置类型之一时触发。
+尝试用 `[ExternalTemplate]` 覆盖 16 种内置类型之一时触发。
 
 触发示例：
 
@@ -170,4 +170,4 @@ struct MyFloat { float Value; }
 
 - [模板语法](./template-syntax): compact 与 XML 格式，五种原语
 - [Managed vs Unmanaged](./managed-vs-unmanaged): 类型策略选择
-- [SerializerRegistry API](../api/serializer-registry): 13 种内置类型扫描与发射方法
+- [SerializerRegistry API](../api/serializer-registry): 16 种内置类型扫描与发射方法

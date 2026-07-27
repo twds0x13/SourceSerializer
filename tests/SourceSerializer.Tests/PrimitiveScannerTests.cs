@@ -49,6 +49,15 @@ public struct BoolField { public bool Val; }
 [Template("<char Val>")]
 public struct CharField { public char Val; }
 
+[Template("<IntPtr Val>")]
+public struct IntPtrOnly { public IntPtr Val; }
+
+[Template("<UIntPtr Val>")]
+public struct UIntPtrOnly { public UIntPtr Val; }
+
+[Template("<Guid Val>")]
+public struct GuidOnly { public Guid Val; }
+
 [Template("<double Val>")]
 public struct DoubleField { public double Val; }
 
@@ -345,4 +354,20 @@ public class PrimitiveScannerTests
     [Test] public void Scan_Double_MaxValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(double.MaxValue.ToString("G17")).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MaxValue)); }
     [Test] public void Scan_Double_MinValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(double.MinValue.ToString("G17")).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MinValue)); }
     [Test] public void Scan_Float_NegZero() { Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("-0").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(-0f)); }
+
+    // ── IntPtr / UIntPtr / Guid ──
+
+    [Test] public void IntPtr_Positive() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((IntPtr)42)); }
+    [Test] public void IntPtr_Zero() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("0").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(IntPtr.Zero)); }
+    [Test] public void IntPtr_Negative() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("-1").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((IntPtr)(-1))); }
+    [Test] public void IntPtr_Roundtrip() { Roundtrip(new IntPtrOnly { Val = (IntPtr)123456789 }, (a, b) => Assert.That(a.Val, Is.EqualTo(b.Val))); }
+
+    [Test] public void UIntPtr_Positive() { Assert.That(SerializerBlocks.TryGet<UIntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((UIntPtr)42)); }
+    [Test] public void UIntPtr_Zero() { Assert.That(SerializerBlocks.TryGet<UIntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("0").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(UIntPtr.Zero)); }
+    [Test] public void UIntPtr_Roundtrip() { Roundtrip(new UIntPtrOnly { Val = (UIntPtr)123456789 }, (a, b) => Assert.That(a.Val, Is.EqualTo(b.Val))); }
+
+    [Test] public void Guid_StandardFormat() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); var g = Guid.NewGuid(); string s = g.ToString("D"); int r = b.Scan(WhitespaceStripper.Strip(s).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(g)); }
+    [Test] public void Guid_Empty() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("00000000-0000-0000-0000-000000000000").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(Guid.Empty)); }
+    [Test] public void Guid_Invalid() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("not-a-guid").AsSpan(), 0, out var v); Assert.That(r, Is.EqualTo(0)); }
+    [Test] public void Guid_Roundtrip() { Roundtrip(new GuidOnly { Val = Guid.NewGuid() }, (a, b) => Assert.That(a.Val, Is.EqualTo(b.Val))); }
 }

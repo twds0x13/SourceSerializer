@@ -45,7 +45,7 @@ flowchart LR
     end
     subgraph RUNTIME["运行时"]
         SB["SerializerBlocks<br/>用户类型注册表"]
-        SR["SerializerRegistry<br/>13 种内置类型"]
+        SR["SerializerRegistry<br/>16 种内置类型"]
         IB["ISerializerBlock&lt;T&gt;<br/>Scan + Emit"]
     end
     SG -->|"生成 Scan/Emit/Init"| GS
@@ -57,7 +57,7 @@ flowchart LR
 
 `GeneratedSerializers` 是 SG 三文件的汇合点：`SerializerScanners.g.cs` 贡献 `Scan_Xxx` 方法，`SerializerEmitters.g.cs` 贡献 `Emit_Xxx` 方法，`SerializerBlocks.g.cs` 贡献 `Init()` 注册入口和 `Block_Xxx` 包装结构体。三个 `partial class` 声明在编译期合并为一个类。
 
-`SerializerBlocks` 是运行时的中心注册点。所有用户类型（SG 生成的或手写的）通过 `AddBlock<T>` 注册，通过 `TryGet<T>` 查询。`SerializerRegistry` 提供 13 种内置类型的零分配 span 扫描器，作为 `TryGet<T>` 未命中时的回退。
+`SerializerBlocks` 是运行时的中心注册点。所有用户类型（SG 生成的或手写的）通过 `AddBlock<T>` 注册，通过 `TryGet<T>` 查询。`SerializerRegistry` 提供 16 种内置类型的零分配 span 扫描器，作为 `TryGet<T>` 未命中时的回退。
 
 ## 一个模板的生命周期
 
@@ -145,7 +145,7 @@ SourceSerializer 有两个注册表，职责互补：
 
 | | SerializerRegistry | SerializerBlocks |
 |------|------|------|
-| 注册内容 | 13 种内置类型的 `Scan_Xxx` / `Emit_Xxx` 方法 | 用户类型的 `ISerializerBlock<T>` 实现 |
+| 注册内容 | 16 种内置类型的 `Scan_Xxx` / `Emit_Xxx` 方法 | 用户类型的 `ISerializerBlock<T>` 实现 |
 | 谁写入 | 库代码，编译期固定 | SG 编译期生成 + 热更 DLL 运行时注册 |
 | 如何获取 | 直接调用静态方法：`SerializerRegistry.Scan_Float(text, pos, out val)` | `SerializerBlocks.TryGet<T>(out block)` |
 | 可扩展 | 否 | 是（`AddBlock` / `RemoveBlock` / `AddBlocks`） |

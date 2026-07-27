@@ -23,7 +23,7 @@
 - `[Template("...")]` 声明结构体布局：字段、分隔符、可选块、可重复序列
 - Unmanaged 路径：span 扫描器，零堆分配，Burst 兼容
 - 序列化方向：编译期生成 `SerializerBlocks`，struct 到 StringBuilder 零分配
-- 13 种 C# 内置类型的内置扫描器与发射器（float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string）
+- 16 种 C# 内置类型的内置扫描器与发射器（float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string、IntPtr、UIntPtr、Guid）
 
 ## 安装
 

@@ -108,9 +108,9 @@ flowchart TD
 
 ## Built-in Types
 
-13 C# built-in types are available without extra configuration:
+16 C# built-in types are available without extra configuration:
 
-float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string.
+float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string, IntPtr, UIntPtr, Guid.
 
 Each built-in type has a corresponding zero-allocation span scanner (e.g., `Scan_Float`, `Scan_Int`) provided by `SerializerRegistry`.
 

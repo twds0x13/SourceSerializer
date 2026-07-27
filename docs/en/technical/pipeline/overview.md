@@ -76,7 +76,7 @@ public static partial class GeneratedSerializers
 }
 ```
 
-`SerializerBlocks.EnsureInitialized()` reflectively scans all loaded assemblies on the first `TryGet<T>` call, automatically discovering and invoking every `GeneratedSerializers.Init()`. Built-in types (13 total) register their `BuiltinBlock_*` after the scan completes, serving as a fallback.
+`SerializerBlocks.EnsureInitialized()` reflectively scans all loaded assemblies on the first `TryGet<T>` call, automatically discovering and invoking every `GeneratedSerializers.Init()`. Built-in types (16 total) register their `BuiltinBlock_*` after the scan completes, serving as a fallback.
 
 **Interface chain merge**: Multiple `AddBlock` calls for the same interface (originating from `Init()` in different assemblies) automatically append to a `ChainBlock<T>` dispatch chain. When a hot-reload DLL calls its own `Init()` after loading, new types are automatically appended to the tail of existing interface chains.
 

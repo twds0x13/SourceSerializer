@@ -172,7 +172,7 @@ public static partial class GeneratedSerializers
 
 ## Built-in Type Registration
 
-After scanning all `GeneratedSerializers.Init()` methods, `EnsureInitialized()` registers `BuiltinBlock_*` implementations for all 13 built-in types (float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string), ensuring built-in serialization is always available.
+After scanning all `GeneratedSerializers.Init()` methods, `EnsureInitialized()` registers `BuiltinBlock_*` implementations for all 16 built-in types (float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string, IntPtr, UIntPtr, Guid), ensuring built-in serialization is always available.
 
 ## Internal Implementation
 

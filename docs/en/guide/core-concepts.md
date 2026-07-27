@@ -45,7 +45,7 @@ flowchart LR
     end
     subgraph RUNTIME["Runtime"]
         SB["SerializerBlocks<br/>user-type registry"]
-        SR["SerializerRegistry<br/>13 built-in types"]
+        SR["SerializerRegistry<br/>16 built-in types"]
         IB["ISerializerBlock&lt;T&gt;<br/>Scan + Emit"]
     end
     SG -->|"generates Scan/Emit/Init"| GS
@@ -57,7 +57,7 @@ flowchart LR
 
 `GeneratedSerializers` is the merge point for all three SG output files: `SerializerScanners.g.cs` contributes `Scan_Xxx` methods, `SerializerEmitters.g.cs` contributes `Emit_Xxx` methods, and `SerializerBlocks.g.cs` contributes the `Init()` registration entry point and `Block_Xxx` wrapper structs. Three `partial class` declarations merge into one class at compile time.
 
-`SerializerBlocks` is the central runtime registration point. All user types (SG-generated or hand-written) register via `AddBlock<T>` and are queried via `TryGet<T>`. `SerializerRegistry` provides zero-allocation span scanners for the 13 built-in types, serving as a fallback when `TryGet<T>` does not match.
+`SerializerBlocks` is the central runtime registration point. All user types (SG-generated or hand-written) register via `AddBlock<T>` and are queried via `TryGet<T>`. `SerializerRegistry` provides zero-allocation span scanners for the 16 built-in types, serving as a fallback when `TryGet<T>` does not match.
 
 ## Lifecycle of a Template
 
@@ -137,7 +137,7 @@ SourceSerializer has two registries with complementary responsibilities:
 
 | | SerializerRegistry | SerializerBlocks |
 |------|------|------|
-| Registered content | `Scan_Xxx` / `Emit_Xxx` methods for 13 built-in types | `ISerializerBlock<T>` implementations for user types |
+| Registered content | `Scan_Xxx` / `Emit_Xxx` methods for 16 built-in types | `ISerializerBlock<T>` implementations for user types |
 | Who writes | Library code, fixed at compile time | SG at compile time + hot-reload DLLs at runtime |
 | How to access | Direct static call: `SerializerRegistry.Scan_Float(text, pos, out val)` | `SerializerBlocks.TryGet<T>(out block)` |
 | Extensible | No | Yes (`AddBlock` / `RemoveBlock` / `AddBlocks`) |
