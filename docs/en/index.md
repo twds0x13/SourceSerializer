@@ -28,7 +28,7 @@ features:
   - title: 16 Built-in Type Scanners
     details: float, double, int, uint, long, ulong, short, ushort, byte, sbyte, bool, char, string, IntPtr, UIntPtr, Guid. Hand-written zero-allocation span scanners, public API.
   - title: Complete Compile-time Diagnostics
-    details: "7 diagnostic codes (SSR001-SSR007) — syntax errors, circular deps, readonly fields, missing types, scalar-in-repetition, template ambiguity, built-in type override prevention. All caught at compile time."
+    details: "6 diagnostic codes (SSR001-SSR006) — syntax errors, readonly fields, missing types, scalar-in-repetition, template ambiguity, built-in type override prevention. All caught at compile time."
   - title: Generic Synthesis + Interface Dispatch
     details: Open generic templates auto-synthesize concrete instances. Interface fields auto-dispatch to concrete types, first-match-wins.
   - title: Convenience API

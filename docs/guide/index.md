@@ -12,7 +12,7 @@ SourceSerializer 的渐进式学习路径。
 ## 进阶
 
 - [Managed vs Unmanaged](./managed-vs-unmanaged)：双策略选择、分配模型
-- [编译期诊断](./diagnostics)：SSR001-SSR007 错误代码与解决方案
+- [编译期诊断](./diagnostics)：SSR001-SSR006 错误代码与解决方案
 - [缩进与空白符处理](./indent-and-whitespace)：`<indent>` 语法与三层空白符策略
 - [热更新与跨程序集注册](./hot-reload)：手写 block、链合并、AddBlock/RemoveBlock
 

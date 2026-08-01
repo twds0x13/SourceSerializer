@@ -28,7 +28,7 @@ features:
   - title: 16 种内置类型扫描器
     details: float、double、int、uint、long、ulong、short、ushort、byte、sbyte、bool、char、string、IntPtr、UIntPtr、Guid。零分配手写 span 扫描器，public API。
   - title: 编译期全覆盖诊断
-    details: 7 种编译期诊断（SSR001-SSR007）：语法错误、循环依赖、只读字段、缺失类型、重复块标量、模板歧义、内置类型覆盖拦截。全部在编译期拦截。
+    details: 6 种编译期诊断（SSR001-SSR006）：语法错误、只读字段、缺失类型、重复块标量、模板歧义、内置类型覆盖拦截。全部在编译期拦截。
   - title: 泛型合成 + 接口分派
     details: 开放泛型模板自动合成具体实例。接口字段自动分派到具现类型，首个推进者胜出。
   - title: 便利 API

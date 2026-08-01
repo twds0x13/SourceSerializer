@@ -194,7 +194,7 @@ struct Container
 }
 ```
 
-Fields marked `[TemplateIgnore]` do not appear in generated code and do not trigger SSR004. Use for runtime state, caches, and other non-serializable fields.
+Fields marked `[TemplateIgnore]` do not appear in generated code and do not trigger SSR003. Use for runtime state, caches, and other non-serializable fields.
 
 ---
 
@@ -372,7 +372,7 @@ Use XML syntax when `<` or `>` characters need escaping in compact form.
 |-----|-------------|
 | Bare fields without type prefix | Wrap in `TypeName(...)` |
 | `\|` or arbitrary separators | Unified comma `, ` separator |
-| `<repetition>A</repetition>` | `<first>A</first><body>A</body>` |
+| `<repetition><first>A</first><body>A</body></repetition>` | `<first>A</first><body>A</body>` |
 | `<repetition><first>A</first><body>B</body></repetition>` | `<first>A</first><body>B</body>` |
 
 Use `<first>/<body>` directly without wrapping in `<repetition>`. Collection type templates are built into the SG — no manual repetition logic is needed.
@@ -384,17 +384,16 @@ Use `<first>/<body>` directly without wrapping in `<repetition>`. Collection typ
 | Code | Meaning |
 |------|---------|
 | SSR001 | Template syntax error |
-| SSR002 | Circular template dependency |
-| SSR003 | Field referenced in template is readonly with no matching constructor — add constructor or remove readonly |
-| SSR004 | Field type missing `[Template]` — add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
-| SSR005 | Scalar field inside repetition block — use a collection type instead |
-| SSR006 | Template ambiguity across interface implementations: adjust templates so each implementation is distinguishable |
+| SSR002 | Field referenced in template is readonly with no matching constructor — add constructor or remove readonly |
+| SSR003 | Field type missing `[Template]` — add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
+| SSR004 | Scalar field inside repetition block — use a collection type instead |
+| SSR005 | Template ambiguity across interface implementations: adjust templates so each implementation is distinguishable |
 
 ## See Also
 
 - [Getting Started](./getting-started): Installation and first use
 - [Template Syntax](./template-syntax): The five primitives, built-in types, collection formats
-- [Diagnostics](./diagnostics): SSR001-SSR007 reference
+- [Diagnostics](./diagnostics): SSR001-SSR006 reference
 - [Core Concepts](./core-concepts): End-to-end architecture
 - [Example: Enum Tags & Aliases](/en/examples/enum-and-alias)
 - [Example: Custom Generics](/en/examples/custom-generics)

@@ -10,7 +10,7 @@
 
 **检查流程：**
 
-1. 类型是否标注了 `[Template]`？SSR004 在编译期拦截缺失的模板依赖，但热更 DLL 可能跳过 SG 编译。
+1. 类型是否标注了 `[Template]`？SSR003 在编译期拦截缺失的模板依赖，但热更 DLL 可能跳过 SG 编译。
 2. 所有字段是否被 `[TemplateIgnore]` 标记导致空模板？空模板的类型仍然注册，但 Scan 不消费任何输入。
 3. `EnsureInitialized()` 是否被调用？首次 `TryGet<T>` 自动触发，但如果在此之前手动调用了 `RemoveBlock<T>`，再调用 `TryGet<T>` 不会重新触发初始化。
 4. 跨程序集场景：热更 DLL 的 `GeneratedSerializers.Init()` 是否被显式调用？`EnsureInitialized()` 只在首次 `TryGet<T>` 时扫描已加载程序集，后续加载的 DLL 需手动初始化。
@@ -25,7 +25,7 @@
 2. 字符串字段是否用引号包裹？`Scan_String` 要求双引号。
 3. 枚举标签是否拼写正确？`[Tag("fire")]` 的扫描器精确匹配标签字符串。
 4. 可选块：字段为 default 时输入可以省略该字段，这是正常行为而非解析失败。
-5. 接口分派的前缀歧义：如果两个具现类型模板互为前缀（`Vec(x,y)` 和 `Vec(x,y,z)`），扫描器可能在第一个类型处提前停止。检查 SSR006。
+5. 接口分派的前缀歧义：如果两个具现类型模板互为前缀（`Vec(x,y)` 和 `Vec(x,y,z)`），扫描器可能在第一个类型处提前停止。检查 SSR005。
 6. 如果直接调用 `block.Scan(span, pos, out _)`，输入中的空白符**不会**被自动剔除。应使用 `Deserialize<T>()` 或先手动 `WhitespaceStripper.Strip()`。
 
 ### 症状：`Deserialize<T>` 抛出异常
@@ -60,17 +60,16 @@
 
 ## 编译期错误
 
-### SSR001-SSR007 速查表
+### SSR001-SSR006 速查表
 
 | 代码 | 标题 | 触发条件 | 修复 |
 |------|------|---------|------|
 | SSR001 | 模板解析错误 | 模板字符串不符合 compact 或 XML 语法 | 检查尖括号闭合、引号配对 |
-| SSR002 | 循环模板依赖 | A 引用 B，B 引用 A | 打破循环，将一环改为内置类型 |
-| SSR003 | 只读字段 | readonly 字段且无匹配构造器 | 提供参数与字段按名称类型匹配的构造器 |
-| SSR004 | 缺失模板依赖 | 字段类型无 `[Template]` 且不是内置类型 | 加 `[Template]`、`[ExternalTemplate]` 或 `[TemplateIgnore]` |
-| SSR005 | 重复块内的标量字段 | 非集合字段在 `<repetition>` 内 | 改用 `List<T>` 等集合类型 |
-| SSR006 | 模板歧义 | 同接口的两个具现类型模板互为前缀 | 调整模板使前缀可区分 |
-| SSR007 | 覆盖内置类型 | `[ExternalTemplate]` 目标为 16 种内置类型之一 | 移除 ExternalTemplate，在上层模板包装 |
+| SSR002 | 只读字段 | readonly 字段且无匹配构造器 | 提供参数与字段按名称类型匹配的构造器 |
+| SSR003 | 缺失模板依赖 | 字段类型无 `[Template]` 且不是内置类型 | 加 `[Template]`、`[ExternalTemplate]` 或 `[TemplateIgnore]` |
+| SSR004 | 重复块内的标量字段 | 非集合字段在 `<repetition>` 内 | 改用 `List<T>` 等集合类型 |
+| SSR005 | 模板歧义 | 同接口的两个具现类型模板互为前缀 | 调整模板使前缀可区分 |
+| SSR006 | 覆盖内置类型 | `[ExternalTemplate]` 目标为 16 种内置类型之一 | 移除 ExternalTemplate，在上层模板包装 |
 
 ## 性能
 
@@ -116,13 +115,13 @@ DLL.Invoke("GeneratedSerializers.Init");  // 2. 显式初始化
 
 ### 症状：`ExternalTemplate` 覆盖内置类型不生效
 
-`ExternalTemplate(typeof(float), ...)` 触发 SSR007 编译错误。16 种内置类型由手写零分配 span 扫描器处理，不可覆盖。
+`ExternalTemplate(typeof(float), ...)` 触发 SSR006 编译错误。16 种内置类型由手写零分配 span 扫描器处理，不可覆盖。
 
 解决方案：在更上层模板包装内置类型：
 
 ```csharp
 // 错误
-[assembly: ExternalTemplate(typeof(float), "Float(<float>)")]  // SSR007
+[assembly: ExternalTemplate(typeof(float), "Float(<float>)")]  // SSR006
 
 // 正确
 [Template("MyFloat(<float Value>)")]
@@ -137,7 +136,7 @@ struct MyFloat { float Value; }
 
 ## 参见
 
-- [编译期诊断](/guide/diagnostics)：SSR001-SSR007 完整错误代码
+- [编译期诊断](/guide/diagnostics)：SSR001-SSR006 完整错误代码
 - [内部机制](/technical/internals)：接口分派、ChainBlock 链合并、WhitespaceStripper 实现
 - [缩进与空白符处理](/guide/indent-and-whitespace)：`<indent>` 语法与三层空白符策略
 - [热更新与跨程序集注册](/guide/hot-reload)：ChainBlock 使用场景

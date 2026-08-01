@@ -18,7 +18,7 @@ public struct SpellCard
 可选块与重复块使用 `<optional>...</optional>` 和 `<repetition>...</repetition>` 包裹：
 
 ```csharp
-[Template("DamageData(<float Damage><repetition>, <float Multipliers></repetition>)")]
+[Template("DamageData(<float Damage><repetition><first><float Multipliers></first><body>, <float Multipliers></body></repetition>)")]
 public struct DamageData
 {
     public float Damage;
@@ -87,8 +87,13 @@ struct Zone { string Name; float X; float Y; }
   <optional>
     <text>, bonuses: </text>
     <repetition>
-      <text>+</text>
-      <field type="float" name="Bonus"/>
+      <first>
+        <field type="float" name="Bonus"/>
+      </first>
+      <body>
+        <text>+</text>
+        <field type="float" name="Bonus"/>
+      </body>
     </repetition>
   </optional>
 </literal-template>
@@ -165,7 +170,7 @@ public struct Spell
 
 ## 不参与序列化的字段
 
-如果 struct 包含不应参与序列化的字段（缓存、内部状态），用 `[TemplateIgnore]` 标记。被标记的字段不出现在模板字符串中，也不会触发 SSR004 错误。详见[编译期诊断](./diagnostics#使用-templateignore-忽略字段)。
+如果 struct 包含不应参与序列化的字段（缓存、内部状态），用 `[TemplateIgnore]` 标记。被标记的字段不出现在模板字符串中，也不会触发 SSR003 错误。详见[编译期诊断](./diagnostics#使用-templateignore-忽略字段)。
 
 ```csharp
 [Template("Stats(<float Value>)")]
@@ -199,14 +204,14 @@ public struct NamedValue
 }
 
 // 集合字段自动解析
-[Template("Container(<repetition>, <List<NamedValue> Items></repetition>)")]
+[Template("Container(<repetition><first><List<NamedValue> Items></first><body>, <List<NamedValue> Items></body></repetition>)")]
 public struct Container
 {
     public List<NamedValue> Items;
 }
 ```
 
-集合类型的字段赋值使用 `.Add()` 而非 `=`，因此解析多个元素时所有值都被保留到列表中。标量字段在 `<repetition>` 块中每次迭代被覆盖，会触发 [SSR005 诊断](./diagnostics#ssr005重复块内的标量字段)。
+集合类型的字段赋值使用 `.Add()` 而非 `=`，因此解析多个元素时所有值都被保留到列表中。标量字段在 `<repetition>` 块中每次迭代被覆盖，会触发 [SSR004 诊断](./diagnostics#ssr004重复块内的标量字段)。
 
 ## 空白符处理
 
@@ -229,6 +234,6 @@ SerializerBlocks.Deserialize<Point2D>("Point2D(\n  3.5,\n  -2.1\n)");
 ## 参见
 
 - [模板写作指南](./template-writing)：12 个场景的完整模板示例
-- [编译期诊断](./diagnostics)：SSR001-SSR007 错误代码
+- [编译期诊断](./diagnostics)：SSR001-SSR006 错误代码
 - [核心概念](./core-concepts)：端到端架构全景
 - [Template API](../api/template-attribute)：`[Template]` 的完整签名

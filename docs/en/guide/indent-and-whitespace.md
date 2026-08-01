@@ -63,7 +63,7 @@ During Emit, the `<indent>` opening tag injects `\n` + `(indentLevel+1)` tabs, a
 `<indent>` can wrap `<repetition>` for tree-like hierarchical output. Since `<indent>` is skipped during Scan, `<first>/<body>` semantics are unaffected:
 
 ```csharp
-[Template("Zone(<string Name><indent>, <float X>, <float Y><repetition>, <List<Item> Items></repetition></indent>)")]
+[Template("Zone(<string Name><indent>, <float X>, <float Y><repetition><first><List<Item> Items></first><body>, <List<Item> Items></body></repetition></indent>)")]
 
 // Emit output:
 // Zone("safe_zone",

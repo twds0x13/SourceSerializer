@@ -36,7 +36,7 @@ SG 生成的全部代码归属 `public static partial class GeneratedSerializers
 
 ## ADR-9: 只读 struct 构造器匹配
 
-只读 struct 的字段无法逐字段赋值（C# CS8340）。SG 通过 Roslyn `IMethodSymbol.Parameters` 发现构造器，按名称和类型做贪心匹配。匹配成功时生成构造器调用，失败时报告 SSR003。替代方案：要求用户始终提供特定签名的构造器，但按名匹配降低了接入成本。
+只读 struct 的字段无法逐字段赋值（C# CS8340）。SG 通过 Roslyn `IMethodSymbol.Parameters` 发现构造器，按名称和类型做贪心匹配。匹配成功时生成构造器调用，失败时报告 SSR002。替代方案：要求用户始终提供特定签名的构造器，但按名匹配降低了接入成本。
 
 ## ADR-10: 泛型实例合成
 

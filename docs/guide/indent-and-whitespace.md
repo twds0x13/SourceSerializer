@@ -63,7 +63,7 @@ Emit 时，`<indent>` 开口标签注入 `\n` + `(indentLevel+1)` 个 `\t`，闭
 `<indent>` 可以包裹 `<repetition>` 以实现树状层级输出。由于 Scan 时 `<indent>` 被跳过，`<first>/<body>` 的语义不受影响：
 
 ```csharp
-[Template("Zone(<string Name><indent>, <float X>, <float Y><repetition>, <List<Item> Items></repetition></indent>)")]
+[Template("Zone(<string Name><indent>, <float X>, <float Y><repetition><first><List<Item> Items></first><body>, <List<Item> Items></body></repetition></indent>)")]
 
 // Emit 输出:
 // Zone("safe_zone",

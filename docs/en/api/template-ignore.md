@@ -24,4 +24,4 @@ struct Container
 
 ## See Also
 
-- [Diagnostics: SSR004](../guide/diagnostics#ssr004---missing-template-dependency)
+- [Diagnostics: SSR003](../guide/diagnostics#ssr003---missing-template-dependency)

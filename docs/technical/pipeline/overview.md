@@ -9,10 +9,9 @@ flowchart TD
     A["[Template] 属性"] --> B[CompactToXml]
     B --> C[XmlTemplateParser]
     C --> D[AST]
-    D --> E[依赖图 + 拓扑排序]
-    E --> F[泛型实例合成]
+    D --> F[泛型实例合成]
     F --> G[接口分派映射]
-    G --> H[校验: SSR003/SSR005/SSR006]
+    G --> H[校验: SSR002/SSR004/SSR005]
     H --> I[ScanCodeEmitter]
     H --> J[EmitCodeEmitter]
     H --> K[BlockEmitter]
@@ -33,10 +32,9 @@ flowchart TD
 |------|------|------|------|---------|
 | CompactToXml | 紧凑语法字符串 | XML 字符串 | `<float X>` 转为 `<field type="float" name="X"/>` | 紧凑语法是用户友好层；XML 是 SG 管线的统一 AST 输入格式。两层分离使语法糖的修改不影响 AST 解析 |
 | XmlTemplateParser | XML 字符串 | AST（TemplateNode 树） | 解析 XML 为 LiteralText/Field/Optional/Repetition 节点 | XML 的嵌套结构天然表达 optional/repetition/first/body 的层级关系；复用 `XmlReader` 无需手写递归下降 |
-| 依赖图 + 拓扑排序 | AST 列表 | 有序类型列表 | 按字段引用构建依赖图，拓扑排序确保嵌套类型先生成 | 嵌套类型的模板必须先于外层类型生成（B 引用 A 的 Scan 方法需要 A 先生成）。拓扑排序保证生成顺序正确 |
 | 泛型实例合成 | 开放泛型模板 + 字段引用 | 具体泛型 struct 定义 | `List<float>` 等具体实例基于默认模板自动合成 | 用户只声明 `Wrapper<T>`，SG 在遇到 `Wrapper<float>` 引用时自动合成具体模板。零手动声明每个具体实例 |
 | 接口分派映射 | 具现类型的 ImplementedInterfaces | 接口到具现列表的映射 | 为每个接口收集所有实现类型 | Roslyn `AllInterfaces` 在编译期提供完整类型信息；运行时无需反射判断类型归属 |
-| 校验 | AST + 依赖图 + 接口映射 | 诊断 (SSR003/005/006/007) | readonly 字段检测、标量在 repetition 内警告、模板歧义检测、内置类型 ExternalTemplate 覆盖检测 | 全部诊断在编译期拦截，用户不会等到运行时才发现模板定义错误。`IsUnmanagedType` 是 Roslyn 权威判定，零行手动规则 |
+| 校验 | AST + 接口映射 | 诊断 (SSR002/004/005/006) | readonly 字段检测、标量在 repetition 内警告、模板歧义检测、内置类型 ExternalTemplate 覆盖检测 | 全部诊断在编译期拦截，用户不会等到运行时才发现模板定义错误。`IsUnmanagedType` 是 Roslyn 权威判定，零行手动规则 |
 | compactWhitespace | 模板 AST | 优化后的生成代码 | 编译期去除 literal text 节点中的空白符，减小生成的 `Scan_Xxx` 方法中字符串常量体积 | ScanCodeEmitter 选项，非用户可配。配合运行时的 `WhitespaceStripper` 实现输入空白符完全透明 |
 | ScanCodeEmitter | AST | `SerializerScanners.g.cs` | 生成 `Scan_Xxx` span 扫描器 | Scan 和 Emit 共享同一 AST 输入但生成不同方向的方法体。分离 emitter 类避免代码生成时 `if (isEmit)` 分支污染 |
 | EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | 生成 `Emit_Xxx` 序列化器，含 `<indent>` 换行缩进注入 | 同上。回写方向的代码生成逻辑（`StringBuilder.Append`、foreach 迭代、indentLevel 管理）与读取方向完全不同 |

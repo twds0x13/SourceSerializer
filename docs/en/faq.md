@@ -10,7 +10,7 @@ The type has no registered serializer block.
 
 **Checklist:**
 
-1. Does the type have a `[Template]` attribute? SSR004 catches missing template dependencies at compile time, but hot-reload DLLs can bypass SG compilation.
+1. Does the type have a `[Template]` attribute? SSR003 catches missing template dependencies at compile time, but hot-reload DLLs can bypass SG compilation.
 2. Are all fields marked with `[TemplateIgnore]`? An empty template still registers the type, but Scan consumes no input.
 3. Was `EnsureInitialized()` called? The first `TryGet<T>` triggers it automatically. If `RemoveBlock<T>` was called manually beforehand, subsequent `TryGet<T>` will not re-trigger initialization.
 4. Cross-assembly scenario: is the hot-reload DLL's `GeneratedSerializers.Init()` explicitly invoked? `EnsureInitialized()` only scans loaded assemblies once on the first `TryGet<T>`. Later-loaded DLLs require manual initialization.
@@ -25,7 +25,7 @@ The input format does not match the template. Scan cannot recognize the first li
 2. Are string fields quoted? `Scan_String` requires double quotes.
 3. Are enum tags spelled correctly? The `[Tag("fire")]` scanner matches the tag string exactly.
 4. Optional blocks: fields at default values can be omitted from input — this is normal behavior, not a parse failure.
-5. Interface dispatch prefix ambiguity: if two concrete type templates are prefixes of each other (`Vec(x,y)` and `Vec(x,y,z)`), the scanner may stop early on the first type. Check SSR006.
+5. Interface dispatch prefix ambiguity: if two concrete type templates are prefixes of each other (`Vec(x,y)` and `Vec(x,y,z)`), the scanner may stop early on the first type. Check SSR005.
 6. If calling `block.Scan(span, pos, out _)` directly, input whitespace is **not** automatically stripped. Use `Deserialize<T>()` or call `WhitespaceStripper.Strip()` manually first.
 
 ### Symptom: `Deserialize<T>` throws an exception
@@ -60,17 +60,16 @@ Does the template use `<indent>` tags? `<indent>...</indent>` injects newlines a
 
 ## Compile-Time Errors
 
-### SSR001-SSR007 Quick Reference
+### SSR001-SSR006 Quick Reference
 
 | Code | Title | Trigger | Fix |
 |------|-------|---------|-----|
 | SSR001 | Template Parse Error | Template string does not conform to compact or XML syntax | Check angle bracket closure and quote pairing |
-| SSR002 | Circular template dependency | A references B, B references A | Break the cycle, convert one reference to a built-in type |
-| SSR003 | Readonly field | readonly field with no matching constructor | Provide a constructor with parameters matching fields by name and type |
-| SSR004 | Missing template dependency | Field type has no `[Template]` and is not a built-in type | Add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
-| SSR005 | Scalar field in repetition | Non-collection field inside `<repetition>` | Use a collection type like `List<T>` |
-| SSR006 | Template ambiguity | Two concrete types sharing an interface have prefix-ambiguous templates | Adjust templates so prefixes are distinguishable |
-| SSR007 | Overriding built-in type | `[ExternalTemplate]` targets one of the 16 built-in types | Remove ExternalTemplate, wrap in a higher-level template |
+| SSR002 | Readonly field | readonly field with no matching constructor | Provide a constructor with parameters matching fields by name and type |
+| SSR003 | Missing template dependency | Field type has no `[Template]` and is not a built-in type | Add `[Template]`, `[ExternalTemplate]`, or `[TemplateIgnore]` |
+| SSR004 | Scalar field in repetition | Non-collection field inside `<repetition>` | Use a collection type like `List<T>` |
+| SSR005 | Template ambiguity | Two concrete types sharing an interface have prefix-ambiguous templates | Adjust templates so prefixes are distinguishable |
+| SSR006 | Overriding built-in type | `[ExternalTemplate]` targets one of the 16 built-in types | Remove ExternalTemplate, wrap in a higher-level template |
 
 ## Performance
 
@@ -116,13 +115,13 @@ DLL.Invoke("GeneratedSerializers.Init");  // 2. Explicit init
 
 ### Symptom: ExternalTemplate override of built-in types does not work
 
-`ExternalTemplate(typeof(float), ...)` triggers SSR007 at compile time. The 16 built-in types are handled by hand-written zero-allocation span scanners and cannot be overridden.
+`ExternalTemplate(typeof(float), ...)` triggers SSR006 at compile time. The 16 built-in types are handled by hand-written zero-allocation span scanners and cannot be overridden.
 
 Solution: wrap the built-in type in a higher-level template:
 
 ```csharp
 // Wrong
-[assembly: ExternalTemplate(typeof(float), "Float(<float>)")]  // SSR007
+[assembly: ExternalTemplate(typeof(float), "Float(<float>)")]  // SSR006
 
 // Correct
 [Template("MyFloat(<float Value>)")]
@@ -137,7 +136,7 @@ Class-level `ExternalTemplate` takes precedence over interface default templates
 
 ## See Also
 
-- [Diagnostics](/en/guide/diagnostics): complete SSR001-SSR007 error code reference
+- [Diagnostics](/en/guide/diagnostics): complete SSR001-SSR006 error code reference
 - [Internals](/en/technical/internals): interface dispatch, ChainBlock merge, WhitespaceStripper implementation
 - [Indent & Whitespace Handling](/en/guide/indent-and-whitespace): `<indent>` syntax and three-tier whitespace strategy
 - [Hot Reload & Cross-Assembly](/en/guide/hot-reload): ChainBlock usage scenarios

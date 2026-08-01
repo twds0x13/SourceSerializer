@@ -81,5 +81,5 @@ SG 自动发现构造器参数与字段的按名匹配，生成构造器调用�
 
 - [快速入门](./getting-started)：安装与首次使用
 - [模板语法](./template-syntax)：四种原语与类型声明
-- [编译期诊断](./diagnostics)：SSR003（只读字段）
+- [编译期诊断](./diagnostics)：SSR002（只读字段）
 - [内部机制](../technical/internals)：NeedsHeapAlloc 判定源码细节

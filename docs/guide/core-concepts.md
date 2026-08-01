@@ -10,10 +10,9 @@
 flowchart TD
     A["[Template] 属性"] --> B["CompactToXml<br/>紧凑语法转 XML"]
     B --> C["XmlTemplateParser<br/>XML 解析为 AST"]
-    C --> D["依赖图 + 拓扑排序"]
-    D --> E["泛型实例合成"]
+    C --> E["泛型实例合成"]
     E --> F["接口分派映射"]
-    F --> G["校验: SSR003/005/006"]
+    F --> G["校验: SSR002/004/005"]
     G --> H["ScanCodeEmitter<br/>生成 Scan 方法"]
     G --> I["EmitCodeEmitter<br/>生成 Emit 方法"]
     G --> J["BlockEmitter<br/>生成 Init + Block"]
@@ -82,10 +81,9 @@ Roslyn 触发 `SerializerGenerator`（`IIncrementalGenerator`）。管线依次�
 
 1. `CompactToXml` 将紧凑语法转 XML
 2. `XmlTemplateParser` 解析 XML 为 AST 节点树
-3. 依赖图拓扑排序（如果 Point2D 引用了其他类型，先生成被引用类型）
-4. 泛型实例合成（`Point2D` 不是泛型，跳过）
-5. 接口分派映射（`Point2D` 未实现接口，跳过）
-6. 校验通过（字段 `X` 和 `Y` 均为 `float`，是内置类型，无 readonly 冲突）
+3. 泛型实例合成（`Point2D` 不是泛型，跳过）
+4. 接口分派映射（`Point2D` 未实现接口，跳过）
+5. 校验通过（字段 `X` 和 `Y` 均为 `float`，是内置类型，无 readonly 冲突）
 7. 三个 emitter 各自生成代码
 
 产出三份 `.g.cs` 文件，全部贡献到 `public static partial class GeneratedSerializers`：

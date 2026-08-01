@@ -34,7 +34,7 @@
 | 接口分派 (Interface Dispatch) | 扫描器按声明顺序尝试所有具现类型，首个推进者胜出 |
 | 默认接口模板 | 系统内置的接口模板（IList、ISet、IReadOnlyList、IDictionary、IReadOnlyDictionary、Array） |
 | Roslyn 回退 | 不在 openGenerics 中时，通过 AllInterfaces 查找匹配接口 |
-| SSR007 | 编译期错误：尝试用 `[ExternalTemplate]` 覆盖 16 种内置类型之一 |
+| SSR006 | 编译期错误：尝试用 `[ExternalTemplate]` 覆盖 16 种内置类型之一 |
 | Array 缓冲区 | `T[]` 集合字段使用的代码生成路径：预分配缓冲区 + 跟踪计数 + 最终 `Array.Copy`，与 `List<T>` 的 `.Add()` 路径相对 |
 
 ## 泛型

@@ -36,7 +36,7 @@ Interface-type `AddBlock` appends to a `ChainBlock<T>` dispatch chain rather tha
 
 ## ADR-9: Readonly Struct Constructor Matching
 
-Readonly struct fields cannot be assigned field-by-field (C# CS8340). The SG discovers constructors via Roslyn `IMethodSymbol.Parameters`, performing greedy matching by name and type. On match, the SG emits a constructor call; on failure, it reports SSR003. Rejected alternative: requiring a constructor with a specific signature, but name-based matching reduces adoption friction.
+Readonly struct fields cannot be assigned field-by-field (C# CS8340). The SG discovers constructors via Roslyn `IMethodSymbol.Parameters`, performing greedy matching by name and type. On match, the SG emits a constructor call; on failure, it reports SSR002. Rejected alternative: requiring a constructor with a specific signature, but name-based matching reduces adoption friction.
 
 ## ADR-10: Generic Instance Synthesis
 

@@ -34,7 +34,7 @@
 | Interface Dispatch | Scanner tries all interface implementations, picks the one advancing farthest |
 | Default Interface Template | Built-in interface templates (IList, ISet, IDictionary, etc.) |
 | Roslyn Fallback | When a type is not in openGenerics, resolve via AllInterfaces |
-| SSR007 | Compile-time error: attempting to override one of 16 built-in types with `[ExternalTemplate]` |
+| SSR006 | Compile-time error: attempting to override one of 16 built-in types with `[ExternalTemplate]` |
 | Array Buffer | Code generation path for `T[]` collection fields: pre-allocated buffer + tracked count + final `Array.Copy`, contrasted with `List<T>`'s `.Add()` path |
 
 ## Generics

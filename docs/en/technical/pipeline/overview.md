@@ -9,10 +9,9 @@ flowchart TD
     A["[Template] Attribute"] --> B[CompactToXml]
     B --> C[XmlTemplateParser]
     C --> D[AST]
-    D --> E[Dependency graph + topological sort]
-    E --> F[Generic instance synthesis]
+    D --> F[Generic instance synthesis]
     F --> G[Interface dispatch mapping]
-    G --> H[Validation: SSR003/SSR005/SSR006]
+    G --> H[Validation: SSR002/SSR004/SSR005]
     H --> I[ScanCodeEmitter]
     H --> J[EmitCodeEmitter]
     H --> K[BlockEmitter]
@@ -33,10 +32,9 @@ flowchart TD
 |------|------|------|------|---------|
 | CompactToXml | Compact syntax string | XML string | Convert `<float X>` to `<field type="float" name="X"/>` | Compact syntax is the user-friendly layer; XML is the unified AST input format for the SG pipeline. Two-layer separation means syntax sugar changes do not affect AST parsing |
 | XmlTemplateParser | XML string | AST (TemplateNode tree) | Parse XML into LiteralText/Field/Optional/Repetition nodes | XML's nested structure naturally expresses the hierarchy of optional/repetition/first/body; reuses `XmlReader` instead of hand-writing a recursive descent parser |
-| Dependency graph + topological sort | AST list | Ordered type list | Build dependency graph from field references, topologically sort to ensure nested types are generated first | Nested type templates must be generated before their outer types (B's Scan method references A's Scan method). Topological sort guarantees correct generation order |
 | Generic instance synthesis | Open generic templates + field references | Concrete generic struct definitions | Auto-synthesize concrete instances like `List<float>` from default templates | The user only declares `Wrapper<T>`; the SG auto-synthesizes the concrete template when it encounters a `Wrapper<float>` reference. Zero manual per-instance declarations |
 | Interface dispatch mapping | ImplementedInterfaces of concrete types | Interface-to-implementations mapping | Collect all implementing types for each interface | Roslyn `AllInterfaces` provides complete type information at compile time; no runtime reflection needed to determine type membership |
-| Validation | AST + dependency graph + interface mapping | Diagnostics (SSR003/005/006/007) | Readonly field detection, scalar-in-repetition warning, template ambiguity detection, built-in type ExternalTemplate override detection | All diagnostics are caught at compile time; users never encounter runtime errors from template definition mistakes. `IsUnmanagedType` is the authoritative Roslyn judgment, with zero lines of manual rules |
+| Validation | AST + interface mapping | Diagnostics (SSR002/004/005/006) | Readonly field detection, scalar-in-repetition warning, template ambiguity detection, built-in type ExternalTemplate override detection | All diagnostics are caught at compile time; users never encounter runtime errors from template definition mistakes. `IsUnmanagedType` is the authoritative Roslyn judgment, with zero lines of manual rules |
 | compactWhitespace | Template AST | Optimized generated code | Compile-time stripping of whitespace from literal text nodes, reducing string constant size in generated `Scan_Xxx` methods | ScanCodeEmitter option, not user-configurable. Works with runtime `WhitespaceStripper` for fully transparent input whitespace handling |
 | ScanCodeEmitter | AST | `SerializerScanners.g.cs` | Generate `Scan_Xxx` span scanners | Scan and Emit share the same AST input but generate methods for opposite directions. Separate emitter classes avoid `if (isEmit)` branching in code generation |
 | EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | Generate `Emit_Xxx` serializers with `<indent>` newline+indent injection | Same rationale as above. Write-direction code generation logic (`StringBuilder.Append`, foreach iteration, indentLevel management) is entirely different from read-direction |

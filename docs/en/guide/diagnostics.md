@@ -7,12 +7,11 @@ All SourceSerializer errors and warnings are reported at compile time via Roslyn
 | Code | Severity | Title | Trigger |
 |------|----------|-------|---------|
 | SSR001 | Error | Template Parse Error | The template string cannot be parsed as valid compact or XML format |
-| SSR002 | Error | Circular template dependency | Two or more templates reference each other, forming a cycle |
-| SSR003 | Error | Readonly field cannot be assigned | A field referenced in the template is `readonly` and no matching constructor exists |
-| SSR004 | Error | Missing template dependency | Template references a type without `[Template]` and the field is not marked `[TemplateIgnore]` |
-| SSR005 | Error | Scalar field inside `<repetition>` | A non-collection field appears inside a `<repetition>` block |
-| SSR006 | Error | Template ambiguity | Two concrete types sharing an interface have templates that are prefixes of each other |
-| SSR007 | Error | Cannot override built-in type | `[ExternalTemplate]` targets one of the 16 built-in types |
+| SSR002 | Error | Readonly field cannot be assigned | A field referenced in the template is `readonly` and no matching constructor exists |
+| SSR003 | Error | Missing template dependency | Template references a type without `[Template]` and the field is not marked `[TemplateIgnore]` |
+| SSR004 | Error | Scalar field inside `<repetition>` | A non-collection field appears inside a `<repetition>` block |
+| SSR005 | Error | Template ambiguity | Two concrete types sharing an interface have templates that are prefixes of each other |
+| SSR006 | Error | Cannot override built-in type | `[ExternalTemplate]` targets one of the 16 built-in types |
 
 ## SSR001: Template Parse Error
 
@@ -27,23 +26,7 @@ public struct Bad { public float X; }
 
 Fix: ensure the template string follows the [Template Syntax](./template-syntax) specification.
 
-## SSR002: Circular Template Dependency
-
-Type A's template references type B, and B's template references A, forming a cycle. The source generator detects cycles via topological sort.
-
-Example trigger:
-
-```csharp
-[Template("<B Other>")]
-public struct A { public B Other; }
-
-[Template("<A Other>")]
-public struct B { public A Other; }
-```
-
-Fix: break the cycle by converting one reference to a built-in type or removing the outer reference.
-
-## SSR003: Readonly Field
+## SSR002: Readonly Field
 
 A field is declared `readonly` and cannot be assigned by deserialization code. All fields of a `readonly struct` are implicitly readonly (C# CS8340), requiring a matching constructor.
 
@@ -53,8 +36,8 @@ Example trigger:
 [Template("<float Attack> <float CritRate>")]
 public readonly struct Damage
 {
-    public readonly float Attack;   // SSR003 (no matching constructor)
-    public readonly float CritRate; // SSR003
+    public readonly float Attack;   // SSR002 (no matching constructor)
+    public readonly float CritRate; // SSR002
 }
 ```
 
@@ -72,16 +55,16 @@ public readonly struct Damage
 
 The generated code uses `new Damage(__f_Attack, __f_CritRate)` instead of field-by-field assignment.
 
-## SSR004: Missing Template Dependency
+## SSR003: Missing Template Dependency
 
-A field type is neither one of the 17 built-in types nor annotated with `[Template]`, and the field is not marked `[TemplateIgnore]`. Compilation will stop.
+A field type is neither one of the 16 built-in types nor annotated with `[Template]`, and the field is not marked `[TemplateIgnore]`. Compilation will stop.
 
 Example trigger:
 
 ```csharp
 public struct Unregistered { public float X; }
 
-[Template("<Unregistered Data>")]  // SSR004
+[Template("<Unregistered Data>")]  // SSR003
 public struct Container { public Unregistered Data; }
 ```
 
@@ -90,21 +73,21 @@ Fix options:
 - Use a built-in type instead
 - If the field should not participate in serialization, mark it with `[TemplateIgnore]` and remove the reference from the template string
 
-## SSR005: Scalar Field Inside Repetition
+## SSR004: Scalar Field Inside Repetition
 
 A scalar field inside a `<repetition>` block gets overwritten on each iteration, losing intermediate values. Use a collection type instead.
 
 Example trigger:
 
 ```csharp
-[Template("<repetition>, <float Items></repetition>")]  // SSR005
+[Template("<repetition><first><float Items></first><body>, <float Items></body></repetition>")]  // SSR004
 public struct Bad { public float Items; }
 ```
 
 Fix: change the field to a collection type:
 
 ```csharp
-[Template("<repetition>, <float Items></repetition>")]
+[Template("<repetition><first><float Items></first><body>, <float Items></body></repetition>")]
 public struct Good { public List<float> Items; }
 ```
 
@@ -123,9 +106,9 @@ public struct Stats
 }
 ```
 
-Note: marked fields should not appear in the template string. If the template string still references the field's type, the source generator will still report SSR004.
+Note: marked fields should not appear in the template string. If the template string still references the field's type, the source generator will still report SSR003.
 
-## SSR006: Template Ambiguity
+## SSR005: Template Ambiguity
 
 Two concrete types implementing the same interface have templates that are prefixes of each other, making interface dispatch unable to reliably distinguish them. Compilation will stop.
 
@@ -140,12 +123,12 @@ struct Vec2 : IVector { float X; float Y; }
 [Template("Vec(<float X>, <float Y>, <float Z>)")]
 struct Vec3 : IVector { float X; float Y; float Z; }
 // Vec2's template "Vec(<float X>, <float Y>)" is a prefix of Vec3's template
-// The scanner cannot determine when to stop → SSR006
+// The scanner cannot determine when to stop → SSR005
 ```
 
 Fix: adjust templates so each concrete type's prefix is distinguishable, e.g., `Vec2(...)` and `Vec3(...)` with different prefixes.
 
-## SSR007: Overriding Built-in Types
+## SSR006: Overriding Built-in Types
 
 Triggered when `[ExternalTemplate]` attempts to override one of the 16 built-in types.
 
@@ -153,7 +136,7 @@ Trigger example:
 
 ```csharp
 [assembly: ExternalTemplate(typeof(float), "Float(<float>)")]
-// → SSR007: Cannot override built-in type 'float'
+// → SSR006: Cannot override built-in type 'float'
 ```
 
 Root cause: built-in types are handled by hand-written zero-allocation span scanners in `SerializerRegistry`. `[ExternalTemplate]` cannot generate code that matches the performance characteristics of these hand-written scanners — their `readonly ref struct` layout and SIMD-friendly branch structure cannot be expressed via template compilation. Additionally, allowing built-in type overrides would cause inconsistent type resolution across assemblies: the same type could be parsed in different formats depending on which assembly's template is active.

@@ -12,7 +12,7 @@ Progressive learning path for SourceSerializer.
 ## Advanced
 
 - [Managed vs Unmanaged](./managed-vs-unmanaged): Dual strategy selection, allocation model
-- [Diagnostics](./diagnostics): SSR001-SSR007 error codes and solutions
+- [Diagnostics](./diagnostics): SSR001-SSR006 error codes and solutions
 - [Indent & Whitespace](./indent-and-whitespace): `<indent>` syntax and three-tier whitespace strategy
 - [Hot Reload & Cross-Assembly](./hot-reload): Hand-written blocks, chain merge, AddBlock/RemoveBlock
 

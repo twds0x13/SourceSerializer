@@ -18,7 +18,7 @@ public struct SpellCard
 Optional and repetition blocks are wrapped with `<optional>...</optional>` and `<repetition>...</repetition>`:
 
 ```csharp
-[Template("DamageData(<float Damage><repetition>, <float Multipliers></repetition>)")]
+[Template("DamageData(<float Damage><repetition><first><float Multipliers></first><body>, <float Multipliers></body></repetition>)")]
 public struct DamageData
 {
     public float Damage;
@@ -87,8 +87,13 @@ Primitives can be nested arbitrarily. An optional block containing a repetition 
   <optional>
     <text>, bonuses: </text>
     <repetition>
-      <text>+</text>
-      <field type="float" name="Bonus"/>
+      <first>
+        <field type="float" name="Bonus"/>
+      </first>
+      <body>
+        <text>+</text>
+        <field type="float" name="Bonus"/>
+      </body>
     </repetition>
   </optional>
 </literal-template>
@@ -161,7 +166,7 @@ Input `"fire"` parses to `Element.Fire`. Input `"water"` fails because no tag ma
 
 ## Fields Excluded from Serialization
 
-If a struct contains fields that should not participate in serialization (caches, internal state), mark them with `[TemplateIgnore]`. Marked fields do not appear in the template string and will not trigger SSR004. See [Diagnostics](./diagnostics#using-templateignore-to-skip-fields).
+If a struct contains fields that should not participate in serialization (caches, internal state), mark them with `[TemplateIgnore]`. Marked fields do not appear in the template string and will not trigger SSR003. See [Diagnostics](./diagnostics#using-templateignore-to-skip-fields).
 
 ```csharp
 [Template("Stats(<float Value>)")]
@@ -195,14 +200,14 @@ public struct NamedValue
 }
 
 // Collection field is auto-resolved
-[Template("Container(<repetition>, <List<NamedValue> Items></repetition>)")]
+[Template("Container(<repetition><first><List<NamedValue> Items></first><body>, <List<NamedValue> Items></body></repetition>)")]
 public struct Container
 {
     public List<NamedValue> Items;
 }
 ```
 
-Collection fields use `.Add()` instead of `=` for assignment, so all parsed values are retained in the list. Scalar fields inside `<repetition>` get overwritten on each iteration, which triggers the [SSR005 diagnostic](./diagnostics#ssr005-scalar-field-inside-repetition).
+Collection fields use `.Add()` instead of `=` for assignment, so all parsed values are retained in the list. Scalar fields inside `<repetition>` get overwritten on each iteration, which triggers the [SSR004 diagnostic](./diagnostics#ssr004-scalar-field-inside-repetition).
 
 ## Whitespace Handling
 

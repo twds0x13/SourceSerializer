@@ -194,7 +194,7 @@ struct Container
 }
 ```
 
-标记了 `[TemplateIgnore]` 的字段不出现在生成的代码中，不触发依赖错误（SSR004）。用于运行时状态、缓存、循环引用等不可序列化字段。
+标记了 `[TemplateIgnore]` 的字段不出现在生成的代码中，不触发依赖错误（SSR003）。用于运行时状态、缓存、循环引用等不可序列化字段。
 
 ---
 
@@ -372,7 +372,7 @@ struct Ability
 |--------|------|
 | 裸字段无类型前缀 | 使用 `TypeName(...)` 包裹 |
 | `\|` 或随意分隔符 | 统一逗号 `, ` 分隔 |
-| `<repetition>A</repetition>` | `<first>A</first><body>A</body>` |
+| `<repetition><first>A</first><body>A</body></repetition>` | `<first>A</first><body>A</body>` |
 | `<repetition><first>A</first><body>B</body></repetition>` | `<first>A</first><body>B</body>` |
 
 `<first>/<body>` 直接使用，不需要包裹在 `<repetition>` 中。集合类型的模板由 SG 内置处理。
@@ -384,17 +384,16 @@ struct Ability
 | 代码 | 含义 |
 |------|------|
 | SSR001 | 模板语法错误 |
-| SSR002 | 循环依赖 |
-| SSR003 | 模板引用的字段是 readonly 且无匹配构造器：添加构造器或移除 readonly |
-| SSR004 | 字段类型缺少 `[Template]`：加 `[Template]`、`[ExternalTemplate]`、或 `[TemplateIgnore]` |
-| SSR005 | 标量字段在重复块内：改用集合类型 |
-| SSR006 | 接口实现间模板歧义：调整模板使各实现可区分 |
+| SSR002 | 模板引用的字段是 readonly 且无匹配构造器：添加构造器或移除 readonly |
+| SSR003 | 字段类型缺少 `[Template]`：加 `[Template]`、`[ExternalTemplate]`、或 `[TemplateIgnore]` |
+| SSR004 | 标量字段在重复块内：改用集合类型 |
+| SSR005 | 接口实现间模板歧义：调整模板使各实现可区分 |
 
 ## 参见
 
 - [快速入门](./getting-started)：安装与首次使用
 - [模板语法](./template-syntax)：四种原语、内置类型、集合格式
-- [编译期诊断](./diagnostics)：SSR001-SSR007 完整诊断码参考
+- [编译期诊断](./diagnostics)：SSR001-SSR006 完整诊断码参考
 - [核心概念](./core-concepts)：端到端架构全景
 - [示例: 枚举标签与别名](/examples/enum-and-alias)
 - [示例: 自定义泛型](/examples/custom-generics)

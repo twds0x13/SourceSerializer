@@ -36,7 +36,7 @@ public struct Point2D { public float X; public float Y; }
 [Template("SpellCard(<float Damage><optional>, draw <int Cards></optional>)")]
 public struct SpellCard { public float Damage; public int Cards; }
 
-[Template("DamageData(<float Damage><repetition>, <float Multipliers></repetition>)")]
+[Template("DamageData(<float Damage><repetition><first><float Multipliers></first><body>, <float Multipliers></body></repetition>)")]
 public struct DamageData { public float Damage; public float Multipliers; }
 ```
 
@@ -53,8 +53,13 @@ public class NamedItem { public string Name; }
 <literal-template>
   <field type="float" name="Damage"/>
   <repetition>
-    <text>, </text>
-    <field type="float" name="Multipliers"/>
+    <first>
+      <field type="float" name="Multipliers"/>
+    </first>
+    <body>
+      <text>, </text>
+      <field type="float" name="Multipliers"/>
+    </body>
   </repetition>
 </literal-template>
 ```

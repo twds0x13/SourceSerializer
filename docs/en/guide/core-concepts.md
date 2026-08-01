@@ -10,10 +10,9 @@ From an attribute declaration to string parsing, SourceSerializer's complete pip
 flowchart TD
     A["[Template] Attribute"] --> B["CompactToXml<br/>compact syntax to XML"]
     B --> C["XmlTemplateParser<br/>XML to AST"]
-    C --> D["Dependency graph + topological sort"]
-    D --> E["Generic instance synthesis"]
+    C --> E["Generic instance synthesis"]
     E --> F["Interface dispatch mapping"]
-    F --> G["Validation: SSR003/005/006"]
+    F --> G["Validation: SSR002/004/005"]
     G --> H["ScanCodeEmitter<br/>generates Scan methods"]
     G --> I["EmitCodeEmitter<br/>generates Emit methods"]
     G --> J["BlockEmitter<br/>generates Init + Block"]
@@ -82,10 +81,9 @@ Roslyn triggers `SerializerGenerator` (`IIncrementalGenerator`). The pipeline ex
 
 1. `CompactToXml` converts compact syntax to XML
 2. `XmlTemplateParser` parses XML into an AST node tree
-3. Dependency graph topological sort (if `Point2D` references other types, generate referenced types first)
-4. Generic instance synthesis (`Point2D` is not generic; skipped)
-5. Interface dispatch mapping (`Point2D` implements no interfaces; skipped)
-6. Validation passes (fields `X` and `Y` are both `float`, a built-in type; no readonly conflicts)
+3. Generic instance synthesis (`Point2D` is not generic; skipped)
+4. Interface dispatch mapping (`Point2D` implements no interfaces; skipped)
+5. Validation passes (fields `X` and `Y` are both `float`, a built-in type; no readonly conflicts)
 7. Three emitters each generate their output
 
 Three `.g.cs` files are produced, all contributing to `public static partial class GeneratedSerializers`:
