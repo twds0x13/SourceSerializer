@@ -76,7 +76,8 @@ public class PrimitiveScannerTests
     public void Float_AtEndOfInput()
     {
         Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out FloatOnly v);
+        using var s = new WhitespaceStripper("42");
+        int r = block.Scan(s.Span, 0, out FloatOnly v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(42f));
     }
@@ -85,7 +86,8 @@ public class PrimitiveScannerTests
     public void Float_FSuffix()
     {
         Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1.5f").AsSpan(), 0, out FloatOnly v);
+        using var s = new WhitespaceStripper("1.5f");
+        int r = block.Scan(s.Span, 0, out FloatOnly v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(1.5f).Within(1e-5f));
     }
@@ -94,7 +96,8 @@ public class PrimitiveScannerTests
     public void Float_UpperCaseFSuffix()
     {
         Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1.5F").AsSpan(), 0, out FloatOnly v);
+        using var s = new WhitespaceStripper("1.5F");
+        int r = block.Scan(s.Span, 0, out FloatOnly v);
         Assert.That(r, Is.EqualTo(4));
         Assert.That(v.Val, Is.EqualTo(1.5f).Within(1e-5f));
     }
@@ -103,7 +106,8 @@ public class PrimitiveScannerTests
     public void Float_UpperCaseDSuffix()
     {
         Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1.5D").AsSpan(), 0, out FloatOnly v);
+        using var s = new WhitespaceStripper("1.5D");
+        int r = block.Scan(s.Span, 0, out FloatOnly v);
         Assert.That(r, Is.EqualTo(4));
         Assert.That(v.Val, Is.EqualTo(1.5f).Within(1e-5f));
     }
@@ -112,7 +116,8 @@ public class PrimitiveScannerTests
     public void Float_ExponentNotHandled_StopsAtE()
     {
         Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1e3").AsSpan(), 0, out FloatOnly v);
+        using var s = new WhitespaceStripper("1e3");
+        int r = block.Scan(s.Span, 0, out FloatOnly v);
         Assert.That(r, Is.EqualTo(1));
         Assert.That(v.Val, Is.EqualTo(1f));
     }
@@ -123,7 +128,8 @@ public class PrimitiveScannerTests
     public void Int_Overflow_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<IntOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("99999999999999999999").AsSpan(), 0, out _);
+        using var s = new WhitespaceStripper("99999999999999999999");
+        int r = block.Scan(s.Span, 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -133,7 +139,8 @@ public class PrimitiveScannerTests
     public void LongField_ParsesWithLSuffix()
     {
         Assert.That(SerializerBlocks.TryGet<LongField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("123L").AsSpan(), 0, out LongField v);
+        using var s = new WhitespaceStripper("123L");
+        int r = block.Scan(s.Span, 0, out LongField v);
         Assert.That(r, Is.EqualTo(4));
         Assert.That(v.Val, Is.EqualTo(123L));
     }
@@ -142,7 +149,8 @@ public class PrimitiveScannerTests
     public void LongField_ParsesNegative()
     {
         Assert.That(SerializerBlocks.TryGet<LongField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("-456").AsSpan(), 0, out LongField v);
+        using var s = new WhitespaceStripper("-456");
+        int r = block.Scan(s.Span, 0, out LongField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(-456L));
     }
@@ -151,7 +159,8 @@ public class PrimitiveScannerTests
     public void Long_Overflow_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<LongOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("99999999999999999999").AsSpan(), 0, out _);
+        using var s = new WhitespaceStripper("99999999999999999999");
+        int r = block.Scan(s.Span, 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -161,7 +170,8 @@ public class PrimitiveScannerTests
     public void UlongField_ParsesWithUlSuffix()
     {
         Assert.That(SerializerBlocks.TryGet<UlongField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("123UL").AsSpan(), 0, out UlongField v);
+        using var s = new WhitespaceStripper("123UL");
+        int r = block.Scan(s.Span, 0, out UlongField v);
         Assert.That(r, Is.EqualTo(5));
         Assert.That(v.Val, Is.EqualTo(123UL));
     }
@@ -170,7 +180,8 @@ public class PrimitiveScannerTests
     public void UlongField_ParsesWithLowercaseSuffix()
     {
         Assert.That(SerializerBlocks.TryGet<UlongField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("456ul").AsSpan(), 0, out UlongField v);
+        using var s = new WhitespaceStripper("456ul");
+        int r = block.Scan(s.Span, 0, out UlongField v);
         Assert.That(r, Is.EqualTo(5));
         Assert.That(v.Val, Is.EqualTo(456UL));
     }
@@ -179,7 +190,8 @@ public class PrimitiveScannerTests
     public void Ulong_Overflow_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<UlongOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("9999999999999999999999999").AsSpan(), 0, out _);
+        using var s = new WhitespaceStripper("9999999999999999999999999");
+        int r = block.Scan(s.Span, 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -189,7 +201,8 @@ public class PrimitiveScannerTests
     public void ShortField_Parses()
     {
         Assert.That(SerializerBlocks.TryGet<ShortField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("-42").AsSpan(), 0, out ShortField v);
+        using var s = new WhitespaceStripper("-42");
+        int r = block.Scan(s.Span, 0, out ShortField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo((short)-42));
     }
@@ -198,7 +211,8 @@ public class PrimitiveScannerTests
     public void UshortField_Parses()
     {
         Assert.That(SerializerBlocks.TryGet<UshortField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("7").AsSpan(), 0, out UshortField v);
+        using var s = new WhitespaceStripper("7");
+        int r = block.Scan(s.Span, 0, out UshortField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo((ushort)7));
     }
@@ -207,7 +221,8 @@ public class PrimitiveScannerTests
     public void ByteField_Parses()
     {
         Assert.That(SerializerBlocks.TryGet<ByteField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("255").AsSpan(), 0, out ByteField v);
+        using var s = new WhitespaceStripper("255");
+        int r = block.Scan(s.Span, 0, out ByteField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo((byte)255));
     }
@@ -216,7 +231,8 @@ public class PrimitiveScannerTests
     public void SbyteField_ParsesNegative()
     {
         Assert.That(SerializerBlocks.TryGet<SbyteField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("-128").AsSpan(), 0, out SbyteField v);
+        using var s = new WhitespaceStripper("-128");
+        int r = block.Scan(s.Span, 0, out SbyteField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo((sbyte)-128));
     }
@@ -227,7 +243,8 @@ public class PrimitiveScannerTests
     public void BoolField_ParsesTrue()
     {
         Assert.That(SerializerBlocks.TryGet<BoolField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("true").AsSpan(), 0, out BoolField v);
+        using var s = new WhitespaceStripper("true");
+        int r = block.Scan(s.Span, 0, out BoolField v);
         Assert.That(r, Is.EqualTo(4));
         Assert.That(v.Val, Is.True);
     }
@@ -236,7 +253,8 @@ public class PrimitiveScannerTests
     public void BoolField_ParsesFalse()
     {
         Assert.That(SerializerBlocks.TryGet<BoolField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("false").AsSpan(), 0, out BoolField v);
+        using var s = new WhitespaceStripper("false");
+        int r = block.Scan(s.Span, 0, out BoolField v);
         Assert.That(r, Is.EqualTo(5));
         Assert.That(v.Val, Is.False);
     }
@@ -245,7 +263,8 @@ public class PrimitiveScannerTests
     public void BoolField_Invalid_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<BoolField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("maybe").AsSpan(), 0, out _);
+        using var s = new WhitespaceStripper("maybe");
+        int r = block.Scan(s.Span, 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -255,7 +274,8 @@ public class PrimitiveScannerTests
     public void CharField_ParsesSingle()
     {
         Assert.That(SerializerBlocks.TryGet<CharField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("A").AsSpan(), 0, out CharField v);
+        using var s = new WhitespaceStripper("A");
+        int r = block.Scan(s.Span, 0, out CharField v);
         Assert.That(r, Is.EqualTo(1));
         Assert.That(v.Val, Is.EqualTo('A'));
     }
@@ -264,7 +284,8 @@ public class PrimitiveScannerTests
     public void CharField_EmptyString_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<CharField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("").AsSpan(), 0, out _);
+        using var s = new WhitespaceStripper("");
+        int r = block.Scan(s.Span, 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -274,7 +295,8 @@ public class PrimitiveScannerTests
     public void DoubleField_ParsesWithDecimal()
     {
         Assert.That(SerializerBlocks.TryGet<DoubleField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("3.14d").AsSpan(), 0, out DoubleField v);
+        using var s = new WhitespaceStripper("3.14d");
+        int r = block.Scan(s.Span, 0, out DoubleField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(3.14d).Within(1e-9));
     }
@@ -283,7 +305,8 @@ public class PrimitiveScannerTests
     public void DoubleField_WithExponent()
     {
         Assert.That(SerializerBlocks.TryGet<DoubleField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1.5e10").AsSpan(), 0, out DoubleField v);
+        using var s = new WhitespaceStripper("1.5e10");
+        int r = block.Scan(s.Span, 0, out DoubleField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(1.5e10));
     }
@@ -292,7 +315,8 @@ public class PrimitiveScannerTests
     public void Double_EPlusExponent()
     {
         Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1.5e+10").AsSpan(), 0, out DoubleOnly v);
+        using var s = new WhitespaceStripper("1.5e+10");
+        int r = block.Scan(s.Span, 0, out DoubleOnly v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(1.5e10));
     }
@@ -301,7 +325,8 @@ public class PrimitiveScannerTests
     public void Double_EMinusExponent()
     {
         Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1.5E-2").AsSpan(), 0, out DoubleOnly v);
+        using var s = new WhitespaceStripper("1.5E-2");
+        int r = block.Scan(s.Span, 0, out DoubleOnly v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(1.5e-2));
     }
@@ -312,7 +337,8 @@ public class PrimitiveScannerTests
     public void UintField_Parses()
     {
         Assert.That(SerializerBlocks.TryGet<UintField>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out UintField v);
+        using var s = new WhitespaceStripper("42");
+        int r = block.Scan(s.Span, 0, out UintField v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.Val, Is.EqualTo(42u));
     }
@@ -339,35 +365,35 @@ public class PrimitiveScannerTests
         Assert.That(SerializerBlocks.TryGet<T>(out var b), Is.True);
         var sb = new StringBuilder();
         b.Emit(sb, original);
-        string compact = WhitespaceStripper.Strip(sb.ToString());
-        int r = b.Scan(WhitespaceStripper.Strip(compact).AsSpan(), 0, out var parsed);
+        using var compact = new WhitespaceStripper(sb.ToString());
+        int r = b.Scan(compact.Span, 0, out var parsed);
         Assert.That(r, Is.GreaterThan(0));
         assert(original, parsed);
     }
 
     // ── 原语边界值 ──
 
-    [Test] public void Scan_Int_MinValue() { Assert.That(SerializerBlocks.TryGet<IntOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(int.MinValue.ToString()).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(int.MinValue)); }
-    [Test] public void Scan_Int_MaxValue() { Assert.That(SerializerBlocks.TryGet<IntOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(int.MaxValue.ToString()).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(int.MaxValue)); }
-    [Test] public void Scan_Uint_MaxValue() { Assert.That(SerializerBlocks.TryGet<UintField>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(uint.MaxValue.ToString()).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(uint.MaxValue)); }
-    [Test] public void Scan_Short_MinValue() { Assert.That(SerializerBlocks.TryGet<ShortField>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(short.MinValue.ToString()).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(short.MinValue)); }
-    [Test] public void Scan_Double_MaxValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(double.MaxValue.ToString("G17")).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MaxValue)); }
-    [Test] public void Scan_Double_MinValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip(double.MinValue.ToString("G17")).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MinValue)); }
-    [Test] public void Scan_Float_NegZero() { Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("-0").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(-0f)); }
+    [Test] public void Scan_Int_MinValue() { Assert.That(SerializerBlocks.TryGet<IntOnly>(out var b), Is.True); using var s = new WhitespaceStripper(int.MinValue.ToString()); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(int.MinValue)); }
+    [Test] public void Scan_Int_MaxValue() { Assert.That(SerializerBlocks.TryGet<IntOnly>(out var b), Is.True); using var s = new WhitespaceStripper(int.MaxValue.ToString()); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(int.MaxValue)); }
+    [Test] public void Scan_Uint_MaxValue() { Assert.That(SerializerBlocks.TryGet<UintField>(out var b), Is.True); using var s = new WhitespaceStripper(uint.MaxValue.ToString()); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(uint.MaxValue)); }
+    [Test] public void Scan_Short_MinValue() { Assert.That(SerializerBlocks.TryGet<ShortField>(out var b), Is.True); using var s = new WhitespaceStripper(short.MinValue.ToString()); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(short.MinValue)); }
+    [Test] public void Scan_Double_MaxValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); using var s = new WhitespaceStripper(double.MaxValue.ToString("G17")); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MaxValue)); }
+    [Test] public void Scan_Double_MinValue() { Assert.That(SerializerBlocks.TryGet<DoubleOnly>(out var b), Is.True); using var s = new WhitespaceStripper(double.MinValue.ToString("G17")); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(double.MinValue)); }
+    [Test] public void Scan_Float_NegZero() { Assert.That(SerializerBlocks.TryGet<FloatOnly>(out var b), Is.True); using var s = new WhitespaceStripper("-0"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(-0f)); }
 
     // ── IntPtr / UIntPtr / Guid ──
 
-    [Test] public void IntPtr_Positive() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((IntPtr)42)); }
-    [Test] public void IntPtr_Zero() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("0").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(IntPtr.Zero)); }
-    [Test] public void IntPtr_Negative() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("-1").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((IntPtr)(-1))); }
+    [Test] public void IntPtr_Positive() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); using var s = new WhitespaceStripper("42"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((IntPtr)42)); }
+    [Test] public void IntPtr_Zero() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); using var s = new WhitespaceStripper("0"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(IntPtr.Zero)); }
+    [Test] public void IntPtr_Negative() { Assert.That(SerializerBlocks.TryGet<IntPtrOnly>(out var b), Is.True); using var s = new WhitespaceStripper("-1"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((IntPtr)(-1))); }
     [Test] public void IntPtr_Roundtrip() { Roundtrip(new IntPtrOnly { Val = (IntPtr)123456789 }, (a, b) => Assert.That(a.Val, Is.EqualTo(b.Val))); }
 
-    [Test] public void UIntPtr_Positive() { Assert.That(SerializerBlocks.TryGet<UIntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((UIntPtr)42)); }
-    [Test] public void UIntPtr_Zero() { Assert.That(SerializerBlocks.TryGet<UIntPtrOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("0").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(UIntPtr.Zero)); }
+    [Test] public void UIntPtr_Positive() { Assert.That(SerializerBlocks.TryGet<UIntPtrOnly>(out var b), Is.True); using var s = new WhitespaceStripper("42"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo((UIntPtr)42)); }
+    [Test] public void UIntPtr_Zero() { Assert.That(SerializerBlocks.TryGet<UIntPtrOnly>(out var b), Is.True); using var s = new WhitespaceStripper("0"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(UIntPtr.Zero)); }
     [Test] public void UIntPtr_Roundtrip() { Roundtrip(new UIntPtrOnly { Val = (UIntPtr)123456789 }, (a, b) => Assert.That(a.Val, Is.EqualTo(b.Val))); }
 
-    [Test] public void Guid_StandardFormat() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); var g = Guid.NewGuid(); string s = g.ToString("D"); int r = b.Scan(WhitespaceStripper.Strip(s).AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(g)); }
-    [Test] public void Guid_Empty() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("00000000-0000-0000-0000-000000000000").AsSpan(), 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(Guid.Empty)); }
-    [Test] public void Guid_Invalid() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); int r = b.Scan(WhitespaceStripper.Strip("not-a-guid").AsSpan(), 0, out var v); Assert.That(r, Is.EqualTo(0)); }
+    [Test] public void Guid_StandardFormat() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); var g = Guid.NewGuid(); string s = g.ToString("D"); using var ws = new WhitespaceStripper(s); int r = b.Scan(ws.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(g)); }
+    [Test] public void Guid_Empty() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); using var s = new WhitespaceStripper("00000000-0000-0000-0000-000000000000"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.GreaterThan(0)); Assert.That(v.Val, Is.EqualTo(Guid.Empty)); }
+    [Test] public void Guid_Invalid() { Assert.That(SerializerBlocks.TryGet<GuidOnly>(out var b), Is.True); using var s = new WhitespaceStripper("not-a-guid"); int r = b.Scan(s.Span, 0, out var v); Assert.That(r, Is.EqualTo(0)); }
     [Test] public void Guid_Roundtrip() { Roundtrip(new GuidOnly { Val = Guid.NewGuid() }, (a, b) => Assert.That(a.Val, Is.EqualTo(b.Val))); }
 }

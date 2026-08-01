@@ -219,7 +219,7 @@ SourceSerializer 通过三层策略实现对输入空白符的完全透明处理
 
 **第一层：编译期（compactWhitespace）** — `ScanCodeEmitter` 在生成扫描器代码前去除 literal text 节点中的空白符。`compactWhitespace: true` 选项使得生成的 `Scan_Xxx` 方法中的字符串常量不包含空格和换行——这些空白符在生成代码时已被剥离，减少了生成代码体积。
 
-**第二层：运行时（WhitespaceStripper）** — `Deserialize<T>()` 和 `TryScan<T>()` 在调用 `Scan` 之前，自动调用 `WhitespaceStripper.Strip()` 对输入做两阶段零分配预处理：第一遍计算输出长度，第二遍通过 `string.Create` 填充输出缓冲区。仅剔除引号字符串外部的空白符，引号内部（包括 `\"` 转义）的空白符完整保留。
+**第二层：运行时（WhitespaceStripper）** — `Deserialize<T>()` 和 `TryScan<T>()` 在调用 `Scan` 之前，自动构造 `WhitespaceStripper` 对输入做两阶段预处理：第一遍计算输出长度，第二遍（仅当有空白符时）通过 `Marshal.AllocHGlobal` 分配 native memory 并填充。无空白符时 Span 直接回指原串，零分配。仅剔除引号字符串外部的空白符，引号内部（包括 `\"` 转义）的空白符完整保留。
 
 **第三层：用户透明** — 对调用方来说，输入中的空白符**完全不影响解析结果**。以下三个调用等价：
 

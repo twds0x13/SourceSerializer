@@ -84,15 +84,15 @@ SG 生成的全部 Scan/Emit 方法和 Block 结构体位于 `public static part
 
 ## 空白符剔除（WhitespaceStripper）
 
-`WhitespaceStripper` 是运行时输入预处理的核心组件，在 `Deserialize<T>()` 和 `TryScan<T>()` 中自动调用。采用两阶段零分配算法：
+`WhitespaceStripper` 是运行时输入预处理的核心组件，在 `Deserialize<T>()` 和 `TryScan<T>()` 中自动构造。`readonly ref struct`，构造即完成剥离：
 
 **第一阶段（计数）**：遍历输入，跳过引号外部的所有空白符，计算输出长度。维护 `inString` 状态标志追踪是否处于双引号内部——引号内的空白符（及 `\"` 转义）完整计入输出长度。
 
-**第二阶段（填充）**：通过 `string.Create` 创建目标长度的字符串，在回调中重新遍历输入，将非空白字符（及引号内全部字符）逐字写入输出缓冲区。
+**第二阶段（填充）**：仅当有空白符需剔除时执行。通过 `Marshal.AllocHGlobal` 分配 native memory 缓冲区，重新遍历输入将保留字符写入缓冲区。完成后 `Span` 属性指向该 native buffer，`Dispose()` 时通过 `Marshal.FreeHGlobal` 释放。
 
-早返优化：如果输出长度等于输入长度（无空白符需剔除），直接返回原字符串避免复制；如果输出长度为 0（全空白），返回 `string.Empty`。
+三态决策：如果输出长度等于输入长度（无空白符），`Span` 直接回指原串，零分配；如果输出长度为 0（全空白），`Span = ReadOnlySpan<char>.Empty`，零分配；否则分配 native memory。
 
-设计原理：将空白符预处理从各类型的 `Scan_Xxx` 方法中分离，集中为单一零分配工具。生成的扫描器代码无需在每个 literal text 匹配前插入空白符跳过分支——扫描器假设输入已紧凑化。这一分离也使得空白符处理策略可独立演进（如未来增加注释支持），不波及每个类型的生成代码。
+设计原理：将空白符预处理从各类型的 `Scan_Xxx` 方法中分离，集中为单一工具。生成的扫描器代码无需在每个 literal text 匹配前插入空白符跳过分支——扫描器假设输入已紧凑化。这一分离也使得空白符处理策略可独立演进（如未来增加注释支持），不波及每个类型的生成代码。
 
 ## Array 缓冲区策略
 

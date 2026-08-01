@@ -38,12 +38,7 @@ public class ScanAllocationBenchmarks
     private const string StringInput = "\"hello\"";
     private const string Point2DInput = "Point2D(1.5, 2.5)";
 
-    // ── 预 Strip 后的 compact string（供 BlockScan 直接使用）──
-    private string _compactInt;
-    private string _compactFloat;
-    private string _compactBool;
-    private string _compactString;
-    private string _compactPoint2D;
+    // RegistryScan/BlockScan 的输入均无空白符——直接用原始输入 AsSpan()
 
     [GlobalSetup]
     public void Setup()
@@ -58,12 +53,7 @@ public class ScanAllocationBenchmarks
         SerializerBlocks.TryGet<string>(out _blockString);
         SerializerBlocks.TryGet<Point2D>(out _blockPoint2D);
 
-        // 预 Strip——排除 BlockScan 方法内的 Strip 分配
-        _compactInt = WhitespaceStripper.Strip(IntInput);
-        _compactFloat = WhitespaceStripper.Strip(FloatInput);
-        _compactBool = WhitespaceStripper.Strip(BoolInput);
-        _compactString = WhitespaceStripper.Strip(StringInput);
-        _compactPoint2D = WhitespaceStripper.Strip(Point2DInput);
+        // 触发 EnsureInitialized 后无需额外 Strip——所有输入均无空白符
     }
 
     // ── 裸 Registry 静态调用（零分配基线）──
@@ -71,28 +61,28 @@ public class ScanAllocationBenchmarks
     [Benchmark(Baseline = true)]
     public int RegistryScan_Int()
     {
-        SerializerRegistry.Scan_Int(_compactInt.AsSpan(), 0, out int v);
+        SerializerRegistry.Scan_Int(IntInput.AsSpan(), 0, out int v);
         return v;
     }
 
     [Benchmark]
     public float RegistryScan_Float()
     {
-        SerializerRegistry.Scan_Float(_compactFloat.AsSpan(), 0, out float v);
+        SerializerRegistry.Scan_Float(FloatInput.AsSpan(), 0, out float v);
         return v;
     }
 
     [Benchmark]
     public bool RegistryScan_Bool()
     {
-        SerializerRegistry.Scan_Bool(_compactBool.AsSpan(), 0, out bool v);
+        SerializerRegistry.Scan_Bool(BoolInput.AsSpan(), 0, out bool v);
         return v;
     }
 
     [Benchmark]
     public string RegistryScan_String()
     {
-        SerializerRegistry.Scan_String(_compactString.AsSpan(), 0, out string v);
+        SerializerRegistry.Scan_String(StringInput.AsSpan(), 0, out string v);
         return v;
     }
 
@@ -101,28 +91,28 @@ public class ScanAllocationBenchmarks
     [Benchmark]
     public int BlockScan_Int()
     {
-        _blockInt.Scan(_compactInt.AsSpan(), 0, out int v);
+        _blockInt.Scan(IntInput.AsSpan(), 0, out int v);
         return v;
     }
 
     [Benchmark]
     public float BlockScan_Float()
     {
-        _blockFloat.Scan(_compactFloat.AsSpan(), 0, out float v);
+        _blockFloat.Scan(FloatInput.AsSpan(), 0, out float v);
         return v;
     }
 
     [Benchmark]
     public bool BlockScan_Bool()
     {
-        _blockBool.Scan(_compactBool.AsSpan(), 0, out bool v);
+        _blockBool.Scan(BoolInput.AsSpan(), 0, out bool v);
         return v;
     }
 
     [Benchmark]
     public string BlockScan_String()
     {
-        _blockString.Scan(_compactString.AsSpan(), 0, out string v);
+        _blockString.Scan(StringInput.AsSpan(), 0, out string v);
         return v;
     }
 
@@ -161,7 +151,7 @@ public class ScanAllocationBenchmarks
     [Benchmark]
     public Point2D BlockScan_Point2D()
     {
-        _blockPoint2D.Scan(_compactPoint2D.AsSpan(), 0, out Point2D v);
+        _blockPoint2D.Scan(Point2DInput.AsSpan(), 0, out Point2D v);
         return v;
     }
 
@@ -186,11 +176,6 @@ public class ScanThroughputBenchmarks
     private ISerializerBlock<bool> _blockBool;
     private ISerializerBlock<string> _blockString;
 
-    private string _compactInt;
-    private string _compactFloat;
-    private string _compactBool;
-    private string _compactString;
-
     private const string IntInput = "42";
     private const string FloatInput = "3.14";
     private const string BoolInput = "true";
@@ -205,10 +190,7 @@ public class ScanThroughputBenchmarks
         SerializerBlocks.TryGet<bool>(out _blockBool);
         SerializerBlocks.TryGet<string>(out _blockString);
 
-        _compactInt = WhitespaceStripper.Strip(IntInput);
-        _compactFloat = WhitespaceStripper.Strip(FloatInput);
-        _compactBool = WhitespaceStripper.Strip(BoolInput);
-        _compactString = WhitespaceStripper.Strip(StringInput);
+        // 所有输入均无空白符——直接用原始输入 AsSpan()
     }
 
     // ── 裸 Registry ──
@@ -216,28 +198,28 @@ public class ScanThroughputBenchmarks
     [Benchmark(Baseline = true)]
     public int RegistryScan_Int()
     {
-        SerializerRegistry.Scan_Int(_compactInt.AsSpan(), 0, out int v);
+        SerializerRegistry.Scan_Int(IntInput.AsSpan(), 0, out int v);
         return v;
     }
 
     [Benchmark]
     public float RegistryScan_Float()
     {
-        SerializerRegistry.Scan_Float(_compactFloat.AsSpan(), 0, out float v);
+        SerializerRegistry.Scan_Float(FloatInput.AsSpan(), 0, out float v);
         return v;
     }
 
     [Benchmark]
     public bool RegistryScan_Bool()
     {
-        SerializerRegistry.Scan_Bool(_compactBool.AsSpan(), 0, out bool v);
+        SerializerRegistry.Scan_Bool(BoolInput.AsSpan(), 0, out bool v);
         return v;
     }
 
     [Benchmark]
     public string RegistryScan_String()
     {
-        SerializerRegistry.Scan_String(_compactString.AsSpan(), 0, out string v);
+        SerializerRegistry.Scan_String(StringInput.AsSpan(), 0, out string v);
         return v;
     }
 
@@ -246,28 +228,28 @@ public class ScanThroughputBenchmarks
     [Benchmark]
     public int BlockScan_Int()
     {
-        _blockInt.Scan(_compactInt.AsSpan(), 0, out int v);
+        _blockInt.Scan(IntInput.AsSpan(), 0, out int v);
         return v;
     }
 
     [Benchmark]
     public float BlockScan_Float()
     {
-        _blockFloat.Scan(_compactFloat.AsSpan(), 0, out float v);
+        _blockFloat.Scan(FloatInput.AsSpan(), 0, out float v);
         return v;
     }
 
     [Benchmark]
     public bool BlockScan_Bool()
     {
-        _blockBool.Scan(_compactBool.AsSpan(), 0, out bool v);
+        _blockBool.Scan(BoolInput.AsSpan(), 0, out bool v);
         return v;
     }
 
     [Benchmark]
     public string BlockScan_String()
     {
-        _blockString.Scan(_compactString.AsSpan(), 0, out string v);
+        _blockString.Scan(StringInput.AsSpan(), 0, out string v);
         return v;
     }
 

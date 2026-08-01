@@ -30,15 +30,15 @@ foreach (var item in value) { ... }
 
 ## Whitespace Stripping (WhitespaceStripper)
 
-`WhitespaceStripper` is the core runtime input preprocessing component, automatically invoked inside `Deserialize<T>()` and `TryScan<T>()`. It uses a two-pass zero-allocation algorithm:
+`WhitespaceStripper` is the core runtime input preprocessing component, automatically constructed inside `Deserialize<T>()` and `TryScan<T>()`. It is a `readonly ref struct` that completes stripping on construction:
 
 **Pass 1 (count)**: traverses the input, skips all whitespace outside quoted strings, and computes the output length. An `inString` state flag tracks whether the current position is inside double-quote delimiters — whitespace inside quotes (and `\"` escapes) is fully preserved in the output length.
 
-**Pass 2 (fill)**: creates the target-length string via `string.Create`, and in the callback re-traverses the input, writing non-whitespace characters (and all characters inside quotes) to the output buffer.
+**Pass 2 (fill)**: executed only when whitespace needs stripping. Allocates a native memory buffer via `Marshal.AllocHGlobal`, then re-traverses the input writing preserved characters to the buffer. The `Span` property points to this native buffer; `Dispose()` releases it via `Marshal.FreeHGlobal`.
 
-Early-return optimizations: if the output length equals the input length (no whitespace to strip), the original string is returned directly to avoid copying. If the output length is 0 (all whitespace), `string.Empty` is returned.
+Three-state dispatch: if output length equals input length (no whitespace), `Span` points back to the original string — zero allocation. If output length is 0 (all whitespace), `Span = ReadOnlySpan<char>.Empty` — zero allocation. Otherwise native memory is allocated and freed on `Dispose()`.
 
-Design rationale: separating whitespace preprocessing from per-type `Scan_Xxx` methods centralizes it into a single zero-allocation utility. Generated scanner code does not need whitespace-skip branches before every literal text match — scanners assume the input is already compacted. This separation also allows the whitespace handling strategy to evolve independently (e.g., future comment support) without touching per-type generated code.
+Design rationale: separating whitespace preprocessing from per-type `Scan_Xxx` methods centralizes it into a single utility. Generated scanner code does not need whitespace-skip branches before every literal text match — scanners assume the input is already compacted. This separation also allows the whitespace handling strategy to evolve independently (e.g., future comment support) without touching per-type generated code.
 
 ## Array Buffer Strategy
 

@@ -126,7 +126,8 @@ public class EdgeCaseTests
     public void String_UnclosedQuote_ReturnsStart()
     {
         Assert.That(SerializerBlocks.TryGet<StringOnly>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("\"no closing").AsSpan(), 0, out _);
+        using var s = new WhitespaceStripper("\"no closing");
+        int r = block.Scan(s.Span, 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 

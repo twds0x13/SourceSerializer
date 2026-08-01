@@ -6,13 +6,13 @@ SourceSerializer uses a three-tier strategy for fully transparent input whitespa
 
 ```
 Compile-time              Runtime                         Emit-time
-compactWhitespace  →  WhitespaceStripper.Strip()  →  <indent> newline+indent
+compactWhitespace  →  WhitespaceStripper construction  →  <indent> newline+indent
 (reduce generated code)   (transparent user input)        (formatted output)
 ```
 
 **Tier 1 (Compile-time)**: `ScanCodeEmitter` strips whitespace from literal text nodes in templates before generating `Scan_Xxx` methods (`compactWhitespace: true`). The string constants used for exact matching in generated C# source are whitespace-free.
 
-**Tier 2 (Runtime)**: `Deserialize<T>()` and `TryScan<T>()` automatically invoke `WhitespaceStripper.Strip()` on input before calling `block.Scan`. This tier is fully transparent to callers.
+**Tier 2 (Runtime)**: `Deserialize<T>()` and `TryScan<T>()` automatically construct `WhitespaceStripper` on input before calling `block.Scan`. This tier is fully transparent to callers.
 
 **Tier 3 (Emit-time)**: `<indent>` tags inject newlines and tab indentation during Emit for readable hierarchical output. This tier has no effect on Scan.
 
@@ -91,28 +91,39 @@ When `<indent>` wraps `<optional>` and all optional fields are at their default 
 
 ### Algorithm Overview
 
-`WhitespaceStripper.Strip(ReadOnlySpan<char>)` uses a two-pass zero-allocation algorithm:
+`WhitespaceStripper` is a `readonly ref struct` that completes stripping on construction. It uses a two-pass algorithm:
 
 ```csharp
-public static string Strip(ReadOnlySpan<char> input)
+public readonly unsafe ref struct WhitespaceStripper
+{
+    public ReadOnlySpan<char> Span { get; }
+    public WhitespaceStripper(string text) { /* ... */ }
+    public void Dispose() { /* ... */ }  // duck-typed using pattern
+}
 ```
 
 **Pass 1 (count)**: traverses the input, computing the output length after stripping whitespace outside quoted strings. An `inString` boolean flag toggles on encountering `"`. Inside `inString`, all characters (including whitespace and `\"` escape sequences) count toward the output length. Outside `inString`, characters where `char.IsWhiteSpace(c)` returns true are skipped.
 
-**Pass 2 (fill)**: creates a string of the target length via `string.Create(outputLen, state, callback)`. In the callback, re-traverses the input, writing non-whitespace characters to the output buffer. Since `string.Create`'s `TState` cannot be `ReadOnlySpan<char>`, the input is first converted to `string`, then retrieved in the callback via `.AsSpan()`.
+**Pass 2 (fill)**: executed only when whitespace needs stripping. Allocates a native memory buffer via `Marshal.AllocHGlobal`, then re-traverses the input writing preserved characters to the buffer. The `Span` property points to this native buffer; `Dispose()` releases it via `Marshal.FreeHGlobal`.
 
-**Early-return optimizations**:
-- If `outputLen == input.Length` (no whitespace to strip), returns `input.ToString()` directly, avoiding a copy.
-- If `outputLen == 0` (input is all whitespace), returns `string.Empty` directly.
+**Three-state dispatch**:
+- `outputLen == input.Length`: no whitespace. `Span` points back to the original string — zero allocation.
+- `outputLen == 0`: all whitespace. `Span = ReadOnlySpan<char>.Empty` — zero allocation.
+- Otherwise: native memory allocation, released on `Dispose()`.
 
 ### Call Sites
 
-`WhitespaceStripper.Strip()` is automatically invoked in two locations:
+`WhitespaceStripper` is automatically constructed and used in two places:
 
 1. `SerializerBlocks.Deserialize<T>(string text)` — before calling Scan
 2. `SerializerBlocks.TryScan<T>(string text, out TData value)` — before calling Scan
 
-Direct calls to `block.Scan(span, pos, out _)` do **not** trigger whitespace preprocessing — callers must ensure their input is already compacted, or manually invoke `WhitespaceStripper.Strip()`.
+```csharp
+using var compact = new WhitespaceStripper(text);
+block.Scan(compact.Span, 0, out value);
+```
+
+Direct calls to `block.Scan(span, pos, out _)` do **not** trigger whitespace preprocessing — callers must ensure their input is already compacted, or manually construct `new WhitespaceStripper(text)`.
 
 ### Design Rationale
 
@@ -120,7 +131,7 @@ Separating whitespace preprocessing from per-type `Scan_Xxx` methods yields thre
 
 1. **Simpler scanners**: generated `Scan_Xxx` methods don't need whitespace-skip branches before every literal text match. Smaller generated code, fewer runtime branches.
 2. **Independent strategy evolution**: whitespace handling strategy (e.g., future comment support) can be modified in `WhitespaceStripper` alone without touching per-type generated code.
-3. **Centralized optimization**: the two-pass `string.Create` approach concentrates allocation in a single point. If distributed across per-type scanners, each would need its own whitespace-skip logic and allocation strategy.
+3. **Centralized optimization**: the two-pass native memory approach concentrates allocation in a single point. If distributed across per-type scanners, each would need its own whitespace-skip logic and allocation strategy.
 
 ## compactWhitespace Compile-Time Optimization
 

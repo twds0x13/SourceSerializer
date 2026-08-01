@@ -215,7 +215,7 @@ SourceSerializer uses a three-tier strategy to make input whitespace fully trans
 
 **Tier 1: Compile-time (compactWhitespace)** — `ScanCodeEmitter` strips whitespace from literal text nodes before generating scanner code. The `compactWhitespace: true` option ensures that string constants in generated `Scan_Xxx` methods contain no spaces or newlines — these are already stripped at code generation time, reducing generated code size.
 
-**Tier 2: Runtime (WhitespaceStripper)** — `Deserialize<T>()` and `TryScan<T>()` automatically invoke `WhitespaceStripper.Strip()` before calling `Scan`, performing two-pass zero-allocation preprocessing: pass 1 counts the output length, pass 2 fills the output buffer via `string.Create`. Only whitespace outside quoted strings is stripped; whitespace inside quotes (including `\"` escapes) is preserved.
+**Tier 2: Runtime (WhitespaceStripper)** — `Deserialize<T>()` and `TryScan<T>()` automatically construct `WhitespaceStripper` before calling `Scan`, performing two-pass preprocessing: pass 1 counts the output length, pass 2 (only when whitespace is present) allocates native memory via `Marshal.AllocHGlobal` and fills the buffer. When no whitespace exists, `Span` points back to the original string — zero allocation. Only whitespace outside quoted strings is stripped; whitespace inside quotes (including `\"` escapes) is preserved.
 
 **Tier 3: Caller-transparent** — to the caller, whitespace in input **has no effect** on parsing. The following three calls are equivalent:
 

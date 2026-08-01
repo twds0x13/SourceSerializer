@@ -6,13 +6,13 @@ SourceSerializer 通过三层策略实现输入空白符的完全透明和输出
 
 ```
 编译期                   运行时                      输出时
-compactWhitespace  →  WhitespaceStripper.Strip()  →  <indent> 换行+缩进
+compactWhitespace  →  WhitespaceStripper 构造  →  <indent> 换行+缩进
 (缩小生成代码)         (用户输入透明化)               (格式化输出)
 ```
 
 **第一层（编译期）**：`ScanCodeEmitter` 在生成 `Scan_Xxx` 方法前，将模板中 literal text 节点的空白符提前剥离（`compactWhitespace: true`）。这意味着生成的 C# 源码中用于精确匹配的字符串常量已不含空白符。
 
-**第二层（运行时）**：`Deserialize<T>()` 和 `TryScan<T>()` 在调用 `block.Scan` 之前，自动调用 `WhitespaceStripper.Strip()` 对输入做预处理。这一层对用户完全透明。
+**第二层（运行时）**：`Deserialize<T>()` 和 `TryScan<T>()` 在调用 `block.Scan` 之前，自动构造 `WhitespaceStripper` 对输入做预处理。这一层对用户完全透明。
 
 **第三层（输出时）**：`<indent>` 标签在 Emit 时注入换行和缩进制表符，用于生成可读的层级化输出。这一层对 Scan 无影响。
 
@@ -91,28 +91,39 @@ Emit 时，`<indent>` 开口标签注入 `\n` + `(indentLevel+1)` 个 `\t`，闭
 
 ### 算法概述
 
-`WhitespaceStripper.Strip(ReadOnlySpan<char>)` 使用两阶段零分配算法：
+`WhitespaceStripper` 是 `readonly ref struct`，构造即完成剥离。使用两阶段算法：
 
 ```csharp
-public static string Strip(ReadOnlySpan<char> input)
+public readonly unsafe ref struct WhitespaceStripper
+{
+    public ReadOnlySpan<char> Span { get; }
+    public WhitespaceStripper(string text) { /* ... */ }
+    public void Dispose() { /* ... */ }  // duck-typed using 模式
+}
 ```
 
 **第一遍（计数）**：遍历输入，计算剔除引号外部空白符后的输出长度。维护 `inString` 布尔标志——当遇到 `"` 时切换状态。在 `inString` 内部，所有字符（包括空白符和 `\"` 转义序列）计入输出长度。在 `inString` 外部，`char.IsWhiteSpace(c)` 返回 true 的字符被跳过。
 
-**第二遍（填充）**：通过 `string.Create(outputLen, state, callback)` 创建目标长度的字符串。在回调中重新遍历输入，将非空白字符写入输出缓冲区。由于 `string.Create` 的 `TState` 不能是 `ReadOnlySpan<char>`，输入先转为 `string`，再在回调内通过 `.AsSpan()` 取回。
+**第二遍（填充）**：仅当输出长度不等于输入长度（有空白符需剔除）时执行。通过 `Marshal.AllocHGlobal` 分配 native memory 缓冲区，重新遍历输入将保留字符写入缓冲区。完成后 `Span` 属性指向该 native buffer，`Dispose()` 时通过 `Marshal.FreeHGlobal` 释放。
 
-**早返优化**：
-- 如果 `outputLen == input.Length`（输入不含需剔除的空白符），直接返回 `input.ToString()`，避免复制。
-- 如果 `outputLen == 0`（输入全为空白符），直接返回 `string.Empty`。
+**三态决策**：
+- `outputLen == input.Length`：无空白符。`Span` 直接回指原串，零分配。
+- `outputLen == 0`：全空白。`Span = ReadOnlySpan<char>.Empty`，零分配。
+- 其他：分配 native memory，`Dispose()` 时释放。
 
 ### 调用位置
 
-`WhitespaceStripper.Strip()` 在两个位置被自动调用：
+`WhitespaceStripper` 在两个位置被自动构造和使用：
 
 1. `SerializerBlocks.Deserialize<T>(string text)` —— 调用 Scan 前
 2. `SerializerBlocks.TryScan<T>(string text, out TData value)` —— 调用 Scan 前
 
-直接调用 `block.Scan(span, pos, out _)` **不会**触发空白符预处理——用户需自行保证输入已紧凑化，或手动调用 `WhitespaceStripper.Strip()`。
+```csharp
+using var compact = new WhitespaceStripper(text);
+block.Scan(compact.Span, 0, out value);
+```
+
+直接调用 `block.Scan(span, pos, out _)` **不会**触发空白符预处理——用户需自行保证输入已紧凑化，或手动构造 `new WhitespaceStripper(text)`。
 
 ### 设计原理
 
@@ -120,7 +131,7 @@ public static string Strip(ReadOnlySpan<char> input)
 
 1. **扫描器简化**：生成的 `Scan_Xxx` 方法中的每个 literal text 匹配不需要插入空白符跳过分支。生成的代码体积更小，运行时分支更少。
 2. **策略独立演进**：空白符处理策略（如未来增加注释支持）可以修改 `WhitespaceStripper` 实现而不触及任何类型的生成代码。
-3. **集中式优化**：两阶段 `string.Create` 方案将内存分配集中在单点。如果分散到每个类型的扫描器中，每个 scanner 都需要自行管理空白符跳过逻辑和分配策略。
+3. **集中式优化**：两阶段 native memory 方案将内存分配集中在单点。如果分散到每个类型的扫描器中，每个 scanner 都需要自行管理空白符跳过逻辑和分配策略。
 
 ## compactWhitespace 编译期优化
 

@@ -13,7 +13,7 @@
 | 重复块 (Repetition Block) | `<repetition><first>...</first><body>...</body></repetition>` 包裹的集合片段 |
 | 缩进块 (Indent Block) | `<indent>...</indent>` 包裹的模板片段。Emit 时输出层级缩进，Scan 时为 no-op |
 | compactWhitespace | `ScanCodeEmitter` 编译期选项：生成代码前去除 literal text 中的空白符，减小生成代码体积 |
-| WhitespaceStripper | 运行时输入预处理：两阶段零分配 `string.Create` 实现，剔除引号外部空白符 |
+| WhitespaceStripper | 运行时输入预处理：`readonly ref struct`，构造即完成。两阶段算法 + `Marshal.AllocHGlobal`，无空白符时零分配，剔除引号外部空白符 |
 
 ## 运行时
 

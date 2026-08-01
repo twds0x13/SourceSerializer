@@ -26,7 +26,7 @@ The input format does not match the template. Scan cannot recognize the first li
 3. Are enum tags spelled correctly? The `[Tag("fire")]` scanner matches the tag string exactly.
 4. Optional blocks: fields at default values can be omitted from input — this is normal behavior, not a parse failure.
 5. Interface dispatch prefix ambiguity: if two concrete type templates are prefixes of each other (`Vec(x,y)` and `Vec(x,y,z)`), the scanner may stop early on the first type. Check SSR005.
-6. If calling `block.Scan(span, pos, out _)` directly, input whitespace is **not** automatically stripped. Use `Deserialize<T>()` or call `WhitespaceStripper.Strip()` manually first.
+6. If calling `block.Scan(span, pos, out _)` directly, input whitespace is **not** automatically stripped. Use `Deserialize<T>()` or manually construct `WhitespaceStripper` first.
 
 ### Symptom: `Deserialize<T>` throws an exception
 
@@ -35,11 +35,11 @@ The input format does not match the template. Scan cannot recognize the first li
 
 ### Symptom: Whitespace causes parse failures
 
-**Only affects direct `block.Scan` calls.** `Deserialize<T>()` and `TryScan<T>()` automatically invoke `WhitespaceStripper.Strip()` in v3.4+.
+**Only affects direct `block.Scan` calls.** `Deserialize<T>()` and `TryScan<T>()` automatically construct `WhitespaceStripper` in v3.4+.
 
 When calling `block.Scan(text, 0, out _)` directly:
 - Literal text in templates requires exact character-by-character match. `"Point2D(3.5, -2.1)"` and `"Point2D( 3.5 , -2.1 )"` are not equivalent.
-- Solution: use `Deserialize<T>()` or manually call `WhitespaceStripper.Strip(text)` before Scan.
+- Solution: use `Deserialize<T>()` or manually call `new WhitespaceStripper(text)` before Scan.
 
 ## Serialization Issues
 
@@ -76,7 +76,7 @@ Does the template use `<indent>` tags? `<indent>...</indent>` injects newlines a
 ### Symptom: Excessive string allocations (GC pressure)
 
 1. `Scan` accepts `ReadOnlySpan<char>` — do not create substrings; pass span slices directly.
-2. `Deserialize<T>()` internally calls `WhitespaceStripper.Strip()` which produces a new string — for high-frequency use, bypass the allocation with `TryGet` + `Scan(span)`.
+2. `Deserialize<T>()` internally constructs `WhitespaceStripper` for preprocessing — for high-frequency use, bypass this step entirely with `TryGet` + `Scan(span)`.
 3. `Emit` uses `StringBuilder` — reuse the StringBuilder instance by calling `Clear()` instead of `new StringBuilder()`.
 4. Enum tag switch-on-string scanners: tag length affects match performance; put high-frequency tags earlier in the switch.
 

@@ -25,7 +25,7 @@ flowchart TD
     N --> O["SerializerBlocks.AddBlock&lt;T&gt;()<br/>runtime registry"]
     O --> P["TryGet&lt;T&gt;(out block)<br/>get ISerializerBlock&lt;T&gt;"]
     P --> Q["block.Scan / block.Emit<br/>deserialize / serialize"]
-    Q --> R["WhitespaceStripper.Strip()<br/>auto-called by Deserialize/TryScan"]
+    Q --> R["WhitespaceStripper preprocessing<br/>auto-constructed by Deserialize/TryScan"]
 ```
 
 Three key boundaries in the pipeline:

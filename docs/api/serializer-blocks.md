@@ -49,7 +49,7 @@ public static string Serialize<TData>(TData value);
 public static TData Deserialize<TData>(string text);
 ```
 
-调用 `TryGet<TData>` 获取 block，通过 `WhitespaceStripper.Strip()` 预处理输入后执行 `Scan`。Scan 失败抛出 `FormatException`，未注册类型抛出 `InvalidOperationException`。
+调用 `TryGet<TData>` 获取 block，通过构造 `WhitespaceStripper` 预处理输入后执行 `Scan`。Scan 失败抛出 `FormatException`，未注册类型抛出 `InvalidOperationException`。
 
 ### TryScan`<T>`
 
@@ -73,7 +73,7 @@ if (SerializerBlocks.TryScan<Point2D>(input, out var result))
     Console.WriteLine(result);
 ```
 
-设计原理：这三个方法在 v3.4 新增，目标是消除七行 `TryGet` + 判 null + `new StringBuilder` + `Emit` + `ToString`（或 `WhitespaceStripper.Strip` + `Scan`）的重复样板。每个方法的实现不超过 10 行，直接委托到 `TryGet` 和 `ISerializerBlock<T>` 的对应方法。
+设计原理：这三个方法在 v3.4 新增，目标是消除七行 `TryGet` + 判 null + `new StringBuilder` + `Emit` + `ToString`（或 `WhitespaceStripper` 构造 + `Scan`）的重复样板。每个方法的实现不超过 10 行，直接委托到 `TryGet` 和 `ISerializerBlock<T>` 的对应方法。
 
 ## AddBlock
 

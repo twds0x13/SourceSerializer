@@ -185,7 +185,8 @@ public class InterfaceDispatchTests
         var original = new Vec3D { X = 3f, Y = 5f, Z = 7f };
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out IVector parsed);
+        using var s = new WhitespaceStripper(sb.ToString());
+        int r = block.Scan(s.Span, 0, out IVector parsed);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(parsed, Is.InstanceOf<Vec3D>());
         var v3 = (Vec3D)parsed;

@@ -26,7 +26,7 @@
 3. 枚举标签是否拼写正确？`[Tag("fire")]` 的扫描器精确匹配标签字符串。
 4. 可选块：字段为 default 时输入可以省略该字段，这是正常行为而非解析失败。
 5. 接口分派的前缀歧义：如果两个具现类型模板互为前缀（`Vec(x,y)` 和 `Vec(x,y,z)`），扫描器可能在第一个类型处提前停止。检查 SSR005。
-6. 如果直接调用 `block.Scan(span, pos, out _)`，输入中的空白符**不会**被自动剔除。应使用 `Deserialize<T>()` 或先手动 `WhitespaceStripper.Strip()`。
+6. 如果直接调用 `block.Scan(span, pos, out _)`，输入中的空白符**不会**被自动剔除。应使用 `Deserialize<T>()` 或先手动构造 `WhitespaceStripper`。
 
 ### 症状：`Deserialize<T>` 抛出异常
 
@@ -35,11 +35,11 @@
 
 ### 症状：空白符导致解析失败
 
-**仅影响直接调用 `block.Scan` 的场景。** `Deserialize<T>()` 和 `TryScan<T>()` 在 v3.4+ 自动调用 `WhitespaceStripper.Strip()` 预处理输入。
+**仅影响直接调用 `block.Scan` 的场景。** `Deserialize<T>()` 和 `TryScan<T>()` 在 v3.4+ 自动构造 `WhitespaceStripper` 对输入做预处理。
 
 如果直接调用 `block.Scan(text, 0, out _)`：
 - 模板中的字面文本需逐字符精确匹配，`"Point2D(3.5, -2.1)"` 和 `"Point2D( 3.5 , -2.1 )"` 不等价。
-- 解决方案：使用 `Deserialize<T>()` 或在调用 Scan 前手动 `WhitespaceStripper.Strip(text)`。
+- 解决方案：使用 `Deserialize<T>()` 或在调用 Scan 前手动 `new WhitespaceStripper(text)`。
 
 ## 序列化问题
 
@@ -76,7 +76,7 @@
 ### 症状：大量字符串分配（GC 压力）
 
 1. `Scan` 接受 `ReadOnlySpan<char>`——不要创建 substring，直接传 span 切片。
-2. `Deserialize<T>()` 内部调用 `WhitespaceStripper.Strip()` 产生新字符串——高频场景用 `TryGet` + `Scan(span)` 绕过字符串分配。
+2. `Deserialize<T>()` 内部构造 `WhitespaceStripper` 进行预处理——高频场景用 `TryGet` + `Scan(span)` 完全绕过。
 3. `Emit` 使用 `StringBuilder`——复用 `StringBuilder` 实例，调用 `Clear()` 而非 `new StringBuilder()`。
 4. 枚举标签的 switch-on-string 扫描器：标签长度影响匹配性能，高频标签放在 switch 前面。
 

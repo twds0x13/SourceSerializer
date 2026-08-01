@@ -73,8 +73,8 @@ public class IndentEmitTests
     {
         Assert.That(SerializerBlocks.TryGet<NestedPoint>(out var block), Is.True);
         // Scan 路径无视缩进——输入不需要也不应该有 \n \t
-        string compact = WhitespaceStripper.Strip("Point(1.5,2.0)");
-        int r = block.Scan(compact.AsSpan(), 0, out var v);
+        using var compact = new WhitespaceStripper("Point(1.5,2.0)");
+        int r = block.Scan(compact.Span, 0, out var v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v.X, Is.EqualTo(1.5f).Within(1e-5f));
         Assert.That(v.Y, Is.EqualTo(2.0f).Within(1e-5f));

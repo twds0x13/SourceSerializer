@@ -49,7 +49,7 @@ Calls `TryGet<TData>` to obtain the block, executes `Emit` via `StringBuilder`, 
 public static TData Deserialize<TData>(string text);
 ```
 
-Calls `TryGet<TData>` to obtain the block, preprocesses input via `WhitespaceStripper.Strip()`, then executes `Scan`. Throws `FormatException` on scan failure, `InvalidOperationException` for unregistered types.
+Calls `TryGet<TData>` to obtain the block, preprocesses input via `WhitespaceStripper` construction, then executes `Scan`. Throws `FormatException` on scan failure, `InvalidOperationException` for unregistered types.
 
 ### TryScan`<T>`
 
@@ -73,7 +73,7 @@ if (SerializerBlocks.TryScan<Point2D>(input, out var result))
     Console.WriteLine(result);
 ```
 
-Design rationale: these three methods, added in v3.4, exist to eliminate the seven-line `TryGet` + null-check + `new StringBuilder` + `Emit` + `ToString` (or `WhitespaceStripper.Strip` + `Scan`) boilerplate. Each method implementation is under 10 lines, delegating directly to `TryGet` and the corresponding `ISerializerBlock<T>` methods.
+Design rationale: these three methods, added in v3.4, exist to eliminate the seven-line `TryGet` + null-check + `new StringBuilder` + `Emit` + `ToString` (or `WhitespaceStripper` construction + `Scan`) boilerplate. Each method implementation is under 10 lines, delegating directly to `TryGet` and the corresponding `ISerializerBlock<T>` methods.
 
 ## AddBlock
 

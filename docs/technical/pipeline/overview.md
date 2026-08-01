@@ -22,7 +22,7 @@ flowchart TD
     M --> P["GeneratedSerializers (Emit_Xxx)"]
     N --> Q["GeneratedSerializers (Init + Block_Xxx)"]
     Q --> R["Runtime: EnsureInitialized() 反射发现"]
-    R --> S["WhitespaceStripper.Strip() 空白符预处理"]
+    R --> S["WhitespaceStripper 空白符预处理"]
     S --> T["block.Scan / block.Emit"]
 ```
 
@@ -39,7 +39,7 @@ flowchart TD
 | ScanCodeEmitter | AST | `SerializerScanners.g.cs` | 生成 `Scan_Xxx` span 扫描器 | Scan 和 Emit 共享同一 AST 输入但生成不同方向的方法体。分离 emitter 类避免代码生成时 `if (isEmit)` 分支污染 |
 | EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | 生成 `Emit_Xxx` 序列化器，含 `<indent>` 换行缩进注入 | 同上。回写方向的代码生成逻辑（`StringBuilder.Append`、foreach 迭代、indentLevel 管理）与读取方向完全不同 |
 | BlockEmitter | EmitEntry 列表 | `SerializerBlocks.g.cs` | 生成 `Init()` 注册入口 + `Block_Xxx` 包装结构体 | Init() 注册逻辑独立生成：Scanner 和 Emitter 不感知注册机制。三个 .g.cs 文件各司其职 |
-| WhitespaceStripper (Runtime) | 原始输入字符串 | 紧凑字符串 | 运行时单次扫描剔除引号外部空白符（两阶段 `string.Create`），在 `Deserialize`/`TryScan` 中自动调用 | 集中式预处理避免每个类型的扫描器代码插入空白符跳过分支。保护引号内区域（含 `\"` 转义）
+| WhitespaceStripper (Runtime) | 原始输入字符串 | 紧凑 span | 运行时单次扫描剔除引号外部空白符（`readonly ref struct` + `Marshal.AllocHGlobal`），在 `Deserialize`/`TryScan` 中自动构造 | 集中式预处理避免每个类型的扫描器代码插入空白符跳过分支。保护引号内区域（含 `\"` 转义）
 
 ## 输出文件
 

@@ -175,7 +175,8 @@ public class ChainBlockTests
         SerializerBlocks.AddBlock<IWeapon>(new Block_IWeapon_Sword());
 
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("Sword(100)").AsSpan(), 0, out IWeapon v);
+        using var s = new WhitespaceStripper("Sword(100)");
+        int r = block.Scan(s.Span, 0, out IWeapon v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Sword>());
         Assert.That(((Sword)v).Atk, Is.EqualTo(100f).Within(1e-5f));
@@ -203,12 +204,14 @@ public class ChainBlockTests
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
 
         // 链节 0 匹配 Sword
-        int r1 = block.Scan(WhitespaceStripper.Strip("Sword(100)").AsSpan(), 0, out IWeapon v1);
+        using var s0 = new WhitespaceStripper("Sword(100)");
+        int r1 = block.Scan(s0.Span, 0, out IWeapon v1);
         Assert.That(r1, Is.GreaterThan(0));
         Assert.That(v1, Is.InstanceOf<Sword>());
 
         // 链节 0 不匹配 → 链节 1 匹配 Bow
-        int r2 = block.Scan(WhitespaceStripper.Strip("Bow(50)").AsSpan(), 0, out IWeapon v2);
+        using var s = new WhitespaceStripper("Bow(50)");
+        int r2 = block.Scan(s.Span, 0, out IWeapon v2);
         Assert.That(r2, Is.GreaterThan(0));
         Assert.That(v2, Is.InstanceOf<Bow>());
         Assert.That(((Bow)v2).Range, Is.EqualTo(50f).Within(1e-5f));
@@ -245,17 +248,20 @@ public class ChainBlockTests
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
 
         // Sword 仍在链中
-        int r1 = block.Scan(WhitespaceStripper.Strip("Sword(100)").AsSpan(), 0, out IWeapon v1);
+        using var s1 = new WhitespaceStripper("Sword(100)");
+        int r1 = block.Scan(s1.Span, 0, out IWeapon v1);
         Assert.That(r1, Is.GreaterThan(0));
         Assert.That(v1, Is.InstanceOf<Sword>());
 
         // Bow 仍在链中
-        int r2 = block.Scan(WhitespaceStripper.Strip("Bow(50)").AsSpan(), 0, out IWeapon v2);
+        using var s = new WhitespaceStripper("Bow(50)");
+        int r2 = block.Scan(s.Span, 0, out IWeapon v2);
         Assert.That(r2, Is.GreaterThan(0));
         Assert.That(v2, Is.InstanceOf<Bow>());
 
         // 新增 Staff 可用
-        int r3 = block.Scan(WhitespaceStripper.Strip("Staff(42)").AsSpan(), 0, out IWeapon v3);
+        using var s3 = new WhitespaceStripper("Staff(42)");
+        int r3 = block.Scan(s3.Span, 0, out IWeapon v3);
         Assert.That(r3, Is.GreaterThan(0));
         Assert.That(v3, Is.InstanceOf<Staff>());
         Assert.That(((Staff)v3).Mana, Is.EqualTo(42));
@@ -270,7 +276,8 @@ public class ChainBlockTests
         SerializerBlocks.AddBlock<IWeapon>(new Block_IWeapon_Bow());
 
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("NotAWeapon").AsSpan(), 0, out _);
+        using var s = new WhitespaceStripper("NotAWeapon");
+        int r = block.Scan(s.Span, 0, out _);
         Assert.That(r, Is.EqualTo(0));
     }
 
@@ -300,7 +307,8 @@ public class ChainBlockTests
         Assert.That(SerializerBlocks.TryGet<IWeapon>(out var block), Is.True);
         Assert.That(block, Is.InstanceOf<ChainBlock<IWeapon>>());
 
-        int r = block.Scan(WhitespaceStripper.Strip("Bow(50)").AsSpan(), 0, out IWeapon v);
+        using var s = new WhitespaceStripper("Bow(50)");
+        int r = block.Scan(s.Span, 0, out IWeapon v);
         Assert.That(r, Is.GreaterThan(0));
         Assert.That(v, Is.InstanceOf<Bow>());
     }

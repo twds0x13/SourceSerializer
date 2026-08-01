@@ -22,7 +22,7 @@ flowchart TD
     M --> P["GeneratedSerializers (Emit_Xxx)"]
     N --> Q["GeneratedSerializers (Init + Block_Xxx)"]
     Q --> R["Runtime: EnsureInitialized() reflection scan"]
-    R --> S["WhitespaceStripper.Strip() whitespace preprocessing"]
+    R --> S["WhitespaceStripper whitespace preprocessing"]
     S --> T["block.Scan / block.Emit"]
 ```
 
@@ -39,7 +39,7 @@ flowchart TD
 | ScanCodeEmitter | AST | `SerializerScanners.g.cs` | Generate `Scan_Xxx` span scanners | Scan and Emit share the same AST input but generate methods for opposite directions. Separate emitter classes avoid `if (isEmit)` branching in code generation |
 | EmitCodeEmitter | AST | `SerializerEmitters.g.cs` | Generate `Emit_Xxx` serializers with `<indent>` newline+indent injection | Same rationale as above. Write-direction code generation logic (`StringBuilder.Append`, foreach iteration, indentLevel management) is entirely different from read-direction |
 | BlockEmitter | EmitEntry list | `SerializerBlocks.g.cs` | Generate `Init()` registration entry point + `Block_Xxx` wrapper structs | Init() registration logic is generated independently: Scanner and Emitter are unaware of the registration mechanism. Three .g.cs files, each with a single responsibility |
-| WhitespaceStripper (Runtime) | Raw input string | Compact string | Single-pass runtime stripping of whitespace outside quoted strings (two-pass `string.Create`), auto-invoked in `Deserialize`/`TryScan` | Centralized preprocessing avoids per-type whitespace-skip branches in scanner code. Preserves quoted regions (including `\"` escapes) |
+| WhitespaceStripper (Runtime) | Raw input string | Compact span | Runtime stripping of whitespace outside quoted strings (`readonly ref struct` + `Marshal.AllocHGlobal`), auto-constructed in `Deserialize`/`TryScan` | Centralized preprocessing avoids per-type whitespace-skip branches in scanner code. Preserves quoted regions (including `\"` escapes) |
 
 ## Output Files
 

@@ -13,7 +13,7 @@
 | Repetition Block | Collection fragment wrapped in `<first>...</first><body>...</body>` |
 | Indent Block | Template fragment wrapped in `<indent>...</indent>`. Emit outputs hierarchical indent; Scan is a no-op |
 | compactWhitespace | `ScanCodeEmitter` compile-time option: strips whitespace from literal text before code generation, reducing generated code size |
-| WhitespaceStripper | Runtime input preprocessing: two-pass zero-allocation `string.Create` implementation, strips whitespace outside quoted strings |
+| WhitespaceStripper | Runtime input preprocessing: `readonly ref struct` that completes stripping on construction. Two-pass algorithm + `Marshal.AllocHGlobal`, with zero-allocation fast path when no whitespace exists |
 
 ## Runtime
 
