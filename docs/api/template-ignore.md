@@ -24,4 +24,4 @@ struct Container
 
 ## 参见
 
-- [编译期诊断: SSR003](../guide/diagnostics#ssr003---missing-template-dependency)
+- [编译期诊断: SSR003](../guide/diagnostics#ssr003-缺失模板依赖)

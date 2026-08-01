@@ -28,7 +28,7 @@ struct Range { float Min; float Max; }
 // 输入: "Range(10, 100)"
 ```
 
-**全部内置类型**：`float` `double` `int` `uint` `long` `ulong` `short` `ushort` `byte` `sbyte` `bool` `char` `string`
+**全部内置类型**：`float` `double` `int` `uint` `long` `ulong` `short` `ushort` `byte` `sbyte` `bool` `char` `string` `IntPtr` `UIntPtr` `Guid`
 
 ---
 

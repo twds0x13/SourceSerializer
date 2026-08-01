@@ -10,7 +10,7 @@ Complete interface for the compile-time source generator and runtime registries.
 | [`[ExternalTemplate]`](./external-template-attribute) | External type template override, supports BCL/third-party types |
 | [`[Tag]`](./tag-attribute) | Enum member tag, runtime `tag → enum value` mapping |
 | [`[TypeAlias]`](./type-alias-attribute) | Type alias, maps custom names in templates to C# built-in types |
-| [`[TemplateIgnore]`](../guide/diagnostics#ssr004---missing-template-dependency) | Skips a field from serialization |
+| [`[TemplateIgnore]`](../guide/diagnostics#ssr003-missing-template-dependency) | Skips a field from serialization |
 
 ## Runtime
 

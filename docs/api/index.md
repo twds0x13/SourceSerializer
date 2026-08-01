@@ -10,7 +10,7 @@
 | [`[ExternalTemplate]`](./external-template-attribute) | 外部类型模板覆盖，支持 BCL/第三方类型 |
 | [`[Tag]`](./tag-attribute) | 枚举成员标签，运行时 `tag → enum value` 映射 |
 | [`[TypeAlias]`](./type-alias-attribute) | 类型别名，将模板中的自定义名称映射到 C# 内置类型 |
-| [`[TemplateIgnore]`](../guide/diagnostics#ssr004---missing-template-dependency) | 跳过字段序列化 |
+| [`[TemplateIgnore]`](../guide/diagnostics#ssr003-缺失模板依赖) | 跳过字段序列化 |
 
 ## Runtime
 
