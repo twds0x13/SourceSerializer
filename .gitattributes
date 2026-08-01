@@ -1,0 +1,19 @@
+# ── 全局默认：自动检测文本文件，行尾规范化 ──
+* text=auto
+
+# ── 源码 ──
+*.cs       text diff=csharp
+*.md       text diff=markdown
+*.json     text
+*.xml      text
+*.csproj   text
+*.props    text
+*.targets  text
+*.sln      text eol=crlf
+*.sh       text eol=lf
+
+# ── 二进制（预编译 / 图片）──
+*.dll      -text
+*.png      -text
+*.jpg      -text
+*.svg      -text
