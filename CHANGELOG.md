@@ -1,3 +1,9 @@
+## [3.5.2](https://github.com/twds0x13/SourceSerializer/compare/v3.5.1...v3.5.2) (2026-08-01)
+
+### Bug Fixes
+
+* handle escaped quotes in Scan_String ([90d9b56](https://github.com/twds0x13/SourceSerializer/commit/90d9b56e551311262314e3b063cd4fa816a16c5a))
+
 ## [3.5.1](https://github.com/twds0x13/SourceSerializer/compare/v3.5.0...v3.5.1) (2026-08-01)
 
 ### Bug Fixes
