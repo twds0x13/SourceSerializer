@@ -46,15 +46,19 @@
     <Compile Include="WhitespaceStripperTests.cs" /> <!-- 空白符剥离器 -->
   </ItemGroup>
 
-  <!-- Source Generator as Analyzer -->
+  <!-- Source Generator as Analyzer (compile-time code gen) -->
   <ItemGroup>
-    <ProjectReference Include="../../packages/sourceserializer/SourceGenerator~/SourceSerializer.Generator.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../packages/sourceserializer/SourceGenerator~/SourceSerializer.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!-- Source Generator as Library (runtime type access for diagnostic tests) -->
+  <ItemGroup>
+    <ProjectReference Include="../../packages/sourceserializer/SourceGenerator~/SourceSerializer.Generator.csproj" />
   </ItemGroup>
 
   <!-- Dependencies -->
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
