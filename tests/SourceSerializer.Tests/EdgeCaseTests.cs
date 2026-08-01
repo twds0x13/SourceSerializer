@@ -137,6 +137,44 @@ public class EdgeCaseTests
         Assert.That(v.Val, Is.EqualTo("hello world"));
     }
 
+    // ── String escape (\" → ") ──
+
+    [Test]
+    public void String_EscapedQuote_InsideContent()
+    {
+        Assert.That(SerializerBlocks.TryScan<StringOnly>("\"hello \\\"world\\\"\"", out StringOnly v), Is.True);
+        Assert.That(v.Val, Is.EqualTo("hello \"world\""));
+    }
+
+    [Test]
+    public void String_EscapedQuote_AtStart()
+    {
+        Assert.That(SerializerBlocks.TryScan<StringOnly>("\"\\\"hello\\\"\"", out StringOnly v), Is.True);
+        Assert.That(v.Val, Is.EqualTo("\"hello\""));
+    }
+
+    [Test]
+    public void String_EscapedQuote_AtEnd()
+    {
+        Assert.That(SerializerBlocks.TryScan<StringOnly>("\"hello\\\"\"", out StringOnly v), Is.True);
+        Assert.That(v.Val, Is.EqualTo("hello\""));
+    }
+
+    [Test]
+    public void String_MultipleEscapedQuotes()
+    {
+        Assert.That(SerializerBlocks.TryScan<StringOnly>("\"a\\\"b\\\"c\"", out StringOnly v), Is.True);
+        Assert.That(v.Val, Is.EqualTo("a\"b\"c"));
+    }
+
+    [Test]
+    public void String_BareBackslash_NotEscaped()
+    {
+        // 单独的 \ 不是转义前缀，保留为自身。序列化内容 a\b (3 chars)，C# 字面量 "a\\b"
+        Assert.That(SerializerBlocks.TryScan<StringOnly>("\"a\\b\"", out StringOnly v), Is.True);
+        Assert.That(v.Val, Is.EqualTo("a\\b"));
+    }
+
     // ── Bool ──
 
     [Test]
