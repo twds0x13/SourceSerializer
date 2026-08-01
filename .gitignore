@@ -3,6 +3,9 @@ tests/SourceSerializer.Tests/bin/
 tests/SourceSerializer.Tests/obj/
 packages/sourceserializer/SourceGenerator/bin/
 packages/sourceserializer/SourceGenerator/obj/
+benchmarks/SourceSerializer.Benchmarks/bin/
+benchmarks/SourceSerializer.Benchmarks/obj/
+BenchmarkDotNet.Artifacts/
 
 # Node / VitePress
 node_modules/
