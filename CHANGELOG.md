@@ -1,3 +1,9 @@
+## [3.5.1](https://github.com/twds0x13/SourceSerializer/compare/v3.5.0...v3.5.1) (2026-08-01)
+
+### Bug Fixes
+
+* restore 8 orphaned readonly struct tests ([3158665](https://github.com/twds0x13/SourceSerializer/commit/315866523dc2d62644a2bd8aeba17cd1925572a1))
+
 ## [3.5.0](https://github.com/twds0x13/SourceSerializer/compare/v3.4.6...v3.5.0) (2026-07-27)
 
 ### Features
