@@ -119,7 +119,7 @@ namespace SourceSerializer
                 {
                     var t = iface.GetGenericArguments()[0];
                     typeof(SerializerBlocks)
-                        .GetMethod(nameof(RegisterBlock), BindingFlags.NonPublic | BindingFlags.Static)
+                        .GetMethod(nameof(RegisterBlock), BindingFlags.NonPublic | BindingFlags.Static)!
                         .MakeGenericMethod(t)
                         .Invoke(null, new object[] { block });
                     return new Builder();
@@ -144,7 +144,7 @@ namespace SourceSerializer
                     {
                         var t = iface.GetGenericArguments()[0];
                         typeof(SerializerBlocks)
-                            .GetMethod(nameof(RegisterBlock), BindingFlags.NonPublic | BindingFlags.Static)
+                            .GetMethod(nameof(RegisterBlock), BindingFlags.NonPublic | BindingFlags.Static)!
                             .MakeGenericMethod(t)
                             .Invoke(null, new object[] { block });
                         break;

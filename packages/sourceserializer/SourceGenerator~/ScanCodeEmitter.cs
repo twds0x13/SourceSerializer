@@ -512,7 +512,7 @@ namespace SourceSerializer.Generator
             sb.AppendLine($"{indent}// <first> — try first element (no separator)");
             sb.AppendLine($"{indent}int {savedVar} = pos;");
             sb.AppendLine($"{indent}{{");
-            EmitNodeList(sb, rep.First, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, firstFail, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
+            EmitNodeList(sb, rep.First!, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, firstFail, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
             sb.AppendLine($"{innerIndent}goto repLoop_{id};");
             sb.AppendLine($"{indent}}}");
             sb.AppendLine($"{indent}{firstFail}:");
