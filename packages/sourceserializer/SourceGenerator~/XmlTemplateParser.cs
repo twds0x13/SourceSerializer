@@ -92,6 +92,7 @@ namespace SourceSerializer.Generator
         private static List<TemplateNode> ParseChildren(XElement parent)
         {
             var nodes = new List<TemplateNode>();
+            int repetitionCount = 0;
 
             foreach (var child in parent.Elements())
             {
@@ -109,6 +110,8 @@ namespace SourceSerializer.Generator
                 }
                 else if (child.Name == RepName)
                 {
+                    if (++repetitionCount > 1)
+                        throw new FormatException("Only one <repetition> per template.");
                     nodes.Add(ParseRepetition(child));
                 }
                 else if (child.Name == IndentName)
@@ -117,24 +120,15 @@ namespace SourceSerializer.Generator
                 }
                 else if (child.Name == FirstName)
                 {
-                    // <first> at root: treat as repetition with First
-                    var firstChildren = ParseChildren(child);
-                    // Next sibling should be <body>
-                    nodes.Add(new RepetitionNode(firstChildren, new List<TemplateNode>()));
+                    throw new FormatException(
+                        "<first> must be inside <repetition>. " +
+                        "Use <repetition><first>...</first><body>...</body></repetition>.");
                 }
                 else if (child.Name == BodyName)
                 {
-                    // <body> after <first>: fill Body of last RepetitionNode
-                    if (nodes.Count > 0 && nodes[nodes.Count - 1] is RepetitionNode repNode && repNode.Body.Count == 0)
-                    {
-                        var bodyChildren = ParseChildren(child);
-                        nodes[nodes.Count - 1] = new RepetitionNode(repNode.First, bodyChildren);
-                    }
-                    else
-                    {
-                        throw new FormatException(
-                            "<body> must immediately follow <first>.");
-                    }
+                    throw new FormatException(
+                        "<body> must be inside <repetition>. " +
+                        "Use <repetition><first>...</first><body>...</body></repetition>.");
                 }
                 else
                 {
@@ -151,33 +145,44 @@ namespace SourceSerializer.Generator
         {
             List<TemplateNode>? first = null;
             List<TemplateNode>? body = null;
-            var fallback = new List<TemplateNode>();
+            int firstCount = 0;
+            int bodyCount = 0;
+            bool seenBody = false;
 
             foreach (var child in repEl.Elements())
             {
                 if (child.Name == FirstName)
+                {
+                    if (seenBody)
+                        throw new FormatException("<body> before <first>.");
+                    firstCount++;
+                    if (firstCount > 1)
+                        throw new FormatException("Duplicate <first>.");
                     first = ParseChildren(child);
+                }
                 else if (child.Name == BodyName)
+                {
+                    seenBody = true;
+                    bodyCount++;
+                    if (bodyCount > 1)
+                        throw new FormatException("Duplicate <body>.");
                     body = ParseChildren(child);
+                }
                 else
-                    fallback.AddRange(new[] { ParseSingleChild(child) });
+                {
+                    throw new FormatException(
+                        $"<{child.Name}> not allowed inside <repetition>. Expected <first> and <body>.");
+                }
             }
 
-            // 向后兼容: 无 <first>/<body> 时全部内容作为通用 Body
-            if (first == null && body == null)
-                return new RepetitionNode(null, fallback);
+            if (firstCount == 0 && bodyCount == 0)
+                throw new FormatException("<repetition> without <first> and <body>.");
+            if (firstCount == 0)
+                throw new FormatException("<body> without <first>.");
+            if (bodyCount == 0)
+                throw new FormatException("<first> without <body>.");
 
-            return new RepetitionNode(first, body ?? new List<TemplateNode>());
-        }
-
-        private static TemplateNode ParseSingleChild(XElement child)
-        {
-            if (child.Name == FieldName) return ParseField(child);
-            if (child.Name == TextName) return new LiteralTextNode(child.Value);
-            if (child.Name == OptName) return new OptionalBlockNode(ParseChildren(child));
-            if (child.Name == RepName) return ParseRepetition(child);
-            if (child.Name == IndentName) return new IndentNode(ParseChildren(child));
-            throw new FormatException($"Unexpected element '<{child.Name}>' inside <repetition>.");
+            return new RepetitionNode(first, body!);
         }
 
         private static FieldDirectiveNode ParseField(XElement el)

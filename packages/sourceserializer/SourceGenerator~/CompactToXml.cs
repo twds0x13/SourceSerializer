@@ -92,31 +92,19 @@ namespace SourceSerializer.Generator
                     else if (trimmed == "repetition")
                     {
                         // 开始缓冲 <repetition> 内容，结束时转为 <first>/<body>
+                        current.Append("<repetition>");
                         repStack.Push((current, false));
                         current = new StringBuilder();
                     }
                     else if (trimmed == "/repetition")
                     {
-                        // 结束缓冲，展开为 <first>/<body>
                         if (repStack.Count == 0)
                             throw new FormatException("Unmatched '</repetition>' without '<repetition>'.");
                         var (parent, hasFirstOrBody) = repStack.Pop();
-                        string body = current.ToString();
-                        if (hasFirstOrBody)
-                        {
-                            // 内容已含 <first>/<body>：直接展平
-                            parent.Append(body);
-                        }
-                        else
-                        {
-                            // 同质内容：复制为 first + body
-                            parent.Append("<first>");
-                            parent.Append(body);
-                            parent.Append("</first>");
-                            parent.Append("<body>");
-                            parent.Append(body);
-                            parent.Append("</body>");
-                        }
+                        if (!hasFirstOrBody)
+                            throw new FormatException("<repetition> without <first> and <body>.");
+                        parent.Append(current.ToString());
+                        parent.Append("</repetition>");
                         current = parent;
                     }
                     else if (trimmed == "first" || trimmed == "/first" ||

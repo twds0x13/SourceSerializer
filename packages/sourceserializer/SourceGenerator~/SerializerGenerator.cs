@@ -141,18 +141,13 @@ namespace SourceSerializer.Generator
 
         private static readonly HashSet<string> _knownEnumTypes = new(StringComparer.Ordinal);
 
-        private static readonly DiagnosticDescriptor CircularDependencyError = new(
-            "SSR002", "Circular template dependency",
-            "Struct '{0}' has a circular dependency via template field types: {1}",
-            "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
-
         private static readonly DiagnosticDescriptor ReadonlyFieldError = new(
-            "SSR003", "Readonly field cannot be assigned by deserialization",
+            "SSR002", "Readonly field cannot be assigned by deserialization",
             "Field '{0}' of '{1}' is declared 'readonly'. Deserialization writes to fields and cannot initialize readonly fields. Remove the 'readonly' modifier from the field, or add a constructor whose parameters match all fields by name and type.",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor MissingDependencyError = new(
-            "SSR004", "Missing template dependency",
+            "SSR003", "Missing template dependency",
             "Template for '{0}' references type '{1}' which has no [Template] and is not a built-in type. Add [Template] or [ExternalTemplate] to the type, use a built-in type, or mark the field with [TemplateIgnore].",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
@@ -161,14 +156,14 @@ namespace SourceSerializer.Generator
             "{0}", "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor ScalarInRepetitionError = new(
-            "SSR005", "Scalar field inside repetition block",
+            "SSR004", "Scalar field inside repetition block",
             "Field '{0}' of struct '{1}' is scalar type '{2}' but appears inside a " +
             "repetition block. Use a collection type (List<T>, T[], etc.) for " +
             "fields that receive repeated values.",
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor TemplateAmbiguityError = new(
-            "SSR006", "Template ambiguity",
+            "SSR005", "Template ambiguity",
             "Template of '{0}' is {1} of '{2}' template. " +
             "When deserializing, the shorter template will always match first, " +
             "making the longer one unreachable. Adjust one of the templates so " +
@@ -176,7 +171,7 @@ namespace SourceSerializer.Generator
             "SourceSerializer", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor BuiltinTypeOverrideError = new(
-            "SSR007", "Cannot override built-in type",
+            "SSR006", "Cannot override built-in type",
             "Cannot override built-in type '{0}' with [ExternalTemplate]. " +
             "Built-in types ({1}) are handled directly by the serializer registry " +
             "and cannot be replaced via ExternalTemplate.",
@@ -367,7 +362,7 @@ namespace SourceSerializer.Generator
                     continue;
                 var targetType = (INamedTypeSymbol)typeArg.Value;
                 if (BuiltinTypeNames.All.Contains(targetType.Name))
-                    continue; // 内置类型不可覆盖（SSR007 在 GenerateSource 中报错）
+                    continue; // 内置类型不可覆盖（SSR006 在 GenerateSource 中报错）
                 string? template = attr.ConstructorArguments[1].Value as string;
                 if (string.IsNullOrEmpty(template))
                     continue;
@@ -392,7 +387,7 @@ namespace SourceSerializer.Generator
                     continue;
                 var targetType = (INamedTypeSymbol)typeArg.Value;
                 if (BuiltinTypeNames.All.Contains(targetType.Name))
-                    continue; // 内置类型不可覆盖（SSR007 在 GenerateSource 中报错）
+                    continue; // 内置类型不可覆盖（SSR006 在 GenerateSource 中报错）
                 string? template = attr.ConstructorArguments[1].Value as string;
                 if (string.IsNullOrEmpty(template))
                     continue;
@@ -563,9 +558,8 @@ namespace SourceSerializer.Generator
                     }
                 }
 
-                // ── 2. Build dependency graph ──
-                var depGraph = BuildDependencyGraph(context, parsed, typeAliases, interfaceMap);
-                if (depGraph == null) return; // circular dependency detected (diagnostic already reported)
+                // ── 2. Validate field references ──
+                ValidateFieldReferences(context, parsed, typeAliases, interfaceMap);
 
                 // ── 2.5 Validate: no scalar fields inside <repetition> ──
                 ValidateRepetitionFields(context, parsed);
@@ -576,10 +570,7 @@ namespace SourceSerializer.Generator
                 // ── 2.7 Validate: no template ambiguity across interface implementations ──
                 ValidateTemplateDisambiguation(context, parsed, interfaceMap);
 
-                // ── 2.8 Validate: no bare string fields (SSR007) ──
-                // 空白符剔除后裸字符串退化为无限匹配机。
-                // 扩展点：后续可扩展检测集合模板缺失闭合结构符等不可匹配模式。
-                // ── 2.9 Validate: no ExternalTemplate overriding built-in types ──
+                // ── 2.8 Validate: no ExternalTemplate overriding built-in types ──
                 foreach (var attr in compilation.Assembly.GetAttributes())
                 {
                     if (attr.AttributeClass == null
@@ -597,12 +588,9 @@ namespace SourceSerializer.Generator
                     }
                 }
 
-                // ── 3. Topological sort ──
-                var ordered = TopologicalSort(parsed, depGraph);
-
-                // ── 4. Emit code（开放泛型模板不生成代码，仅合成时使用）──
+                // ── 3. Emit code（开放泛型模板不生成代码，仅合成时使用）──
                 var emitList = new List<EmitEntry>();
-                foreach (var (info, ast) in ordered)
+                foreach (var (info, ast) in parsed)
                 {
                     if (info.IsOpenGeneric) continue;
                     if (info.IsReadonlyStruct && info.MatchedCtorParams == null) continue;
@@ -618,7 +606,7 @@ namespace SourceSerializer.Generator
                 }
 
                 var emitDepGraph = new Dictionary<string, string>(StringComparer.Ordinal);
-                foreach (var (info, _) in ordered)
+                foreach (var (info, _) in parsed)
                 {
                     if (info.IsOpenGeneric) continue;
                     if (info.IsReadonlyStruct && info.MatchedCtorParams == null) continue;
@@ -648,26 +636,21 @@ namespace SourceSerializer.Generator
             }
         }
 
-        private static Dictionary<string, HashSet<string>>? BuildDependencyGraph(
+        private static void ValidateFieldReferences(
             SourceProductionContext context,
             List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed,
             System.Collections.Immutable.ImmutableArray<(string Alias, string CSharpType)> typeAliases,
             Dictionary<string, List<string>> interfaceMap)
         {
-            // 别名映射的后备类型等同于内置类型，不需要依赖边
+            // 别名映射的后备类型等同于内置类型，不需要依赖检查
             var aliasBackingTypes = new HashSet<string>(StringComparer.Ordinal);
             foreach (var (alias, _) in typeAliases)
                 aliasBackingTypes.Add(alias);
 
-            var graph = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
             var allNames = new HashSet<string>(StringComparer.Ordinal);
             foreach (var (info, _) in parsed)
-            {
                 allNames.Add(info.StructName);
-                graph[info.StructName] = new HashSet<string>(StringComparer.Ordinal);
-            }
 
-            // Collect dependencies
             foreach (var (info, ast) in parsed)
             {
                 var externalRefs = FindFieldTypeReferences(ast);
@@ -688,41 +671,19 @@ namespace SourceSerializer.Generator
                     if (info.TypeParameterNames != null && info.TypeParameterNames.Contains(refType))
                         continue;
 
-                    // 接口引用：interfaceMap 中有实现 → 合法依赖
+                    // 接口引用：合法
                     if (interfaceMap.ContainsKey(refType))
-                    {
-                        graph[info.StructName].Add(refType);
                         continue;
-                    }
 
+                    // 其他 user-defined 类型引用：合法
                     if (allNames.Contains(refType))
-                        graph[info.StructName].Add(refType);
-                    else
-                    {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            MissingDependencyError, Location.None,
-                            info.StructName, refType));
-                    }
-                }
-            }
+                        continue;
 
-            // Circular dependency check
-            foreach (var kv in graph)
-            {
-                var visited = new HashSet<string>(StringComparer.Ordinal);
-                var inStack = new HashSet<string>(StringComparer.Ordinal);
-                var cyclePath = new List<string>();
-                if (HasCycle(kv.Key, graph, visited, inStack, cyclePath))
-                {
-                    cyclePath.Add(kv.Key);
                     context.ReportDiagnostic(Diagnostic.Create(
-                        CircularDependencyError, Location.None,
-                        kv.Key, string.Join(" → ", cyclePath)));
-                    return null;
+                        MissingDependencyError, Location.None,
+                        info.StructName, refType));
                 }
             }
-
-            return graph;
         }
 
         private static HashSet<string> FindFieldTypeReferences(List<TemplateNode> nodes)
@@ -792,7 +753,7 @@ namespace SourceSerializer.Generator
                 {
                     if (fieldKinds.TryGetValue(field.FieldName, out var kind) && kind == CollectionKind.None)
                     {
-                        // Report SSR005: don't have the type name handy here, just report field
+                        // Report SSR004: don't have the type name handy here, just report field
                         context.ReportDiagnostic(Diagnostic.Create(
                             ScalarInRepetitionError, Location.None,
                             field.FieldName, structName, "scalar"));
@@ -863,7 +824,7 @@ namespace SourceSerializer.Generator
 
         /// <summary>
         /// 验证接口实现类型之间的模板歧义：如果 A 的模板字面上包含在 B 的模板中
-        ///（前缀或全等），产生 SSR006——扫描时无法区分。
+        ///（前缀或全等），产生 SSR005——扫描时无法区分。
         /// </summary>
         private static void ValidateTemplateDisambiguation(
             SourceProductionContext context,
@@ -915,7 +876,7 @@ namespace SourceSerializer.Generator
         }
 
         /// <summary>
-        /// 检测模板中的不可匹配扫描模式（SSR007）。
+        /// 检测模板中的不可匹配扫描模式（SSR006）。
         /// 当前触发条件：模板含有 string 字段——裸字符串在空白符剔除后
         /// 退化为无限匹配机，必须使用引号字符串输入。
         /// 扩展点：后续可检测集合模板缺失闭合结构符等不可匹配模式。
@@ -1254,83 +1215,6 @@ namespace SourceSerializer.Generator
             int gt = typeName.LastIndexOf('>');
             if (lt < 0 || gt <= lt) return null;
             return typeName.Substring(lt + 1, gt - lt - 1);
-        }
-
-        private static bool HasCycle(
-            string node, Dictionary<string, HashSet<string>> graph,
-            HashSet<string> visited, HashSet<string> inStack, List<string> cyclePath)
-        {
-            if (inStack.Contains(node))
-            {
-                cyclePath.Add(node);
-                return true;
-            }
-            if (visited.Contains(node)) return false;
-
-            visited.Add(node);
-            inStack.Add(node);
-
-            if (graph.TryGetValue(node, out var deps))
-            {
-                foreach (var dep in deps)
-                {
-                    if (HasCycle(dep, graph, visited, inStack, cyclePath))
-                    {
-                        cyclePath.Insert(0, dep);
-                        return true;
-                    }
-                }
-            }
-
-            inStack.Remove(node);
-            return false;
-        }
-
-        private static List<(StructTemplateInfo Info, List<TemplateNode> Ast)> TopologicalSort(
-            List<(StructTemplateInfo Info, List<TemplateNode> Ast)> parsed,
-            Dictionary<string, HashSet<string>> deps)
-        {
-            var result = new List<(StructTemplateInfo, List<TemplateNode>)>();
-            var remaining = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var (info, _) in parsed)
-                remaining.Add(info.StructName);
-
-            var nameIndex = new Dictionary<string, (StructTemplateInfo, List<TemplateNode>)>(StringComparer.Ordinal);
-            foreach (var (info, ast) in parsed)
-                nameIndex[info.StructName] = (info, ast);
-
-            while (remaining.Count > 0)
-            {
-                bool found = false;
-                foreach (var name in remaining.ToList())
-                {
-                    bool hasDep = false;
-                    if (deps.TryGetValue(name, out var d))
-                    {
-                        foreach (var dep in d)
-                        {
-                            if (remaining.Contains(dep))
-                            { hasDep = true; break; }
-                        }
-                    }
-
-                    if (!hasDep)
-                    {
-                        result.Add(nameIndex[name]);
-                        remaining.Remove(name);
-                        found = true;
-                    }
-                }
-
-                if (!found && remaining.Count > 0)
-                {
-                    foreach (var name in remaining)
-                        result.Add(nameIndex[name]);
-                    remaining.Clear();
-                }
-            }
-
-            return result;
         }
 
         internal struct StructTemplateInfo

@@ -134,7 +134,7 @@ namespace SourceSerializer.Generator
 
         /// <summary>
         /// 为接口生成 dispatch 扫描方法：按声明顺序尝试，首个推进者胜出。
-        /// 模板歧义由 SSR006 在编译期拦截——此处假设所有实现类型模板互不包含。
+        /// 模板歧义由 SSR005 在编译期拦截——此处假设所有实现类型模板互不包含。
         /// </summary>
         private static string EmitInterfaceDispatch(string ifaceName, List<string> concreteTypes,
             Dictionary<string, string> dependencyGraph)
@@ -485,7 +485,7 @@ namespace SourceSerializer.Generator
             string innerIndent = indent + IndentStep;
 
             // ── 收集 repetition body 内的集合字段 ──
-            var bodyNodes = rep.First != null ? rep.First.Concat(rep.Body).ToList() : rep.Body;
+            var bodyNodes = rep.First!.Concat(rep.Body).ToList();
             var collectionFields = FindCollectionFields(bodyNodes, fieldTypes);
 
             // ── 自集合数组类型：从模板 AST 提取字段名+元素类型，合成缓冲区 ──
@@ -505,48 +505,32 @@ namespace SourceSerializer.Generator
                 sb.AppendLine($"{indent}int __cnt_{fieldName} = 0;");
             }
 
-            if (rep.First != null)
-            {
-                string savedVar = $"saved_{id}";
-                string firstFail = $"repFirstFail_{id}";
+            string savedVar = $"saved_{id}";
+            string firstFail = $"repFirstFail_{id}";
 
-                // ── <first>: 首个元素（无分隔符）──
-                sb.AppendLine($"{indent}// <first> — try first element (no separator)");
-                sb.AppendLine($"{indent}int {savedVar} = pos;");
-                sb.AppendLine($"{indent}{{");
-                EmitNodeList(sb, rep.First, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, firstFail, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
-                sb.AppendLine($"{innerIndent}goto repLoop_{id};");
-                sb.AppendLine($"{indent}}}");
-                sb.AppendLine($"{indent}{firstFail}:");
-                sb.AppendLine($"{innerIndent}pos = {savedVar};");
-                sb.AppendLine($"{innerIndent}goto repEnd_{id};");
+            // ── <first>: 首个元素（无分隔符）──
+            sb.AppendLine($"{indent}// <first> — try first element (no separator)");
+            sb.AppendLine($"{indent}int {savedVar} = pos;");
+            sb.AppendLine($"{indent}{{");
+            EmitNodeList(sb, rep.First, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, firstFail, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
+            sb.AppendLine($"{innerIndent}goto repLoop_{id};");
+            sb.AppendLine($"{indent}}}");
+            sb.AppendLine($"{indent}{firstFail}:");
+            sb.AppendLine($"{innerIndent}pos = {savedVar};");
+            sb.AppendLine($"{innerIndent}goto repEnd_{id};");
 
-                // ── <body>: 后续元素（含分隔符）──
-                sb.AppendLine($"{indent}repLoop_{id}: // <body> — subsequent elements");
-                sb.AppendLine($"{indent}while (true)");
-                sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{innerIndent}{savedVar} = pos;");
-                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, failLabel, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
-                sb.AppendLine($"{innerIndent}continue;");
-                sb.AppendLine($"{innerIndent}{failLabel}:");
-                sb.AppendLine($"{innerIndent}    pos = saved_{id};");
-                sb.AppendLine($"{innerIndent}    break;");
-                sb.AppendLine($"{indent}}}");
-                sb.AppendLine($"{indent}repEnd_{id}: ;");
-            }
-            else
-            {
-                // 向后兼容: 无 <first>/<body>，整个 body 作为通用循环模式
-                sb.AppendLine($"{indent}while (true)");
-                sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{innerIndent}int saved_{id} = pos;");
-                EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, failLabel, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
-                sb.AppendLine($"{innerIndent}continue;");
-                sb.AppendLine($"{innerIndent}{failLabel}:");
-                sb.AppendLine($"{innerIndent}    pos = saved_{id};");
-                sb.AppendLine($"{innerIndent}    break;");
-                sb.AppendLine($"{indent}}}");
-            }
+            // ── <body>: 后续元素（含分隔符）──
+            sb.AppendLine($"{indent}repLoop_{id}: // <body> — subsequent elements");
+            sb.AppendLine($"{indent}while (true)");
+            sb.AppendLine($"{indent}{{");
+            sb.AppendLine($"{innerIndent}{savedVar} = pos;");
+            EmitNodeList(sb, rep.Body, structTypeName, dependencyGraph, typeAliases, enumTags, fieldTypes, innerIndent, failLabel, isInRepetition: true, isCollection: isCollection, isArrayCollection: isArrayCollection, state: state, compactWhitespace: compactWhitespace);
+            sb.AppendLine($"{innerIndent}continue;");
+            sb.AppendLine($"{innerIndent}{failLabel}:");
+            sb.AppendLine($"{innerIndent}    pos = saved_{id};");
+            sb.AppendLine($"{innerIndent}    break;");
+            sb.AppendLine($"{indent}}}");
+            sb.AppendLine($"{indent}repEnd_{id}: ;");
 
             // ── 循环后: 缓存数组 → 目标字段单次转换 ──
             string targetPrefix = strategy.RepetitionTargetPrefix;
