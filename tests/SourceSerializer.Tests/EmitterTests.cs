@@ -177,8 +177,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<Point2D>(sb.ToString(), out var parsed), Is.True);
         Assert.That(parsed.X, Is.EqualTo(3.5f).Within(1e-5f));
         Assert.That(parsed.Y, Is.EqualTo(-2.1f).Within(1e-5f));
     }
@@ -192,8 +191,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<Vec3>(sb.ToString(), out var parsed), Is.True);
         Assert.That(parsed.X, Is.EqualTo(1f));
         Assert.That(parsed.Y, Is.EqualTo(2f));
         Assert.That(parsed.Z, Is.EqualTo(3f));
@@ -208,8 +206,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<Entity>(sb.ToString(), out var parsed), Is.True);
         Assert.That(parsed.Pos.X, Is.EqualTo(1f));
         Assert.That(parsed.Pos.Y, Is.EqualTo(2f));
         Assert.That(parsed.Pos.Z, Is.EqualTo(3f));
@@ -220,17 +217,14 @@ public class EmitterTests
     [Test]
     public void SpellCard_Full_Roundtrip()
     {
+        const string input = "SpellCard(Damage:10.5, DrawsProvide:2, StartIndex:1)";
+        Assert.That(SerializerBlocks.TryScan<SpellCard>(input, out var card), Is.True);
+
         Assert.That(SerializerBlocks.TryGet<SpellCard>(out var block), Is.True);
-
-        const string input = "10.5|draw 2|idx:1";
-        int r = block.Scan(WhitespaceStripper.Strip(input).AsSpan(), 0, out var card);
-        Assert.That(r, Is.GreaterThan(0));
-
         var sb = new StringBuilder();
         block.Emit(sb, card);
 
-        r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var card2);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<SpellCard>(sb.ToString(), out var card2), Is.True);
         Assert.That(card2.Damage, Is.EqualTo(card.Damage).Within(1e-5f));
         Assert.That(card2.DrawsProvide, Is.EqualTo(card.DrawsProvide));
         Assert.That(card2.StartIndex, Is.EqualTo(card.StartIndex));
@@ -246,8 +240,8 @@ public class EmitterTests
         block.Emit(sb, card);
 
         string result = sb.ToString();
-        Assert.That(result, Does.Not.Contain("draw"));
-        Assert.That(result, Does.Contain("idx:1"));
+        Assert.That(result, Does.Not.Contain("DrawsProvide"));
+        Assert.That(result, Does.Contain("StartIndex:1"));
     }
 
     // ── Enum tag tests ──
@@ -255,16 +249,14 @@ public class EmitterTests
     [Test]
     public void TaggedSpell_Emit_Roundtrip()
     {
+        const string input = "TaggedSpell(Type:fire, Power:10)";
+        Assert.That(SerializerBlocks.TryScan<TaggedSpell>(input, out var spell), Is.True);
+
         Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-
-        const string input = "fire|10";
-        int r = block.Scan(WhitespaceStripper.Strip(input).AsSpan(), 0, out var spell);
-        Assert.That(r, Is.GreaterThan(0));
-
         var sb = new StringBuilder();
         block.Emit(sb, spell);
 
-        Assert.That(sb.ToString(), Is.EqualTo("fire|10"));
+        Assert.That(sb.ToString(), Is.EqualTo("TaggedSpell(Type:fire, Power:10)"));
     }
 
     // ── Managed type tests ──
@@ -278,8 +270,7 @@ public class EmitterTests
         var sb = new StringBuilder();
         block.Emit(sb, original);
 
-        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<NamedValue>(sb.ToString(), out var parsed), Is.True);
         Assert.That(parsed.Name, Is.EqualTo("sword"));
         Assert.That(parsed.Value, Is.EqualTo(3.5f).Within(1e-5f));
     }

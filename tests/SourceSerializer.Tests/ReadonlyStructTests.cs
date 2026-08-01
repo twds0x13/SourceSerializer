@@ -8,7 +8,7 @@ using SourceSerializer;
 // ═══════════════════════════════════════════════════════
 
 /// <summary>有匹配构造器 → 构造器路径（贪心优先级 1）</summary>
-[Template("<float Attack>,<float CritRate>")]
+[Template("Damage(<float Attack>, <float CritRate>)")]
 public readonly struct Damage
 {
     public readonly float Attack;
@@ -17,7 +17,7 @@ public readonly struct Damage
 }
 
 /// <summary>构造器参数名与字段名大小写不同 → 映射测试</summary>
-[Template("<float X>,<float Y>")]
+[Template("ReadonlyPoint2D(<float X>, <float Y>)")]
 public readonly struct ReadonlyPoint2D
 {
     public readonly float X;
@@ -34,7 +34,7 @@ public readonly struct InternalCtor
 }
 
 /// <summary>三字段 readonly struct + 匹配构造器</summary>
-[Template("<float Attack>,<float CritRate>,<float Defense>")]
+[Template("FullDamage(<float Attack>, <float CritRate>, <float Defense>)")]
 public readonly struct FullDamage
 {
     public readonly float Attack;
@@ -58,9 +58,7 @@ public class ReadonlyStructTests
     [Test]
     public void ReadonlyStruct_ParsesViaConstructor()
     {
-        Assert.That(SerializerBlocks.TryGet<Damage>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("10.5,0.25").AsSpan(), 0, out Damage v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<Damage>("Damage(10.5, 0.25)", out Damage v), Is.True);
         Assert.That(v.Attack, Is.EqualTo(10.5f).Within(1e-5f));
         Assert.That(v.CritRate, Is.EqualTo(0.25f).Within(1e-5f));
     }
@@ -81,32 +79,27 @@ public class ReadonlyStructTests
     [Test]
     public void ReadonlyStruct_Emit_Roundtrip()
     {
-        Assert.That(SerializerBlocks.TryGet<ReadonlyPoint2D>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("1.5,-3").AsSpan(), 0, out ReadonlyPoint2D parsed);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<ReadonlyPoint2D>("ReadonlyPoint2D(1.5, -3)", out ReadonlyPoint2D parsed), Is.True);
         Assert.That(parsed.X, Is.EqualTo(1.5f).Within(1e-5f));
         Assert.That(parsed.Y, Is.EqualTo(-3f).Within(1e-5f));
 
+        Assert.That(SerializerBlocks.TryGet<ReadonlyPoint2D>(out var block), Is.True);
         var sb = new StringBuilder();
         block.Emit(sb, parsed);
-        Assert.That(sb.ToString(), Is.EqualTo("1.5,-3"));
+        Assert.That(sb.ToString(), Is.EqualTo("ReadonlyPoint2D(1.5, -3)"));
     }
 
     [Test]
     public void ReadonlyStruct_InternalCtor_IsMatched()
     {
-        Assert.That(SerializerBlocks.TryGet<InternalCtor>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out InternalCtor v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<InternalCtor>("42", out InternalCtor v), Is.True);
         Assert.That(v.Value, Is.EqualTo(42f).Within(1e-5f));
     }
 
     [Test]
     public void ReadonlyStruct_ThreeFields_ParsesCorrectly()
     {
-        Assert.That(SerializerBlocks.TryGet<FullDamage>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("100,0.5,50").AsSpan(), 0, out FullDamage v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<FullDamage>("FullDamage(100, 0.5, 50)", out FullDamage v), Is.True);
         Assert.That(v.Attack, Is.EqualTo(100f).Within(1e-5f));
         Assert.That(v.CritRate, Is.EqualTo(0.5f).Within(1e-5f));
         Assert.That(v.Defense, Is.EqualTo(50f).Within(1e-5f));
@@ -121,8 +114,7 @@ public class ReadonlyStructTests
         var original = new Damage(100f, 0.25f);
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<Damage>(sb.ToString(), out var parsed), Is.True);
         Assert.That(parsed.Attack, Is.EqualTo(100f).Within(1e-5f));
         Assert.That(parsed.CritRate, Is.EqualTo(0.25f).Within(1e-5f));
     }
@@ -134,8 +126,7 @@ public class ReadonlyStructTests
         var original = new FullDamage(100f, 0.5f, 50f);
         var sb = new StringBuilder();
         block.Emit(sb, original);
-        int r = block.Scan(WhitespaceStripper.Strip(sb.ToString()).AsSpan(), 0, out var parsed);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<FullDamage>(sb.ToString(), out var parsed), Is.True);
         Assert.That(parsed.Attack, Is.EqualTo(100f).Within(1e-5f));
         Assert.That(parsed.CritRate, Is.EqualTo(0.5f).Within(1e-5f));
         Assert.That(parsed.Defense, Is.EqualTo(50f).Within(1e-5f));

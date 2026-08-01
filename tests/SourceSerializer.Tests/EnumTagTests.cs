@@ -13,7 +13,7 @@ public enum Element : byte
     [Tag("magic")] Magic,
 }
 
-[Template("<Element Type>|<float Power>")]
+[Template("TaggedSpell(Type:<Element Type>, Power:<float Power>)")]
 public struct TaggedSpell
 {
     public Element Type;
@@ -29,9 +29,7 @@ public class EnumTagTests
     [Test]
     public void TaggedSpell_ParsesFire()
     {
-        Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("fire|10").AsSpan(), 0, out TaggedSpell v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<TaggedSpell>("TaggedSpell(Type:fire, Power:10)", out TaggedSpell v), Is.True);
         Assert.That(v.Type, Is.EqualTo(Element.Fire));
         Assert.That(v.Power, Is.EqualTo(10f));
     }
@@ -39,9 +37,7 @@ public class EnumTagTests
     [Test]
     public void TaggedSpell_ParsesIce()
     {
-        Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("ice|5").AsSpan(), 0, out TaggedSpell v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<TaggedSpell>("TaggedSpell(Type:ice, Power:5)", out TaggedSpell v), Is.True);
         Assert.That(v.Type, Is.EqualTo(Element.Ice));
         Assert.That(v.Power, Is.EqualTo(5f));
     }
@@ -49,18 +45,14 @@ public class EnumTagTests
     [Test]
     public void TaggedSpell_ParsesMagic()
     {
-        Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("magic|100").AsSpan(), 0, out TaggedSpell v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<TaggedSpell>("TaggedSpell(Type:magic, Power:100)", out TaggedSpell v), Is.True);
         Assert.That(v.Type, Is.EqualTo(Element.Magic));
     }
 
     [Test]
     public void TaggedSpell_UnknownTag_ReturnsStart()
     {
-        Assert.That(SerializerBlocks.TryGet<TaggedSpell>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("water|10").AsSpan(), 0, out _);
-        Assert.That(r, Is.EqualTo(0));
+        Assert.That(SerializerBlocks.TryScan<TaggedSpell>("TaggedSpell(Type:water, Power:10)", out _), Is.False);
     }
 
     // ── : int 后端枚举 ──
@@ -68,14 +60,14 @@ public class EnumTagTests
     [Test]
     public void IntBackedEnum_ScanAndEmit()
     {
-        Assert.That(SerializerBlocks.TryGet<IntSpell>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("Fire 10").AsSpan(), 0, out var v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<IntSpell>("IntSpell(Fire, 10)", out var v), Is.True);
         Assert.That(v.Elem, Is.EqualTo(IntElement.Fire));
         Assert.That(v.Power, Is.EqualTo(10));
+
+        Assert.That(SerializerBlocks.TryGet<IntSpell>(out var block), Is.True);
         var sb = new System.Text.StringBuilder();
         block.Emit(sb, v);
-        Assert.That(sb.ToString(), Is.EqualTo("Fire 10"));
+        Assert.That(sb.ToString(), Is.EqualTo("IntSpell(Fire, 10)"));
     }
 
     // ── 无 [Tag] 枚举 — 当前 SG 不支持（无 [Tag] 枚举触发 SSR004）
@@ -88,7 +80,7 @@ public enum IntElement : int
     [Tag("Ice")]  Ice  = 1,
 }
 
-[Template("<IntElement Elem> <int Power>")]
+[Template("IntSpell(<IntElement Elem>, <int Power>)")]
 public struct IntSpell
 {
     public IntElement Elem;

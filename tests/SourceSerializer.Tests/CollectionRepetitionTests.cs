@@ -8,7 +8,7 @@ using SourceSerializer;
 // Collection / Repetition test types
 // ═══════════════════════════════════════════════════════
 
-[Template("<float Damage><optional>, <List<float> Multipliers></optional>")]
+[Template("DamageCompact(Damage:<float Damage><optional>, Multipliers:<List<float> Multipliers></optional>)")]
 public struct DamageCompact
 {
     public float Damage;
@@ -29,7 +29,7 @@ public struct DamageWithMultipliers
     public List<float> Multipliers;
 }
 
-[Template("<float X><optional>, <List<float> Rest></optional>")]
+[Template("RepetitionMulti(X:<float X><optional>, Rest:<List<float> Rest></optional>)")]
 public struct RepetitionMulti
 {
     public float X;
@@ -45,9 +45,7 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_Compact_ZeroExtra()
     {
-        Assert.That(SerializerBlocks.TryGet<DamageCompact>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("42").AsSpan(), 0, out DamageCompact v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<DamageCompact>("DamageCompact(Damage:42)", out DamageCompact v), Is.True);
         Assert.That(v.Damage, Is.EqualTo(42f));
         Assert.That(v.Multipliers, Is.Not.Null);
         Assert.That(v.Multipliers.Count, Is.EqualTo(0));
@@ -56,9 +54,7 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_Compact_OneExtra()
     {
-        Assert.That(SerializerBlocks.TryGet<DamageCompact>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("42, List(1.5)").AsSpan(), 0, out DamageCompact v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<DamageCompact>("DamageCompact(Damage:42, Multipliers:List(1.5))", out DamageCompact v), Is.True);
         Assert.That(v.Damage, Is.EqualTo(42f));
         Assert.That(v.Multipliers, Is.Not.Null);
         Assert.That(v.Multipliers.Count, Is.EqualTo(1));
@@ -68,9 +64,7 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_Xml_MultipleExtra()
     {
-        Assert.That(SerializerBlocks.TryGet<DamageWithMultipliers>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("42, List(1.5, 2.0, 3.5)").AsSpan(), 0, out DamageWithMultipliers v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<DamageWithMultipliers>("42, List(1.5, 2.0, 3.5)", out DamageWithMultipliers v), Is.True);
         Assert.That(v.Damage, Is.EqualTo(42f));
         Assert.That(v.Multipliers, Is.Not.Null);
         Assert.That(v.Multipliers.Count, Is.EqualTo(3));
@@ -81,9 +75,7 @@ public class CollectionRepetitionTests
     [Test]
     public void Repetition_MultipleMatches_KeepsAll()
     {
-        Assert.That(SerializerBlocks.TryGet<RepetitionMulti>(out var block), Is.True);
-        int r = block.Scan(WhitespaceStripper.Strip("10, List(20, 30)").AsSpan(), 0, out RepetitionMulti v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<RepetitionMulti>("RepetitionMulti(X:10, Rest:List(20, 30))", out RepetitionMulti v), Is.True);
         Assert.That(v.X, Is.EqualTo(10f));
         Assert.That(v.Rest, Is.Not.Null);
         Assert.That(v.Rest.Count, Is.EqualTo(2));
@@ -96,10 +88,8 @@ public class CollectionRepetitionTests
     [Test]
     public void LargeList_100_Elements()
     {
-        Assert.That(SerializerBlocks.TryGet<ManyFloats>(out var block), Is.True);
         var input = "List(" + string.Join(", ", Enumerable.Range(0, 100)) + ")";
-        int r = block.Scan(WhitespaceStripper.Strip(input).AsSpan(), 0, out var v);
-        Assert.That(r, Is.GreaterThan(0));
+        Assert.That(SerializerBlocks.TryScan<ManyFloats>(input, out var v), Is.True);
         Assert.That(v.Values.Count, Is.EqualTo(100));
         Assert.That(v.Values[0], Is.EqualTo(0f));
         Assert.That(v.Values[99], Is.EqualTo(99f));

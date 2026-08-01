@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using SourceSerializer;
 
-[Template("<string Name><optional>, <int Age></optional>")]
+[Template("Person(Name:<string Name><optional>, Age:<int Age></optional>)")]
 public class Person
 {
     public string Name;
