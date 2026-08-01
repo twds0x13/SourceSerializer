@@ -27,6 +27,7 @@
   <ItemGroup>
     <Compile Include="PrimitiveScannerTests.cs" />      <!-- 内置类型扫描器 -->
     <Compile Include="UnmanagedStructTests.cs" />       <!-- 纯值类型 struct -->
+    <Compile Include="ReadonlyStructTests.cs" />       <!-- readonly struct + 构造器 -->
     <Compile Include="ManagedTypeTests.cs" />           <!-- class + managed struct -->
     <Compile Include="CollectionRepetitionTests.cs" />  <!-- List/Repetition 集合 -->
     <Compile Include="EnumTagTests.cs" />               <!-- 枚举标签 -->
